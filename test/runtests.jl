@@ -56,9 +56,15 @@ function test_equality(s::AbstractString,ps)
 end
 
 include("test_idm.jl")
-
 include("test_mobil.jl")
+include("test_types.jl")
+include("test_crash.jl")
 
 println("Running Unit Tests...")
 test_idm()
 test_mobil()
+test_mdp_types()
+test_crash()
+
+println("Running an example...")
+include("run_example.jl")
