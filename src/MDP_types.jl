@@ -3,8 +3,8 @@ abstract AbstractMLRewardModel
 abstract AbstractMLDynamicsModel
 
 type MLMDP{S, A, DModel<:AbstractMLDynamicsModel, RModel<:AbstractMLRewardModel}  <: MDP{S, A}
-    rmodel::RModel
     dmodel::DModel
+    rmodel::RModel
 	discount::Float64
 end
 

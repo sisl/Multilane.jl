@@ -23,7 +23,7 @@ rmodel = OriginalRewardModel(r_crash,
 
 dmodel = IDMMOBILModel(nb_cars, pp)
 
-mdp = OriginalMDP(rmodel, dmodel, _discount);
+mdp = OriginalMDP(dmodel, rmodel, _discount);
 
 # initialize the solver
 # the hyper parameters in MCTS can be tricky to set properly

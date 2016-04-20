@@ -11,6 +11,9 @@ import Iterators.product
 
 import Base: ==, hash, length
 
+# for visualization
+using Interact
+
 # package code goes here
 export 
     PhysicalParam,
@@ -31,7 +34,10 @@ export
     get_adj_cars,
     get_idm_dv,
     get_mobil_lane_change,
-    is_crash
+    is_crash,
+    visualize,
+    display_sim
+
 
 include("physical.jl")
 include("MDP_types.jl")
@@ -40,5 +46,6 @@ include("MDP.jl")
 include("IDM.jl")
 include("MOBIL.jl")
 include("behavior.jl")
+include("visualization.jl")
 
 end # module
