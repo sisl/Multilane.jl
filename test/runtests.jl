@@ -43,7 +43,7 @@ function test_equality(s::AbstractString,ps)
 	for i = 1:length(ps)
 		for j = 1:length(ps)
 			if i == j
-				assert(ps[i],ps[j])
+				assert(ps[i],deepcopy(ps[j]))
 			else
 				assert(ps[i],ps[j],true)
 				assert(ps[j],ps[i],true)

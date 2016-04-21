@@ -1,6 +1,7 @@
 using GenerativeModels
 using MCTS
 using POMDPs
+using POMDPToolbox
 
 #Set up problem configuration
 nb_lanes = 2
@@ -38,38 +39,6 @@ solver = MCTSSolver(n_iterations=100, depth=10, exploration_constant=1.0, enable
 # initialize the policy by passing in your problem and the solver
 policy = solve(solver, mdp);
 
-rng = MersenneTwister(9) # initialize a random number generator
-n_ep = 1
-Rs = [Float64[] for _=1:n_ep]#zeros(n_ep)
-nb_early_term = 0
-histS = Array{MLState,1}[]
-histA = Array{MLAction,1}[]
-for j = 1:n_ep
-    push!(histS,MLState[])
-    push!(histA,MLAction[])
-    s = initial_state(mdp,rng)
-    rtot = 0.0
-    disc = 1.0
-    for i = 1:10
-        # get the action from our SARSOP policy
-        a = action(policy, s) # the QMDP action function returns the POMDP action not its index like the SARSOP action function
-        #if j == n_ep
-            push!(histS[j],s)
-            push!(histA[j],a)
-        #end
-        # compute the reward
-        r = reward(mdp, s, a)
-        push!(Rs[j],r)
-        rtot += disc*r
-        if isterminal(mdp,s,a)
-            nb_early_term += 1
-            break
-        end
-        disc *= discount(mdp)
-        print("\rEp:$j, t=$i")
-        # transition the system state
-        s = generate_s(mdp,s,a,rng)
-    end
-    #Rs[j] = rtot
-    print("\rTotal discounted reward: $rtot\n")
-end
+sim = HistoryRecorder(rng=MersenneTwister(9), max_steps=10) # initialize a random number generator
+
+simulate(sim, mdp, policy, initial_state(mdp, sim.rng))
