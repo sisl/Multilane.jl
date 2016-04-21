@@ -152,7 +152,7 @@ function visualize(mdp::MLMDP{MLState, MLAction, IDMMOBILModel},
 		draw_box(0,-border_thickness+Y_ABS,W,border_thickness,border_color)
 		draw_box(0.,H+Y_ABS,W,border_thickness,border_color)
 
-
+        # \/ rand is there to make it look like the cars are moving
 		lane_marker_x = collect((0.-rand()):lane_marker_inbetween:W)
 		lane_marker_length_ = Float64[lane_marker_length for i=1:length(lane_marker_x)]
 		lane_marker_length_[1] += lane_marker_x[1]

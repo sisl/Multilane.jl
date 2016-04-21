@@ -59,14 +59,26 @@ end #carstate
 Base.hash(a::CarState,h::UInt64=zero(UInt64)) = hash(a.vel,hash(a.pos,hash(a.lane_change,hash(a.behavior,h))))
 
 type MLState
+    crashed::Bool # A crash occurs at the state transition. All crashed states are considered equal
 	agent_pos::Int #row
 	agent_vel::Float64
-	# sensor_failed::Bool # getting rid of this for the base mdp
 	env_cars::Array{CarState,1}
 end #MLState
 
-==(a::MLState,b::MLState) = (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel) &&(a.env_cars == b.env_cars)
-Base.hash(a::MLState,h::UInt64=zero(UInt64)) = hash(a.agent_vel,hash(a.agent_pos,hash(a.env_cars,h)))
+function ==(a::MLState, b::MLState)
+    if a.crashed && b.crashed
+        return true
+    elseif a.crashed || b.crashed # only one has crashed
+        return false
+    end
+    return (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel) &&(a.env_cars == b.env_cars)
+end
+function Base.hash(a::MLState, h::UInt64=zero(UInt64))
+    if a.crashed
+        return hash(a.crashed, h)
+    end
+    return hash(a.agent_vel,hash(a.agent_pos,hash(a.env_cars,h)))
+end
 
 type MLAction
 	vel::Float64 #-1,0 or +1, corresponding to desired velocities of v_fast,v_slow or v_nom

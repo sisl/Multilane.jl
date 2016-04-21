@@ -139,6 +139,9 @@ function is_crash(mdp::MLMDP{MLState,MLAction},s::MLState,a::MLAction,debug::Boo
 
 	dt = pp.dt
 	for (i,env_car) in enumerate(s.env_cars)
+
+        # TODO first do a quick check to see if the cars are even close
+
 		pos = env_car.pos
 		if pos[1] < 0.
 			continue
