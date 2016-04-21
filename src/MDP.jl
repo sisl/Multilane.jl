@@ -71,7 +71,7 @@ function sample(rng::AbstractRNG,wv::WeightVec)
 end
 sample(rng::AbstractRNG,a::AbstractArray, wv::WeightVec) = a[sample(rng,wv)]
 
-function GenerativeModels.generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG)
+function GenerativeModels.generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
