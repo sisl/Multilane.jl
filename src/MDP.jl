@@ -85,7 +85,7 @@ function GenerativeModels.generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, 
     #underactuating
     agent_vel_ = max(pp.v_slow,min(agent_vel_,pp.v_fast))
 
-    car_states = CarState[]
+    car_states = resize!(sp.env_cars,0)
     valid_col_top = collect(1:2:nb_col)
     valid_col_bot = collect(1:2:nb_col)
 
@@ -219,8 +219,12 @@ function GenerativeModels.generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, 
         #push!(car_states,CarState(pos,vel,lanechange,behavior))
     end
 
-    return MLState(is_crash(mdp, s, a), agent_lane_, agent_vel_, car_states)
+    sp.crashed = is_crash(mdp, s, a)
+    sp.agent_pos = agent_lane_
+    sp.agent_vel = agent_vel_
+    @assert sp.car_states === car_states
 
+    return sp
 end
 
 iterator(as::ActionSpace) = as.actions
