@@ -32,9 +32,15 @@ type CarNeighborhood
 	behind_idm::Dict{Int,IDMParam}
 	ahead_lanechange::Int
 end
-CarNeighborhood(x,y,z) = CarNeighborhood(x,deepcopy(x),deepcopy(x),deepcopy(x),y,deepcopy(y),z)
-CarNeighborhood() = CarNeighborhood(Dict{Int,Float64}(),Dict{Int,IDMParam}(),0)
-
+#CarNeighborhood(x,y,z) = CarNeighborhood(x,deepcopy(x),deepcopy(x),deepcopy(x),y,deepcopy(y),z)
+CarNeighborhood() = CarNeighborhood(Dict{Int,Float64}(), #ahead_dist
+																		Dict{Int,Float64}(), #behind_dist
+																		Dict{Int,Float64}(), #ahead_dv
+																		Dict{Int,Float64}(), #behind_dv
+																		Dict{Int,IDMParam}(), #ahead_idm
+																		Dict{Int,IDMParam}(), #behind_idm
+																		0) #ahead lanechange
+																		
 function is_lanechange_dangerous(nbhd::CarNeighborhood,dt::Float64,l_car::Float64,dir::Int)
 	slf = get(nbhd.behind_dist,dir,1000.)
 	slb = get(nbhd.ahead_dist,dir,1000.)
