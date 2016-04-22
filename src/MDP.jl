@@ -222,7 +222,7 @@ function GenerativeModels.generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, 
     sp.crashed = is_crash(mdp, s, a)
     sp.agent_pos = agent_lane_
     sp.agent_vel = agent_vel_
-    @assert sp.car_states === car_states
+    @assert sp.env_cars === car_states
 
     return sp
 end

@@ -139,9 +139,6 @@ function is_crash(mdp::MLMDP{MLState,MLAction},s::MLState,a::MLAction,debug::Boo
 
 	dt = pp.dt
 	for (i,env_car) in enumerate(s.env_cars)
-
-        # TODO first do a quick check to see if the cars are even close
-
 		pos = env_car.pos
 		if pos[1] < 0.
 			continue
@@ -154,6 +151,9 @@ function is_crash(mdp::MLMDP{MLState,MLAction},s::MLState,a::MLAction,debug::Boo
 
 		dv = get(neighborhood.ahead_dv,0,0.)
 		ds = get(neighborhood.ahead_dist,0,1000.)
+
+        # TODO first do a quick check to see if the cars are even close
+
 		dvel_ms = get_idm_dv(behavior.p_idm,dt,vel,dv,ds) #call idm model
 		dp =  dt*(vel-s.agent_vel)#dt*(pp.VELOCITIES[vel]-pp.VELOCITIES[s.agent_vel])#+0.5*dt*dvel_ms #x+vt+1/2at2 #XXX remove at2 term
 		dy = (lane_-pos[2])*pp.y_interval # XXX this doesn't seem right
