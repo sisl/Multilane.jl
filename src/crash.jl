@@ -130,6 +130,10 @@ function is_crash(mdp::MLMDP{MLState,MLAction},s::MLState,a::MLAction,debug::Boo
 	X = Array{Float64,2}[[agent_pos agent_pos; agent_y agent_y+w_car_],[agent_pos+l_car agent_pos+l_car; agent_y agent_y+w_car_],
 						[agent_pos agent_pos+l_car; agent_y agent_y],[agent_pos agent_pos+l_car; agent_y+w_car_ agent_y+w_car_]]
 
+	#center of the ego car
+	x = [agent_pos; agent_y]
+	#corner-corner distance between two sedan
+	d = norm([2*l_car;2*w_car])
 	if debug
 		subplot(212)
 		for x in X
@@ -160,6 +164,12 @@ function is_crash(mdp::MLMDP{MLState,MLAction},s::MLState,a::MLAction,debug::Boo
 		#dy = lane_change*pp.y_interval
 		p = pos[1]#pp.POSITIONS[pos[1]]
 		y = pos[2]*pp.y_interval
+
+		y1 = [p;y]
+		y2 = [p+dp;y+dy]
+		if norm(x-y1) > d && norm(x-y2) > d
+			continue
+		end
 		##TODO: make consistent with new formulation
 		Y1 = Array{Float64,2}[[p p; y y+w_car],[p+l_car p+l_car; y y+w_car],[p p+l_car; y y],[p p+l_car; y+w_car y+w_car]]
 		Y2 = Array{Float64,2}[xy + [dp dp; dy dy] for xy in Y1]
