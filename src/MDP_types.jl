@@ -17,20 +17,14 @@ type OriginalRewardModel <: AbstractMLRewardModel
 	lanechange_cost::Float64
 end
 
-type NoCrashRewardModel <: AbstractMLRewardModel
-    cost_close_call::Float64
-    cost_emergency_brake::Float64
-    reward_in_desired_lane::Float64
-end
-
 type IDMMOBILModel <: AbstractMLDynamicsModel
-	nb_cars::Int # ??? number of cars (what happens when they leave)
-	phys_param::PhysicalParam # ??? what should really be in physical parameters
+	nb_cars::Int
+    phys_param::PhysicalParam
 
-	BEHAVIORS::Array{BehaviorModel,1} # ??? will we always need this
-	NB_PHENOTYPES::Int # 
+	BEHAVIORS::Array{BehaviorModel,1}
+	NB_PHENOTYPES::Int
 
-	encounter_prob::Float64 # ??? What is this
+	encounter_prob::Float64
 	accels::Array{Int,1}
 end
 
@@ -40,19 +34,15 @@ function IDMMOBILModel(nb_cars, phys_param; encounter_prob=0.5, accels=Int[-3,-2
 end
 
 # TODO for performance, parameterize this by BehaviorModel
-type CarState
+immutable CarState
 	pos::Tuple{Float64,Int} #row, col/ (x,y)
 	vel::Float64
 	lane_change::Int #-1,0, or +1, corresponding to to the right lane, no lane change, or to the left lane
 	behavior::BehaviorModel
+
 	function CarState(pos::Tuple{Float64,Int},vel::Float64,lane_change::Int,behavior::BehaviorModel)
-		self = new()
-		self.pos = pos
-		self.vel = vel
 		assert(abs(lane_change) <= 1)
-		self.lane_change = lane_change
-		self.behavior = behavior
-		return self
+		return new(pos, vel, lane_change, behavior)
 	end
 end #carstate
 ==(a::CarState,b::CarState) = (a.pos==b.pos) && (a.vel==b.vel) &&(a.lane_change == b.lane_change)&&(a.behavior==b.behavior)
@@ -80,19 +70,19 @@ function Base.hash(a::MLState, h::UInt64=zero(UInt64))
     return hash(a.agent_vel,hash(a.agent_pos,hash(a.env_cars,h)))
 end
 
-type MLAction
-	vel::Float64 #-1,0 or +1, corresponding to desired velocities of v_fast,v_slow or v_nom
-	lane_change::Int #-1,0, or +1, corresponding to to the right lane, no lane change, or to the left lane
+immutable MLAction
+	acc::Float64
+    lane_change::Int #-1,0, or +1, corresponding to to the right lane, no lane change, or to the left lane
 end
 MLAction() = MLAction(0,0)
-==(a::MLAction,b::MLAction) = (a.vel==b.vel) && (a.lane_change==b.lane_change)
-Base.hash(a::MLAction,h::UInt64=zero(UInt64)) = hash(a.vel,hash(a.lane_change,h))
+==(a::MLAction,b::MLAction) = (a.acc==b.acc) && (a.lane_change==b.lane_change)
+Base.hash(a::MLAction,h::UInt64=zero(UInt64)) = hash(a.acc,hash(a.lane_change,h))
 function MLAction(x::Array{Float64,1})
 	assert(length(x)==2)
 	lane_change = abs(x[2]) <= 0.3? 0: sign(x[2])
 	return MLAction(x[1],lane_change)
 end
-vec(a::MLAction) = Float64[a.vel;a.lane_change]
+vec(a::MLAction) = Float64[a.acc;a.lane_change]
 
 typealias OriginalMDP MLMDP{MLState, MLAction, IDMMOBILModel, OriginalRewardModel}
 

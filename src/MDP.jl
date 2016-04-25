@@ -4,15 +4,15 @@ actions(mdp::OriginalMDP,s::MLState,A::ActionSpace=actions(mdp)) = A #SARSOP doe
 function __reward(mdp::OriginalMDP,s::MLState,a::MLAction)
 
     pos = s.agent_pos
-    vel = a.vel
+    acc = a.acc
     lane_change = a.lane_change
         nb_col = 2*mdp.dmodel.phys_param.nb_lanes-1
 
     cost = 0.
-    if a.vel > 0
-        cost += mdp.rmodel.accel_cost*a.vel
-    elseif a.vel < 0
-        cost -= mdp.rmodel.decel_cost*a.vel
+    if a.acc > 0
+        cost += mdp.rmodel.accel_cost*a.acc
+    elseif a.acc < 0
+        cost -= mdp.rmodel.decel_cost*a.acc
     end
     if abs(a.lane_change) != 0
         cost += mdp.rmodel.lanechange_cost
@@ -71,7 +71,7 @@ function sample(rng::AbstractRNG,wv::WeightVec)
 end
 sample(rng::AbstractRNG,a::AbstractArray, wv::WeightVec) = a[sample(rng,wv)]
 
-function GenerativeModels.generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -81,7 +81,7 @@ function GenerativeModels.generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, 
     agent_lane_ = s.agent_pos + a.lane_change
     agent_lane_ = max(1,min(agent_lane_,nb_col)) #can't leave the grid
 
-    agent_vel_ = s.agent_vel + a.vel*dt#convert(Int,ceil(a.vel*dt/(v_interval)))
+    agent_vel_ = s.agent_vel + a.acc*dt
     #underactuating
     agent_vel_ = max(pp.v_slow,min(agent_vel_,pp.v_fast))
 

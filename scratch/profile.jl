@@ -34,10 +34,12 @@ policy = RandomPolicy(mdp)
 sim = RolloutSimulator(max_steps=1000)
 
 @time simulate(sim, mdp, policy, initial_state(mdp, rng))
-@time simulate(sim, mdp, policy, initial_state(mdp, rng))
+@time for i in 1:100
+    simulate(sim, mdp, policy, initial_state(mdp, rng))
+end
 
 Profile.clear()
-@profile for i in 1:10
+@profile for i in 1:100
     simulate(sim, mdp, policy, initial_state(mdp, rng))
 end
 

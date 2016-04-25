@@ -52,6 +52,6 @@ type PhysicalParam
 		self.lane_length = lane_length
 
 		return self
-		end
+	end
 end
 
