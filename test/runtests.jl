@@ -1,3 +1,4 @@
+push!(LOAD_PATH,joinpath("..","src"))
 using Multilane
 using Base.Test
 

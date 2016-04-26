@@ -19,7 +19,7 @@ end
 
 type IDMMOBILModel <: AbstractMLDynamicsModel
 	nb_cars::Int
-    phys_param::PhysicalParam
+  phys_param::PhysicalParam
 
 	BEHAVIORS::Array{BehaviorModel,1}
 	NB_PHENOTYPES::Int
@@ -35,25 +35,35 @@ end
 
 # TODO for performance, parameterize this by BehaviorModel
 immutable CarState
-	pos::Tuple{Float64,Int} #row, col/ (x,y)
-	vel::Float64
-	lane_change::Int #-1,0, or +1, corresponding to to the right lane, no lane change, or to the left lane
-	behavior::BehaviorModel
+	pos::Tuple{Float64,Float64} #row, col/ (x,y)
+	vel::Float64 #v_x
+	lane_change::Float64 #-1,0, or +1, corresponding to to the right lane, no lane change, or to the left lane (also v_y/heading)
+	behavior::Nullable{BehaviorModel}
 
-	function CarState(pos::Tuple{Float64,Int},vel::Float64,lane_change::Int,behavior::BehaviorModel)
-		assert(abs(lane_change) <= 1)
+	function CarState(pos::Tuple{Float64,Real},vel::Float64,lane_change::Real,behavior::Union{Nullable{BehaviorModel},BehaviorModel})
+		assert(abs(lane_change) <= 1.) #XXX might not be appropriate with new def of lane_change
 		return new(pos, vel, lane_change, behavior)
 	end
 end #carstate
-==(a::CarState,b::CarState) = (a.pos==b.pos) && (a.vel==b.vel) &&(a.lane_change == b.lane_change)&&(a.behavior==b.behavior)
+==(a::CarState,b::CarState) = (a.pos==b.pos) && (a.vel==b.vel) &&(a.lane_change == b.lane_change)&&((isnull(a.behavior) && isnull(b.behavior)) || (get(a.behavior)==get(b.behavior)))
 Base.hash(a::CarState,h::UInt64=zero(UInt64)) = hash(a.vel,hash(a.pos,hash(a.lane_change,hash(a.behavior,h))))
 
 type MLState
-    crashed::Bool # A crash occurs at the state transition. All crashed states are considered equal
-	agent_pos::Int #row
-	agent_vel::Float64
-	env_cars::Array{CarState,1}
+  crashed::Bool # A crash occurs at the state transition. All crashed states are considered equal
+	#agent_pos::Int #row
+	#agent_vel::Float64
+	env_cars::Array{CarState,1} #NOTE ego car is first car
 end #MLState
+#XXX convenience functions
+function MLState(pos::Real,vel::Real,cars::Array{CarState,1},x::Real=50.)
+  #x = mdp.phys_param.lane_length/2.
+  insert!(cars,1,CarState((x,pos),vel,0,Nullable{BehaviorModel}()))
+  return MLState(false,cars)
+end
+function MLState(crashed::Bool,pos::Real,vel::Real,cars::Array{CarState,1},x::Real=50.)
+  insert!(cars,1,CarState((x,pos),vel,0,Nullable{BehaviorModel}()))
+  return MLState(crashed,cars)
+end
 
 function ==(a::MLState, b::MLState)
     if a.crashed && b.crashed
@@ -61,18 +71,18 @@ function ==(a::MLState, b::MLState)
     elseif a.crashed || b.crashed # only one has crashed
         return false
     end
-    return (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel) &&(a.env_cars == b.env_cars)
+    return (a.env_cars == b.env_cars) #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
 end
 function Base.hash(a::MLState, h::UInt64=zero(UInt64))
     if a.crashed
         return hash(a.crashed, h)
     end
-    return hash(a.agent_vel,hash(a.agent_pos,hash(a.env_cars,h)))
+    return hash(a.env_cars,h)#hash(a.agent_vel,hash(a.agent_pos,hash(a.env_cars,h)))
 end
 
 immutable MLAction
 	acc::Float64
-    lane_change::Int #-1,0, or +1, corresponding to to the right lane, no lane change, or to the left lane
+  lane_change::Float64 #-1,0, or +1, corresponding to to the right lane, no lane change, or to the left lane
 end
 MLAction() = MLAction(0,0)
 ==(a::MLAction,b::MLAction) = (a.acc==b.acc) && (a.lane_change==b.lane_change)
