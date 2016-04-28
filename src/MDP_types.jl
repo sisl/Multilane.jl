@@ -61,7 +61,7 @@ function ==(a::MLState, b::MLState)
     elseif a.crashed || b.crashed # only one has crashed
         return false
     end
-    return (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel) &&(a.env_cars == b.env_cars)
+    return (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel) && (a.env_cars == b.env_cars)
 end
 function Base.hash(a::MLState, h::UInt64=zero(UInt64))
     if a.crashed
