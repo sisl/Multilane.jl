@@ -28,8 +28,8 @@ type CarNeighborhood
 	behind_dist::Dict{Int,Float64}
 	ahead_dv::Dict{Int,Float64}
 	behind_dv::Dict{Int,Float64}
-	ahead_idm::Dict{Int,IDMParam}
-	behind_idm::Dict{Int,IDMParam}
+	ahead_idm::Dict{Int,Union{IDMParam,Float64}}
+	behind_idm::Dict{Int,Union{IDMParam,Float64}}
 	ahead_lanechange::Int
 end
 #CarNeighborhood(x,y,z) = CarNeighborhood(x,deepcopy(x),deepcopy(x),deepcopy(x),y,deepcopy(y),z)
@@ -40,8 +40,8 @@ CarNeighborhood() = CarNeighborhood(Dict{Int,Float64}(), #ahead_dist
 																		Dict{Int,IDMParam}(), #ahead_idm
 																		Dict{Int,IDMParam}(), #behind_idm
 																		0) #ahead lanechange
-																		
-function is_lanechange_dangerous(nbhd::CarNeighborhood,dt::Float64,l_car::Float64,dir::Int)
+
+function is_lanechange_dangerous(nbhd::CarNeighborhood,dt::Float64,l_car::Float64,dir::Real)
 	slf = get(nbhd.behind_dist,dir,1000.)
 	slb = get(nbhd.ahead_dist,dir,1000.)
 	dvlf = get(nbhd.behind_dv,dir,0.)
@@ -59,20 +59,20 @@ function is_lanechange_dangerous(nbhd::CarNeighborhood,dt::Float64,l_car::Float6
 
 end
 
-function get_adj_cars(p::PhysicalParam,arr::Array{CarState,1},i::Int)
+function get_adj_cars(p::PhysicalParam,arr::Array{CarState,1},i::Int,a::MLAction)
 	##TODO: update CarNeighborhood with stuff for the IDM parameters
 	neighborhood = CarNeighborhood()
 
 	x = arr[i]
 
 	#going offroad is not allowed
-	if x.pos[2] <= 1
+	if x.pos[2] <= 1.
 		#can't go right
 		neighborhood.ahead_dist[-1] = -100.
 		neighborhood.behind_dist[-1] = -100.
 	# elseif x.pos[2] >= p.NB_POS/length(p.POSITIONS)
     # XXX is the line below the same as the line above??
-	elseif x.pos[2] >= 2*p.nb_lanes-1
+	elseif x.pos[2] >= 2*p.nb_lanes-1.
 		#can't go left
 		neighborhood.ahead_dist[1] = -100.
 		neighborhood.behind_dist[1] = -100.
@@ -88,9 +88,9 @@ function get_adj_cars(p::PhysicalParam,arr::Array{CarState,1},i::Int)
 			continue
 		end
 		dlane = pos[2]-x.pos[2]
-		if abs(dlane) > 2 #not in or adjacent to current lane
+		if abs(dlane) > 2. #not in or adjacent to current lane
 			continue
-		elseif abs(dlane) <= 1
+		elseif abs(dlane) <= 1.
 			dlane = 0
 		else #abs(dlane) == 2
 			dlane = sign(dlane)
@@ -103,14 +103,14 @@ function get_adj_cars(p::PhysicalParam,arr::Array{CarState,1},i::Int)
 		if (dist >= 0) && ((dist - p.l_car) < get(neighborhood.ahead_dist,dlane,1000.))
 			neighborhood.ahead_dist[dlane] = dist - p.l_car
 			neighborhood.ahead_dv[dlane] = dv
-			neighborhood.ahead_idm[dlane] = car.behavior.p_idm #pointless
+			neighborhood.ahead_idm[dlane] = !isnull(car.behavior)?get(car.behavior).p_idm:a.acc #pointless
 			if dlane == 0
 				neighborhood.ahead_lanechange = car.lane_change
 			end
 		elseif (dist < 0) && ((-1*dist - p.l_car) < get(neighborhood.behind_dist,dlane,1000.))
 			neighborhood.behind_dist[dlane] = -1*dist - p.l_car
 			neighborhood.behind_dv[dlane] = -1*dv
-			neighborhood.behind_idm[dlane] = car.behavior.p_idm
+			neighborhood.behind_idm[dlane] = !isnull(car.behavior)?get(car.behavior).p_idm:a.acc
 		end
 	end
 
@@ -126,8 +126,8 @@ function get_mobil_lane_change(p::PhysicalParam,state::CarState,neighborhood::Ca
 	#				in other lane(s)
 	#need sets of idm parameters
 	dt = p.dt
-	p_idm_self = state.behavior.p_idm
-	p_mobil = state.behavior.p_mobil
+	p_idm_self = get(state.behavior).p_idm
+	p_mobil = get(state.behavior).p_mobil
 	#println(neighborhood)
 	if isempty(neighborhood.ahead_dv) && isempty(neighborhood.behind_dv)
 		return 0 #no reason to change lanes if you're all alone
@@ -152,10 +152,15 @@ function get_mobil_lane_change(p::PhysicalParam,state::CarState,neighborhood::Ca
 		v_behind = v + neighborhood.behind_dv[0]
 		dv_behind = neighborhood.behind_dv[0]
 		s_behind = get(neighborhood.behind_dist,0,1000.)
-		a_follower = get_idm_dv(neighborhood.behind_idm[0],dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
 		dv_behind_ = dv_behind + get(neighborhood.ahead_dv,0,0.)
 		s_behind_ = s_behind + get(neighborhood.ahead_dist,0,1000.) + p.l_car
-		a_follower_ = get_idm_dv(neighborhood.behind_idm[0],dt,v_behind,dv_behind_,s_behind_)/dt
+		if typeof(neighborhood.behind_idm[0]) <: Float64
+			a_follower = neighborhood.behind_idm[0]
+			a_follower_ = neighborhood.behind_idm[0]
+		else
+			a_follower = get_idm_dv(neighborhood.behind_idm[0],dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
+			a_follower_ = get_idm_dv(neighborhood.behind_idm[0],dt,v_behind,dv_behind_,s_behind_)/dt
+		end
 	end
 
 	if get(neighborhood.behind_idm,1,0.) == 0.
@@ -165,10 +170,15 @@ function get_mobil_lane_change(p::PhysicalParam,state::CarState,neighborhood::Ca
 		v_left = v + neighborhood.behind_dv[1]
 		dv_left = neighborhood.behind_dv[1] + get(neighborhood.ahead_dv,1,0.)
 		s_left = get(neighborhood.behind_dist,1,1000.) + get(neighborhood.ahead_dist,1,1000.)+p.l_car
-		a_follower_left = get_idm_dv(neighborhood.behind_idm[1],dt,v_left,dv_left,s_left)/dt
 		dv_left_ = get(neighborhood.behind_dv,1,0.)
 		s_left_ = get(neighborhood.behind_dist,1,1000.)
-		a_follower_left_ = get_idm_dv(neighborhood.behind_idm[1],dt,v_left,dv_left_,s_left_)/dt
+		if typeof(neighborhood.behind_idm[1]) <: Float64
+			a_follower_left_ = neighborhood.behind_idm[1]
+			a_follower_left = neighborhood.behind_idm[1]
+		else
+			a_follower_left = get_idm_dv(neighborhood.behind_idm[1],dt,v_left,dv_left,s_left)/dt
+			a_follower_left_ = get_idm_dv(neighborhood.behind_idm[1],dt,v_left,dv_left_,s_left_)/dt
+		end
 	end
 
 	if get(neighborhood.behind_idm,-1,0.) == 0.
@@ -178,10 +188,16 @@ function get_mobil_lane_change(p::PhysicalParam,state::CarState,neighborhood::Ca
 		v_right = v + neighborhood.behind_dv[-1]
 		dv_right = neighborhood.behind_dv[-1] + get(neighborhood.ahead_dv,-1,0.)
 		s_right = neighborhood.behind_dist[-1] + get(neighborhood.ahead_dist,-1,1000.) + p.l_car
-		a_follower_right = get_idm_dv(neighborhood.behind_idm[-1],dt,v_right,dv_right,s_right)/dt
+
 		dv_right_ = neighborhood.behind_dv[-1]
 		s_right_ = neighborhood.behind_dist[-1]
-		a_follower_right_ = get_idm_dv(neighborhood.behind_idm[-1],dt,v_right,dv_right_,s_right_)/dt
+		if typeof(neighborhood.behind_idm[-1]) <: Float64
+			a_follower_right = neighborhood.behind_idm[-1]
+			a_follower_right_ = neighborhood.behind_idm[-1]
+		else
+			a_follower_right = get_idm_dv(neighborhood.behind_idm[-1],dt,v_right,dv_right,s_right)/dt
+			a_follower_right_ = get_idm_dv(neighborhood.behind_idm[-1],dt,v_right,dv_right_,s_right_)/dt
+		end
 	end
 
 
@@ -208,10 +224,10 @@ function get_mobil_lane_change(p::PhysicalParam,state::CarState,neighborhood::Ca
 	#println("$(r) $(v0) left: $left_crit,$slf,$slb,$dslf,$dslb\n right: $right_crit,$slf_,$slb_,$dslf_,$dslb_")
 
 	#check if going left or right is preferable
-	dir_flag = left_crit >= right_crit ? 1:-1
+	dir_flag = left_crit >= right_crit ? 1.:-1.
 	#check incentive criterion
 	if max(left_crit,right_crit) > p_mobil.a_thr
 		return dir_flag
 	end
-	return 0
+	return 0.
 end

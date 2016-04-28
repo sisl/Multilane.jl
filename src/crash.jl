@@ -107,10 +107,11 @@ function is_crash(mdp::MLMDP{MLState,MLAction},s::MLState,a::MLAction,debug::Boo
 	#do collision check between agent car and all environment cars
 	#going offroad is considered grashing
 
-    pp = mdp.dmodel.phys_param
-    nb_col = 2*pp.nb_lanes-1
-	agent_pos = pp.lane_length/2.
-	agent_y = s.agent_pos*pp.y_interval
+  pp = mdp.dmodel.phys_param
+  nb_col = 2*pp.nb_lanes-1
+	agent_pos = s.env_cars[1].pos[1]#pp.lane_length/2.
+	agent_y = s.env_cars[1].pos[2]*pp.y_interval
+	agent_vel = s.env_cars[1].vel
 
 	#treat agent_pos, agent_y as (0,0)
 	w_car = pp.w_car
@@ -124,7 +125,6 @@ function is_crash(mdp::MLMDP{MLState,MLAction},s::MLState,a::MLAction,debug::Boo
 	elseif a.lane_change > 0
 		w_car_ += pp.y_interval*(1.+(1-diff))
 		agent_y += pp.y_interval*(1-diff)
-
 	end
 	#X = Array{Float64,2}[agent_pos agent_pos+l_car agent_pos+l_car agent_pos agent_pos; agent_y agent_y agent_y+w_car agent_y+w_car agent_y]
 	X = Array{Float64,2}[[agent_pos agent_pos; agent_y agent_y+w_car_],[agent_pos+l_car agent_pos+l_car; agent_y agent_y+w_car_],
@@ -143,15 +143,18 @@ function is_crash(mdp::MLMDP{MLState,MLAction},s::MLState,a::MLAction,debug::Boo
 
 	dt = pp.dt
 	for (i,env_car) in enumerate(s.env_cars)
+		if i == 1
+			continue
+		end
 		pos = env_car.pos
 		if pos[1] < 0.
 			continue
 		end
 		vel = env_car.vel
 		lane_change = env_car.lane_change
-		behavior = env_car.behavior
+		behavior = get(env_car.behavior)
 		lane_ = max(1,min(pos[2]+lane_change,nb_col))
-		neighborhood = get_adj_cars(pp,s.env_cars,i)
+		neighborhood = get_adj_cars(pp,s.env_cars,i,a)
 
 		dv = get(neighborhood.ahead_dv,0,0.)
 		ds = get(neighborhood.ahead_dist,0,1000.)
@@ -159,7 +162,7 @@ function is_crash(mdp::MLMDP{MLState,MLAction},s::MLState,a::MLAction,debug::Boo
         # TODO first do a quick check to see if the cars are even close
 
 		dvel_ms = get_idm_dv(behavior.p_idm,dt,vel,dv,ds) #call idm model
-		dp =  dt*(vel-s.agent_vel)#dt*(pp.VELOCITIES[vel]-pp.VELOCITIES[s.agent_vel])#+0.5*dt*dvel_ms #x+vt+1/2at2 #XXX remove at2 term
+		dp =  dt*(vel-agent_vel)#dt*(pp.VELOCITIES[vel]-pp.VELOCITIES[s.agent_vel])#+0.5*dt*dvel_ms #x+vt+1/2at2 #XXX remove at2 term
 		dy = (lane_-pos[2])*pp.y_interval # XXX this doesn't seem right
 		#dy = lane_change*pp.y_interval
 		p = pos[1]#pp.POSITIONS[pos[1]]

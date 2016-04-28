@@ -3,7 +3,7 @@ actions(mdp::OriginalMDP,s::MLState,A::ActionSpace=actions(mdp)) = A #SARSOP doe
 
 function __reward(mdp::OriginalMDP,s::MLState,a::MLAction)
 
-    pos = s.agent_pos
+    pos = s.env_cars[1].pos[2]#s.agent_pos
     acc = a.acc
     lane_change = a.lane_change
         nb_col = 2*mdp.dmodel.phys_param.nb_lanes-1
@@ -16,13 +16,13 @@ function __reward(mdp::OriginalMDP,s::MLState,a::MLAction)
     end
     if abs(a.lane_change) != 0
         cost += mdp.rmodel.lanechange_cost
-        if (a.lane_change == -1) && (s.agent_pos == 1)
+        if (a.lane_change == -1) && (pos == 1)
             cost += mdp.rmodel.invalid_cost
-        elseif (a.lane_change == 1) && (s.agent_pos == nb_col)
+        elseif (a.lane_change == 1) && (pos == nb_col)
             cost += mdp.rmodel.invalid_cost
         end
     end
-    if mod(s.agent_pos,2) == 0 #on a lane divider--an
+    if mod(pos,2) == 0 #on a lane divider--an
         cost += mdp.rmodel.lineride_cost
     end
 
@@ -36,7 +36,7 @@ end
 #         return mdp.rmodel.r_crash
 #     end
 #     #penalty for accelerating/decelerating/lane change
-# 
+#
 #     return __reward(mdp,s,a) #
 # end
 
@@ -51,8 +51,10 @@ discount(mdp::MLMDP) = mdp.discount
 isterminal(mdp::MLMDP,s::MLState) = s.crashed
 
 function GenerativeModels.initial_state(mdp::OriginalMDP, rng::AbstractRNG=MersenneTwister(34985))
-    return MLState(false, 1, mdp.dmodel.phys_param.v_med,
-                                     CarState[CarState((-1.,1),1.,0,mdp.dmodel.BEHAVIORS[1]) for i = 1:mdp.dmodel.nb_cars])
+   s0 = MLState(false,CarState[CarState((-1.,1),1.,0,mdp.dmodel.BEHAVIORS[1]) for i = 1:mdp.dmodel.nb_cars])
+   #insert ego car at index 1
+   insert!(s0.env_cars,1,CarState((mdp.dmodel.phys_param.lane_length/2.,1.),mdp.dmodel.phys_param.v_med,0,Nullable{BehaviorModel}()))
+   return s0
 end
 
 
@@ -78,34 +80,41 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     nb_col = 2*pp.nb_lanes-1
     BEHAVIORS = mdp.dmodel.BEHAVIORS
     ##agent position always updates deterministically
-    agent_lane_ = s.agent_pos + a.lane_change
-    agent_lane_ = max(1,min(agent_lane_,nb_col)) #can't leave the grid
+    agent_vel = s.env_cars[1].vel
+    agent_lane_ = s.env_cars[1].pos[2] + a.lane_change
+    agent_lane_ = round(max(1,min(agent_lane_,nb_col)))#can't leave the grid, snap to lane
 
-    agent_vel_ = s.agent_vel + a.acc*dt
+    agent_vel_ = agent_vel + a.acc*dt
     #underactuating
     agent_vel_ = max(pp.v_slow,min(agent_vel_,pp.v_fast))
 
     car_states = resize!(sp.env_cars,0)
+    push!(car_states,CarState((s.env_cars[1].pos[1],agent_lane_),
+                                agent_vel_,s.env_cars[1].lane_change,
+                                Nullable{BehaviorModel}()))
     valid_col_top = collect(1:2:nb_col)
     valid_col_bot = collect(1:2:nb_col)
 
     encounter_inds = Int[] #which cars need to be updated in the second loop
 
     for (i,car) in enumerate(s.env_cars)
+        if i == 1
+          continue
+        end
         if car.pos[1] >= 0.
             pos = car.pos
             vel = car.vel
             lane_change = car.lane_change
-            lane_ = max(1,min(pos[2]+lane_change,nb_col))
+            lane_ = round(max(1,min(pos[2]+lane_change,nb_col)))
 
-            neighborhood = get_adj_cars(pp,s.env_cars,i)
+            neighborhood = get_adj_cars(pp,s.env_cars,i,a)
 
-            dvel_ms = get_idm_dv(car.behavior.p_idm,dt,vel,get(neighborhood.ahead_dv,0,0.),get(neighborhood.ahead_dist,0,1000.)) #call idm model
+            dvel_ms = get_idm_dv(get(car.behavior).p_idm,dt,vel,get(neighborhood.ahead_dv,0,0.),get(neighborhood.ahead_dist,0,1000.)) #call idm model
             #bound by the acceleration/braking terms in idm models
             #NOTE restricting available velocities
-            dvel_ms = min(max(dvel_ms/dt,-car.behavior.p_idm.b),car.behavior.p_idm.a)*dt
+            dvel_ms = min(max(dvel_ms/dt,-get(car.behavior).p_idm.b),get(car.behavior).p_idm.a)*dt
             vel_ = vel + dvel_ms
-            pos_ = pos[1] + dt*(vel-s.agent_vel)
+            pos_ = pos[1] + dt*(vel-agent_vel)
             if (pos_ > pp.lane_length) || (pos_ < 0.)
                 push!(car_states,CarState((-1.,1),1.,0,BEHAVIORS[1]))
                 continue
@@ -114,31 +123,31 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
             #sample velocity
             #accelerate normally or dont accelerate
-            if rand(rng) < 1- car.behavior.rationality
+            if rand(rng) < 1- get(car.behavior).rationality
                 vel_ = vel
             end
             vel_ = max(min(vel_,pp.v_max),pp.v_min)
             #sample lanechange
             #if in between lanes, continue lanechange with prob behavior.rationality, else go other direction
             #TODO add safety check here
-            if mod(lane_,2) == 0 #in between lanes
+            if mod(lane_,2) == 0. #in between lanes
                 r = rand(rng)
                 #if on the off chance its not changing lanes, make it, the jerk
-                if lane_change == 0
+                if lane_change == 0.
                     lane_change = rand(rng,-1:2:1)
                 end
-                lanechange = r < car.behavior.rationality ? lane_change : -1*lane_change
+                lanechange = r < get(car.behavior).rationality ? lane_change : -1*lane_change
 
                 if is_lanechange_dangerous(neighborhood,dt,pp.l_car,lanechange)
-                    lanechange *= -1
+                    lanechange *= -1.
                 end
 
             else
                 #sample normally
                 lanechange_ = get_mobil_lane_change(pp,car,neighborhood)
                 #if frnot neighbor is lanechanging, don't lane change
-                if neighborhood.ahead_dv != 0 
-                    lanechange_ = 0
+                if neighborhood.ahead_dv != 0.
+                    lanechange_ = 0.
                 end
                 lane_change_other = setdiff([-1;0;1],[lanechange_])
                 #safety criterion is hard
@@ -149,8 +158,8 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
                     lane_change_other = setdiff(lane_change_other,[-1])
                 end
 
-                lanechange_other_probs = ((1-car.behavior.rationality)/length(lane_change_other))*ones(length(lane_change_other))
-                lanechange_probs = WeightVec([car.behavior.rationality;lanechange_other_probs])
+                lanechange_other_probs = ((1-get(car.behavior).rationality)/length(lane_change_other))*ones(length(lane_change_other))
+                lanechange_probs = WeightVec([get(car.behavior).rationality;lanechange_other_probs])
                 lanechange = sample(rng,[lanechange_;lane_change_other],lanechange_probs)
                 #NO LANECHANGING
                 #lanechange = 0
@@ -205,9 +214,9 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         vel = (vels[2]-vels[1])*rand(rng)+vels[1]#vels[rand(rng,1:length(vels))]
         if mod(pos[2],2) == 0
             #in between lanes, so he must be lane changing
-            lanechanges = [-1;1]
+            lanechanges = [-1.;1.]
         else
-            lanechanges = [-1;0;1]
+            lanechanges = [-1.;0.;1.]
         end
         lanechange = lanechanges[rand(rng,1:length(lanechanges))]
         behavior = deepcopy(BEHAVIORS[rand(rng,1:length(BEHAVIORS))])
@@ -220,8 +229,8 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     end
 
     sp.crashed = is_crash(mdp, s, a)
-    sp.agent_pos = agent_lane_
-    sp.agent_vel = agent_vel_
+    #sp.agent_pos = agent_lane_
+    #sp.agent_vel = agent_vel_
     @assert sp.env_cars === car_states
 
     return sp
