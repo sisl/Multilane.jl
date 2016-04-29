@@ -109,7 +109,7 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
             neighborhood = get_adj_cars(pp,s.env_cars,i,a)
 
-            dvel_ms = get_idm_dv(get(car.behavior).p_idm,dt,vel,get(neighborhood.ahead_dv,0,0.),get(neighborhood.ahead_dist,0,1000.)) #call idm model
+            dvel_ms = get_idm_dv(get(car.behavior).p_idm, dt, vel,get(neighborhood.ahead_dv,0,0.),get(neighborhood.ahead_dist,0,1000.)) #call idm model
             #bound by the acceleration/braking terms in idm models
             #NOTE restricting available velocities
             dvel_ms = min(max(dvel_ms/dt,-get(car.behavior).p_idm.b),get(car.behavior).p_idm.a)*dt
@@ -199,6 +199,8 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
     pos_enter = vcat([(0.,y) for y in valid_col_bot],
                                     [(pp.lane_length,y) for y in valid_col_top])
+
+    # this loop is for initialising new cars
     for j in encounter_inds
         if length(pos_enter) <= 0
             #this should work find since that just means they're unencountered by default
@@ -213,7 +215,6 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         end
         vel = (vels[2]-vels[1])*rand(rng)+vels[1]#vels[rand(rng,1:length(vels))]
         if mod(pos[2],2) == 0
-            #in between lanes, so he must be lane changing
             lanechanges = [-1.;1.]
         else
             lanechanges = [-1.;0.;1.]
@@ -225,12 +226,9 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
                                                     rand(rng) + behavior.p_idm.v0
 
         car_states[j] = CarState(pos,vel,lanechange,behavior)
-        #push!(car_states,CarState(pos,vel,lanechange,behavior))
     end
 
     sp.crashed = is_crash(mdp, s, a)
-    #sp.agent_pos = agent_lane_
-    #sp.agent_vel = agent_vel_
     @assert sp.env_cars === car_states
 
     return sp

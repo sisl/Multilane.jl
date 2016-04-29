@@ -81,24 +81,63 @@ end
 
 function generate_sr(mdp::NoCrashMPD, s::MLState, a::MLAction, rng::AbstractRNG)
 
-    # Copied and pasted from generate_s(OriginalMDP, ...) any of this can change
-    #=
     pp = mdp.dmodel.phys_param
     dt = pp.dt
-    nb_col = 2*pp.nb_lanes-1
+    nb_cars = length(s.env_cars)
+    car_states_ = resize!(sp.env_cars,0)
 
     agent_lane_ = s.agent_pos + a.lane_change
     agent_lane_ = max(1,min(agent_lane_,nb_col)) #can't leave the grid
 
     agent_vel_ = s.agent_vel + a.acc*dt
-    #underactuating
     agent_vel_ = max(pp.v_slow,min(agent_vel_,pp.v_fast))
 
-    car_states = resize!(sp.env_cars,0)
-    valid_col_top = collect(1:2:nb_col)
-    valid_col_bot = collect(1:2:nb_col)
+    ## Calculate deltas ##
+    dvs = Array(Float64, nb_cars)
+    dys = Array(Float64, nb_cars)
 
-    encounter_inds = Int[] #which cars need to be updated in the second loop
+    # agent
+    dvs[1] = a.acc*dt
+    dys[1] = a.lane_change
+
+    for i in 2:nb_cars
+        
+    end
+
+    ## Consistency checking ##
+    sorted_inds = sort!(collect(1:nb_cars), by=i->s.env_cars[i].pos[1]) # this might be slow because anonymous functions are slow
+
+    for i_unsorted in 1:nb_cars-1
+        i = sorted_inds[i_unsorted]
+        j = sorted_inds[i_unsorted+1]
+        car_i = s.env_cars[i]
+        car_j = s.env_cars[j]
+
+        # check if both cars are trying to change into the same lane at the same spot
+
+        # check if they are both starting to change lanes
+        if dys[i] != 0.0 && dys[j] != 0.0 && isinteger(car_i.pos[2]) && isinteger(car_j.pos[2])
+
+            # make sure there is a conflict longitudinally
+            if car_i.pos[1] - car_j.pos[1] <= pp.l_car
+
+                # check if they are near each other lanewise
+                if abs(car_i.pos[2] - car_j.pos[2]) <= 2.0
+
+                    # check if they are moving towards each other
+                    if dys[i]*dys[j] < 0.0 && abs(car_i.pos[2]+dys[2] - car_j.pos[2]+dys[2]) < 2.0
+                        
+                        # make j stay in his lane
+                        dys[j] = 0.0
+                        car_states_[j].lane_change = 0.0
+                    end
+                end
+            end
+        end
+    end
+
+    ## Dynamics
+
 
     for (i,car) in enumerate(s.env_cars)
         
@@ -174,4 +213,11 @@ function generate_sr(mdp::NoCrashMPD, s::MLState, a::MLAction, rng::AbstractRNG)
 
 end
 
-
+# """
+# Detect if two cars are moving into the same lane.
+# 
+# Assumes that i is the index of a car that is ahead of or even with j longitudinally
+# """
+# function lanechange_conflict(state::MLState, i::Int, j::Int)
+#     
+# end
