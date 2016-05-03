@@ -26,7 +26,7 @@ end
 function is_lanechange_dangerous(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,dir::Real)
 
 	#check if dir is oob
-	lane_ = s.env_cars[idx].pos[2] + dir
+	lane_ = s.env_cars[idx].y + dir
 	if (lane_ > dmodel.phys_param.nb_lanes*2 - 1) || (lane_ < 1.)
 		return true
 	end
@@ -63,10 +63,10 @@ function get_neighborhood(dmodel::IDMMOBILModel,s::MLState,idx::Int)
 	"""
 	x = s.env_cars[idx]
 	#rightmost lane: no one to the right
-	if x.pos[2] <= 1.
+	if x.y <= 1.
 		dists[[1;4]] = [-1.;-1.]
 	#leftmost lane: no one to the left
-	elseif x.pos[2] >= 2*dmodel.phys_param.nb_lanes - 1.
+	elseif x.y >= 2*dmodel.phys_param.nb_lanes - 1.
 		dists[[3;6]] = [-1.;-1.]
 	end
 
@@ -75,13 +75,13 @@ function get_neighborhood(dmodel::IDMMOBILModel,s::MLState,idx::Int)
 		if i == idx
 			continue
 		end
-		pos = car.pos[1]
-		lane = car.pos[2]
+		pos = car.x
+		lane = car.y
 		#this car is oob
 		if pos < 0.
 			continue
 		end
-		dlane = lane - x.pos[2] #NOTE float: convert to int
+		dlane = lane - x.y #NOTE float: convert to int
 		#too distant to be a neighbor
 		if abs(dlane) > 2.
 			continue
@@ -91,7 +91,7 @@ function get_neighborhood(dmodel::IDMMOBILModel,s::MLState,idx::Int)
 			dlane = convert(Int,sign(dlane))
 		end
 
-		d = pos-x.pos[1]
+		d = pos-x.x
 
 		offset = d >= 0. ? 2 : 5
 
@@ -113,7 +113,7 @@ function get_dv_ds(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,
 	nbr = nbhd[idy]
 	#dv: if ahead: me - him; behind: him - me
 	dv = nbr != 0 ? -1*sign((idy-3.5))*(car.vel - s.env_cars[nbr].vel) : 0.
-	ds = nbr != 0 ? abs(s.env_cars[nbr].pos[1] - car.pos[1]) - dmodel.phys_param.l_car : 1000.
+	ds = nbr != 0 ? abs(s.env_cars[nbr].x - car.x) - dmodel.phys_param.l_car : 1000.
 
 	return dv, ds
 end
@@ -174,7 +174,7 @@ function get_mobil_lane_change(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,
 	end
 
 	##if between lanes, return +1 if moving left, -1 if moving right
-	if state.pos[2] % 2 == 0 #even is between lanes
+	if state.y % 2 == 0 #even is between lanes
 		return state.lane_change #continue going in the direction you're going
 	end
 

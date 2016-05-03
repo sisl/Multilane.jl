@@ -67,25 +67,25 @@ function test_is_crash()
 	bs = BehaviorModel[BehaviorModel(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[pp.v_slow;pp.v_med;pp.v_fast],[pp.l_car]))]
 
 	#Env Car out of bounds
-	cs_oob = CarState((-1.,1),27.,0,bs[1])
+	cs_oob = CarState(-1.,1,27.,0,bs[1])
 	#env car going slow in right lane: (41,1) corresponds to right in front of agent car area + 0.25m or 0.5m
-	cs_r_slow = CarState((10.,1),27.,0,BehaviorModel("aggressive",27.,4.,1))
+	cs_r_slow = CarState(10.,1,27.,0,BehaviorModel("aggressive",27.,4.,1))
 	#env car going fast in right lane: (7,1) corresponds to right behind the agent car area + 0.25m or 0.5m
-	cs_r_fast = CarState((1.75,1),35.,0,BehaviorModel("aggressive",35.,4.,1))
+	cs_r_fast = CarState(1.75,1,35.,0,BehaviorModel("aggressive",35.,4.,1))
 	#env car going at a medium speed in the right lane heading left
-	cs_lchange = CarState((6.,1),30.,1,BehaviorModel("normal",31.,4.,1))
+	cs_lchange = CarState(6.,1,30.,1,BehaviorModel("normal",31.,4.,1))
 	#env car going at a medium speed in the left lane heading right
-	cs_rchange = CarState((6.,2),30.,-1,BehaviorModel("normal",31.,4.,1))
+	cs_rchange = CarState(6.,2,30.,-1,BehaviorModel("normal",31.,4.,1))
 	#env car is just chilling in the right/btwn/lhigh lane
-	cs_rchill = CarState((6.,1),30.,1,BehaviorModel("normal",31.,4.,1))
-	cs_mchill = CarState((6.,2),30.,1,BehaviorModel("normal",31.,4.,1))
-	cs_hchill = CarState((7.,1),30.,1,BehaviorModel("normal",31.,4.,1))
+	cs_rchill = CarState(6.,1,30.,1,BehaviorModel("normal",31.,4.,1))
+	cs_mchill = CarState(6.,2,30.,1,BehaviorModel("normal",31.,4.,1))
+	cs_hchill = CarState(7.,1,30.,1,BehaviorModel("normal",31.,4.,1))
 
 	##TODO: change these tests borrowed from test_reward to something more meaningful
 	#env car going slow in right lane: (41,1) corresponds to right in front of agent car area + 0.25m or 0.5m
-	_cs_l_slow = CarState((0.75,1),27.,0,BehaviorModel("aggressive",27.,4.,1))
+	_cs_l_slow = CarState(0.75,1,27.,0,BehaviorModel("aggressive",27.,4.,1))
 	#env car going fast in right lane: (7,1) corresponds to right behind the agent car area + 0.25m or 0.5m
-	_cs_r_fast = CarState((12.,1),35.,0,BehaviorModel("aggressive",35.,4.,1))
+	_cs_r_fast = CarState(12.,1,35.,0,BehaviorModel("aggressive",35.,4.,1))
 	s = MLState(1,27.,CarState[_cs_r_fast])
 	a = MLAction(0,-1)
 	#going out of top boundary

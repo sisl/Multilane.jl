@@ -122,8 +122,8 @@ function e_brake_acc(mdp::NoCrashMDP, s::MLState)
     # find car immediately in front
     if length(s.env_cars > 1)
         for i in 2:nb_cars
-            if occupation_overlap(s.env_cars[i].pos[2], ego.pos[2]) # occupying same lane
-                gap = s.env_cars[i].pos[1] - ego.pos[1]
+            if occupation_overlap(s.env_cars[i].y, ego.y) # occupying same lane
+                gap = s.env_cars[i].x - ego.x
                 if gap >= 0.0 && gap < smallest_gap
                     car_in_front = i
                     smallest_gap = gap
@@ -172,7 +172,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     if a.acc < -mdp.rmodel.dangerous_brake_threshold
         r -= mdp.rmodel.cost_emergency_brake
     end
-    if s.env_cars[1].pos[y] == mdp.rmodel.desired_lane
+    if s.env_cars[1].y == mdp.rmodel.desired_lane
         r += mdp.rmodel.reward_in_desired_lane
     end
 
@@ -199,7 +199,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     ## Consistency checking ##
     #========================#
 
-    sorted_changers = sort!(collect(changers), by=i->s.env_cars[i].pos[1]) # this might be slow because anonymous functions are slow
+    sorted_changers = sort!(collect(changers), by=i->s.env_cars[i].x) # this might be slow because anonymous functions are slow
 
     # iterate through pairs
     iter_state = start(sorted_changers)
@@ -211,16 +211,16 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         car_j = s.env_cars[j]
 
         # check if they are both starting to change lanes on this step
-        if isinteger(car_i.pos[2]) && isinteger(car_j.pos[2])
+        if isinteger(car_i.y) && isinteger(car_j.y)
 
             # make sure there is a conflict longitudinally
-            if car_i.pos[1] - car_j.pos[1] <= pp.l_car
+            if car_i.x - car_j.x <= pp.l_car
 
                 # check if they are near each other lanewise
-                if abs(car_i.pos[2] - car_j.pos[2]) <= 2.0
+                if abs(car_i.y - car_j.y) <= 2.0
 
                     # check if they are moving towards each other
-                    if dys[i]*dys[j] < 0.0 && abs(car_i.pos[2]+dys[2] - car_j.pos[2]+dys[2]) < 2.0
+                    if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[2] - car_j.y+dys[2]) < 2.0
 
                         # make j stay in his lane
                         dys[j] = 0.0
@@ -236,12 +236,12 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
     exits = IntSet()
     for i in 1:nb_cars
-        sp.env_cars[i].pos[1] = s.env_cars[i].pos[1] + dt*(s.env_cars[i].vel - s.env_cars[1].vel)
-        sp.env_cars[i].pos[2] = s.env_cars[i].pos[2] + dys[i]
+        sp.env_cars[i].x = s.env_cars[i].x + dt*(s.env_cars[i].vel - s.env_cars[1].vel)
+        sp.env_cars[i].y = s.env_cars[i].y + dys[i]
         sp.env_cars[i].vel = max(min(s.env_cars[i].vel + dvs[i],pp.v_max),pp.v_min)
 
         # note lane change is updated above
-        if sp.env_cars[i].pos[1] < 0.0 || sp.env_cars[i].pos[1] >= lane_length
+        if sp.env_cars[i].x < 0.0 || sp.env_cars[i].x >= lane_length
             push!(exits, i)
         end
     end
@@ -259,10 +259,10 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
                 clearances[(i,j)] = Inf
             end
             for i in nb_cars
-                lowlane = floor(Int, s.env_cars[i].pos[2])
-                highlane = ceil(Int, s.env_cars[i].pos[2])
-                front = pp.lane_length - (s.env_cars[i].pos[1] + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
-                back = s.env_cars[i].pos[1] - pp.l_car
+                lowlane = floor(Int, s.env_cars[i].y)
+                highlane = ceil(Int, s.env_cars[i].y)
+                front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
+                back = s.env_cars[i].x - pp.l_car
                 clearances[(lowlane, true)] = min(front, clearances[(lowlane, true)])
                 clearances[(highlane, true)] = min(front, clearances[(highlane, true)])
                 clearances[(lowlane, false)] = min(back, clearances[(lowlane, false)])
@@ -278,9 +278,9 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             spot = rand(rng, clear_spots)
             behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
             if spot[2] # at front
-                push!(sp.env_cars, CarState((pp.lane_length, spot[1]), sp.env_car[1], pp.lane_length, behavior))
+                push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_car[1], pp.lane_length, behavior))
             else # at back
-                push!(sp.env_cars, CarState((pp.lane_length, spot[1]), sp.env_car[1], 0.0, behavior))
+                push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_car[1], 0.0, behavior))
             end
         end
     end
@@ -297,11 +297,12 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
   _nb_cars = rand(rng,1:mdp.dmodel.nb_cars)
   #place ego car
 
-  pos = (pp.lane_length/2.,rand(rng,1:(pp.nb_lanes*2-1)))
+  pos_x = pp.lane_length/2. #this is fixed
+  pos_y = rand(rng,1:(pp.nb_lanes*2-1))
   #ego velocity
   vel = max(min(randn(rng)*mdp.dmodel.vel_sigma + pp.v_med, pp.v_max), pp.v_min)
 
-  s.env_cars[1] = CarState(pos,vel,0,Nullable{BehaviorModel}())
+  s.env_cars[1] = CarState(pos_x,pos_y,vel,0,Nullable{BehaviorModel}())
   # XXX dirichlet and exponential are from distributions--does not accept rng!!!
   dir_distr = Dirichlet(mdp.dmodel.lane_weights)
   cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
@@ -345,13 +346,13 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
         assert(lam > 0.)
         dist_distr = Exponential(lam)
         dist = rand(dist_distr) + mdp.dmodel.appear_clearance
-        x = s.env_cars[idx-1].pos[1]-dist
+        x = s.env_cars[idx-1].x-dist
         if x < 0.
           break_flag = true
           continue
         end
       end
-      car = CarState((x,lane,),vel,0,behavior)
+      car = CarState(x,lane,vel,0,behavior)
       s.env_cars[idx] = car
       idx += 1
     end
