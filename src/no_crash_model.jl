@@ -109,8 +109,11 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
     changers = IntSet()
     for i in 2:nb_cars
-        dvs[i] = get_dv(mdp.dmodel, neighborhood, s, i, rng)
-        sp.env_cars[i].lane_change = get_dy(mdp.dmodel, neighborhood, s, i, rng)
+        neighborhood = get_neighborhood(mdp.dmodel, s, i)
+        # To distinguish between different models--is there a better way?
+        behavior = get(s.env_cars[i].behavior)
+        dvs[i] = dt*generate_accel(behavior, mdp.dmodel, neighborhood, s, i, rng)
+        sp.env_cars[i].lane_change = generate_lane_change(behavior, mdp.dmodel, neighborhood, s, i, rng)
         dys[i] = sp.env_cars[i].lane_change * dmodel.lane_change_vel * dt
         if sp.env_cars[i].lane_change
             push!(changers, i)
@@ -159,51 +162,29 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     for i in 1:nb_cars
         sp.env_cars[i].pos[1] = s.env_cars[i].pos[1] + dt*(s.env_cars[i].vel - s.env_cars[1].vel)
         sp.env_cars[i].pos[2] = s.env_cars[i].pos[2] + dys[i]
-        sp.env_cars[i].vel = s.env_cars[i].vel + dvs[i]
+        sp.env_cars[i].vel = max(min(s.env_cars[i].vel + dvs[i],pp.v_max),pp.v_min)
+
         # note lane change is updated above
         if sp.env_cars[i].pos[1] < 0.0 || sp.env_cars[i].pos[1] >= lane_length
             push!(exits, i)
         end
     end
     deleteat!(sp.env_cars, exits)
-    nb_cars -= length(exits)
+    nbcars -= length(exits)
 
     ## Generate new cars ##
     #=====================#
 
+    #=
     for j in 1:(pp.nb_env_cars-nb_cars)
-        if rand(rng) <= mdp.dmodel.p_appear
-            # calculate clearance for all the lanes
-            clearances = Dict{Tuple{Int,Bool},Float64}() # integer is lane, bool is true if front, false if back
-            for i in 1:pp.nb_lanes, j in (true,false)
-                clearances[(i,j)] = Inf
-            end
-            for i in nb_cars                
-                lowlane = floor(Int, s.env_cars[i].pos[2])
-                highlane = ceil(Int, s.env_cars[i].pos[2])
-                front = pp.lane_length - (s.env_cars[i].pos[1] + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
-                back = s.env_cars[i].pos[1] - pp.l_car
-                clearances[(lowlane, true)] = min(front, clearances[(lowlane, true)])
-                clearances[(highlane, true)] = min(front, clearances[(highlane, true)])
-                clearances[(lowlane, false)] = min(back, clearances[(lowlane, false)])
-                clearances[(highlane, false)] = min(back, clearances[(highlane, false)])
-            end
-            clear_spots = Array(Tuple{Int,Bool}, 0)
-            for i in 1:pp.nb_lanes, j in (true,false)
-                if clearances[(i,j)] >= mdp.dmodel.appear_clearance
-                    push!(clear_spots, (i,j))
-                end
-            end
-            # pick one
-            spot = rand(rng, clear_spots)
-            behavior = sample(mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
-            if spot[2] # at front
-                push!(sp.env_cars, CarState((pp.lane_length, spot[1]), sp.env_car[1], pp.lane_length, behavior))
-            else # at back
-                push!(sp.env_cars, CarState((pp.lane_length, spot[1]), sp.env_car[1], 0.0, behavior))
-            end
-        end
+        if rng
     end
+    =#
 
     return sp
+end
+
+function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_state(mdp))
+  #TODO how to make a state that's not instant death?
+  
 end

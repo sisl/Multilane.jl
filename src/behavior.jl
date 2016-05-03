@@ -12,12 +12,12 @@ function IDMMOBILBehavior(s::AbstractString,v0::Float64,s0::Float64,idx::Int)
 	return IDMMOBILBehavior(IDMParam(s,v0,s0),MOBILParam(s),typedict[s],idx)
 end
 
-get_dv(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
+generate_accel(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
 
-get_dy(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
+generate_lane_change(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState,neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
 
 
-function get_dv(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function generate_accel(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 	pp = dmodel.phys_param
 	dt = pp.dt
 	car = s.env_cars[idx]
@@ -29,19 +29,17 @@ function get_dv(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLState, nei
 	ds = nbr != 0 ? s.env_cars[nbr].pos[1] - car.pos[1] + pp.l_car : 1000.
 
 	dvel = get_idm_dv(get(car.behavior).p_idm,dt,vel,dv,ds) #call idm model
-	dvel = min(max(dvel/dt,-get(car.behavior).p_idm.b),get(car.behavior).p_idm.a)*dt
+	dvel = min(max(dvel/dt,-get(car.behavior).p_idm.b),get(car.behavior).p_idm.a)
 	#accelerate normally or dont accelerate
 	if rand(rng) < 1- get(car.behavior).rationality
 			dvel = 0
 	end
 	#make sure it wont result in an inconsistent thing?
-	# XXX put into dynamics update?
-	dvel = max(min(dvel+vel,pp.v_max),pp.v_min)-vel #TODO check
 
 	return dvel
 end
 
-function get_dy(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLState,neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLState,neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 
 	pp = dmodel.phys_param
 	dt = pp.dt
@@ -139,7 +137,7 @@ function closest_car(dmodel::IDMMOBILModel, s::MLState, nbhd::Array{Int,1}, idx:
 
 end
 
-function get_dv(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function generate_accel(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 	closest_car = closest_car(dmodel,s,neighborhood,idx,bmodel.jerk)
 	if closest_car == 0
 		return 0.
@@ -158,7 +156,7 @@ function get_dv(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, neighborh
 
 end
 
-function get_dy(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function generate_lane_change(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 	closest_car = closest_car(dmodel,s,neighborhood,idx,bmodel.jerk)
 	if closest_car == 0
 		return 0.
