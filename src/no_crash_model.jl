@@ -18,6 +18,10 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
 
     p_appear::Float64 # probability of a new car appearing if the maximum number are not on the road
     appear_clearance::Float64 # minimum clearance for a car to appear
+
+    vel_sigma::Float64 # std of new car speed about v0
+    lane_weights::Array{Float64,1} # dirichlet alpha values for each lane: first is for rightmost lane
+    dist_lambda::Float64 # exponential distr param for first car's distance from top of lane
 end
 
 typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
@@ -92,6 +96,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     resize!(sp.env_cars, nb_cars)
     r = 0.0 # reward
 
+    sp.env_cars[1].lane_change = a.lane_change
     ## Calculate deltas ##
     #====================#
 
@@ -154,7 +159,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
                     # check if they are moving towards each other
                     if dys[i]*dys[j] < 0.0 && abs(car_i.pos[2]+dys[2] - car_j.pos[2]+dys[2]) < 2.0
-                        
+
                         # make j stay in his lane
                         dys[j] = 0.0
                         car_states_[j].lane_change = 0.0
@@ -191,7 +196,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             for i in 1:pp.nb_lanes, j in (true,false)
                 clearances[(i,j)] = Inf
             end
-            for i in nb_cars                
+            for i in nb_cars
                 lowlane = floor(Int, s.env_cars[i].pos[2])
                 highlane = ceil(Int, s.env_cars[i].pos[2])
                 front = pp.lane_length - (s.env_cars[i].pos[1] + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
@@ -222,16 +227,6 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 end
 
 function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_state(mdp))
-  #TODO how to make a state that's not instant death?
-
-  #NEEDED PARAMS FOR def
-  """
-  vel_sig: variance of velocity distribution
-  lane_weights: vector of length nb_lanes, with weight of a car being in that
-                lane. First element is weight for rightmost lane
-  dist_exp: exponential parameter for how far first car is from top of lane
-  min_dist: minimum distance between generated cars
-  """
 
   pp = mdp.dmodel.phys_param
 
@@ -242,14 +237,14 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
   s.env_cars[1].pos[1] = pp.lane_length/2. #this is fixed
   s.env_cars[1].pos[2] = rand(rng,1:(pp.nb_lanes*2-1))
   #ego velocity
-  s.env_cars[1].vel = randn(rng)*vel_sig + pp.v_med
+  s.env_cars[1].vel = max(min(randn(rng)*mdp.dmodel.vel_sigma + pp.v_med, pp.v_max), pp.v_min)
 
   # XXX dirichlet and exponential are from distributions--does not accept rng!!!
-  dir_distr = Dirichlet(lane_weights)
+  dir_distr = Dirichlet(mdp.dmodel.lane_weights)
   cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
 
   # TODO remove nb_cars - sum(cars_per_lane)
-  dist_distr1 = Exponential(dist_exp)
+  dist_distr1 = Exponential(mdp.dmodel.dist_lambda)
 
   idx = 2
   for (_lane,nb_cars) in enumerate(cars_per_lane)
@@ -268,15 +263,14 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
         continue
       end
       #sample Behavior TODO sample(rng,v,wv) in utils?
-      behavior = sample(rng,mdp.dmodel.behaviors,
-                        mdp.WeightVec(mdp.dmodel.behavior_probabilities))
+      behavior = sample(mdp.dmodel.behaviors,
+                        mdp.dmodel.behavior_probabilities)
       #sample velocity
       #TODO need generic interface with behavior models for desired speed
-      vel = randn(rng)*vel_sig + 0.
+      vel = randn(rng)*mdp.dmodel.vel_sigma + behavior.p_idm.v0
       vel = max(min(vel,pp.v_max),pp.v_min)
       if i == 1
         dist = rand(dist_distr1)
-        #TODO bound dist
         x = pp.lane_length - dist
         if x < 0.
           break_flag = true
@@ -285,10 +279,10 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
         s.env_cars[idx].pos = (x,lane,)
       else
         #mean of v0*T - min_dist
-        lam = 1/(behvaior.p_idm.T*behavior.p_idm.v0 - min_dist)
+        lam = 1/(behavior.p_idm.T*behavior.p_idm.v0 - mdp.dmodel.appear_clearance)
         assert(lam > 0.)
         dist_distr = Exponential(lam)
-        dist = rand(dist_distr) + min_dist
+        dist = rand(dist_distr) + mdp.dmodel.appear_clearance
         x = s.env_cars[idx-1].pos[1]-dist
         if x < 0.
           break_flag = true
