@@ -101,7 +101,7 @@ function poly_intersect(X::Array{Array{Float64,2},1},Y::Array{Array{Float64,2},1
 	return false
 end
 
-function is_crash(mdp::MLMDP{MLState,MLAction},s::MLState,a::MLAction,debug::Bool=false)
+function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::Bool=false)
 	#calculate current position, next position, convert to metric space
 	#convert to polyhedron based on car size
 	#do collision check between agent car and all environment cars
