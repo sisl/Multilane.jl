@@ -3,6 +3,7 @@ type NoCrashRewardModel <: AbstractMLRewardModel
     reward_in_desired_lane::Float64
 
     dangerous_brake_threshold::Float64 # if the deceleration is greater than this cost_emergency_brake will be accured
+    desired_lane::Int
 end
 
 type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
@@ -14,6 +15,9 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
 
     adjustment_acceleration::Float64
     lane_change_vel::Float64
+
+    p_appear::Float64 # probability of a new car appearing if the maximum number are not on the road
+    appear_clearance::Float64 # minimum clearance for a car to appear
 end
 
 typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
@@ -105,8 +109,8 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
     changers = IntSet()
     for i in 2:nb_cars
-        dvs[i] = dt*generate_accel(mdp.dmodel, neighborhood, s, i, rng)
-        sp.env_cars[i].lane_change = generate_lane_change(mdp.dmodel, neighborhood, s, i, rng)
+        dvs[i] = get_dv(mdp.dmodel, neighborhood, s, i, rng)
+        sp.env_cars[i].lane_change = get_dy(mdp.dmodel, neighborhood, s, i, rng)
         dys[i] = sp.env_cars[i].lane_change * dmodel.lane_change_vel * dt
         if sp.env_cars[i].lane_change
             push!(changers, i)
@@ -162,14 +166,44 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         end
     end
     deleteat!(sp.env_cars, exits)
-    nbcars -= length(exits)
+    nb_cars -= length(exits)
 
     ## Generate new cars ##
     #=====================#
 
-    #=
     for j in 1:(pp.nb_env_cars-nb_cars)
-        if rng
+        if rand(rng) <= mdp.dmodel.p_appear
+            # calculate clearance for all the lanes
+            clearances = Dict{Tuple{Int,Bool},Float64}() # integer is lane, bool is true if front, false if back
+            for i in 1:pp.nb_lanes, j in (true,false)
+                clearances[(i,j)] = Inf
+            end
+            for i in nb_cars                
+                lowlane = floor(Int, s.env_cars[i].pos[2])
+                highlane = ceil(Int, s.env_cars[i].pos[2])
+                front = pp.lane_length - (s.env_cars[i].pos[1] + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
+                back = s.env_cars[i].pos[1] - pp.l_car
+                clearances[(lowlane, true)] = min(front, clearances[(lowlane, true)])
+                clearances[(highlane, true)] = min(front, clearances[(highlane, true)])
+                clearances[(lowlane, false)] = min(back, clearances[(lowlane, false)])
+                clearances[(highlane, false)] = min(back, clearances[(highlane, false)])
+            end
+            clear_spots = Array(Tuple{Int,Bool}, 0)
+            for i in 1:pp.nb_lanes, j in (true,false)
+                if clearances[(i,j)] >= mdp.dmodel.appear_clearance
+                    push!(clear_spots, (i,j))
+                end
+            end
+            # pick one
+            spot = rand(rng, clear_spots)
+            behavior = sample(mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
+            if spot[2] # at front
+                push!(sp.env_cars, CarState((pp.lane_length, spot[1]), sp.env_car[1], pp.lane_length, behavior))
+            else # at back
+                push!(sp.env_cars, CarState((pp.lane_length, spot[1]), sp.env_car[1], 0.0, behavior))
+            end
+        end
     end
-    =#
+
+    return sp
 end
