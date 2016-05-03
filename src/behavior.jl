@@ -35,6 +35,7 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLSt
 			dvel = 0
 	end
 	#make sure it wont result in an inconsistent thing?
+
 	return dvel
 end
 
