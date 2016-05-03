@@ -1,12 +1,14 @@
 module Multilane
 
-import StatsBase: WeightVec
+import StatsBase: WeightVec, sample
 
 using POMDPs
 import POMDPs: actions, discount, isterminal, iterator
 import POMDPs: create_action, create_state, rand, reward
 using GenerativeModels
 import GenerativeModels: generate_s, generate_sr
+
+import Distributions: Dirichlet, Exponential, rand
 
 import Iterators.product
 

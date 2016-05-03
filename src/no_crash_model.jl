@@ -185,5 +185,88 @@ end
 
 function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_state(mdp))
   #TODO how to make a state that's not instant death?
-  
+
+  #NEEDED PARAMS FOR def
+  """
+  vel_sig: variance of velocity distribution
+  lane_weights: vector of length nb_lanes, with weight of a car being in that
+                lane. First element is weight for rightmost lane
+  dist_exp: exponential parameter for how far first car is from top of lane
+  min_dist: minimum distance between generated cars
+  """
+
+  pp = mdp.dmodel.phys_param
+
+  #Unif # cars in initial scene
+  _nb_cars = rand(rng,1:mdp.dmodel.nb_cars)
+
+  #place ego car
+  s.env_cars[1].pos[1] = pp.lane_length/2. #this is fixed
+  s.env_cars[1].pos[2] = rand(rng,1:(pp.nb_lanes*2-1))
+  #ego velocity
+  s.env_cars[1].vel = randn(rng)*vel_sig + pp.v_med
+
+  # XXX dirichlet and exponential are from distributions--does not accept rng!!!
+  dir_distr = Dirichlet(lane_weights)
+  cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
+
+  # TODO remove nb_cars - sum(cars_per_lane)
+  dist_distr1 = Exponential(dist_exp)
+
+  idx = 2
+  for (_lane,nb_cars) in enumerate(cars_per_lane)
+
+    if nb_cars <= 0
+      continue
+    end
+
+    # if there's no room to generate the remaining cars
+    break_flag = false
+
+    lane = 2*_lane - 1
+    #from front to back
+    for i = 1:nb_cars
+      if break_flag
+        continue
+      end
+      #sample Behavior TODO sample(rng,v,wv) in utils?
+      behavior = sample(rng,mdp.dmodel.behaviors,
+                        mdp.WeightVec(mdp.dmodel.behavior_probabilities))
+      #sample velocity
+      #TODO need generic interface with behavior models for desired speed
+      vel = randn(rng)*vel_sig + 0.
+      vel = max(min(vel,pp.v_max),pp.v_min)
+      if i == 1
+        dist = rand(dist_distr1)
+        #TODO bound dist
+        x = pp.lane_length - dist
+        if x < 0.
+          break_flag = true
+          continue
+        end
+        s.env_cars[idx].pos = (x,lane,)
+      else
+        #mean of v0*T - min_dist
+        lam = 1/(behvaior.p_idm.T*behavior.p_idm.v0 - min_dist)
+        assert(lam > 0.)
+        dist_distr = Exponential(lam)
+        dist = rand(dist_distr) + min_dist
+        x = s.env_cars[idx-1].pos[1]-dist
+        if x < 0.
+          break_flag = true
+          continue
+        end
+        s.env_cars[idx].pos = (x,lane,)
+      end
+
+      s.env_cars[idx].vel = vel
+      #TODO lanechanging? initialized as zero
+      s.env_cars[idx].behavior = Nullable{IDMMOBILBehavior}(behavior)
+      idx += 1
+    end
+
+  end
+
+  return s
+
 end
