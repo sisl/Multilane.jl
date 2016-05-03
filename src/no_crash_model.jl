@@ -293,16 +293,15 @@ end
 function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_state(mdp))
 
   pp = mdp.dmodel.phys_param
-
   #Unif # cars in initial scene
   _nb_cars = rand(rng,1:mdp.dmodel.nb_cars)
-
   #place ego car
-  s.env_cars[1].pos[1] = pp.lane_length/2. #this is fixed
-  s.env_cars[1].pos[2] = rand(rng,1:(pp.nb_lanes*2-1))
-  #ego velocity
-  s.env_cars[1].vel = max(min(randn(rng)*mdp.dmodel.vel_sigma + pp.v_med, pp.v_max), pp.v_min)
 
+  pos = (pp.lane_length/2.,rand(rng,1:(pp.nb_lanes*2-1)))
+  #ego velocity
+  vel = max(min(randn(rng)*mdp.dmodel.vel_sigma + pp.v_med, pp.v_max), pp.v_min)
+
+  s.env_cars[1] = CarState(pos,vel,0,Nullable{BehaviorModel}())
   # XXX dirichlet and exponential are from distributions--does not accept rng!!!
   dir_distr = Dirichlet(mdp.dmodel.lane_weights)
   cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
@@ -340,7 +339,6 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
           break_flag = true
           continue
         end
-        s.env_cars[idx].pos = (x,lane,)
       else
         #mean of v0*T - min_dist
         lam = 1./(behavior.p_idm.T*behavior.p_idm.v0 - mdp.dmodel.appear_clearance)
@@ -352,12 +350,9 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
           break_flag = true
           continue
         end
-        s.env_cars[idx].pos = (x,lane,)
       end
-
-      s.env_cars[idx].vel = vel
-      #TODO lanechanging? initialized as zero
-      s.env_cars[idx].behavior = Nullable{IDMMOBILBehavior}(behavior)
+      car = CarState((x,lane,),vel,0,behavior)
+      s.env_cars[idx] = car
       idx += 1
     end
 

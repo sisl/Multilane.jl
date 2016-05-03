@@ -116,7 +116,7 @@ function draw_sedan(pp::PhysicalParam, s::CarState, v_nom::Float64, frame::Float
 	annotate("$(round(s.vel,2))",xy=(x_ctr,y_ctr))
 end
 
-function visualize(mdp::MLMDP{MLState, MLAction, IDMMOBILModel},
+function visualize(mdp::MLMDP,
                    s::MLState, a::MLAction; debug::Bool=false, frame::Float64=0., nb_rows::Int=1)
 	#Placeholder!
 	clf()
