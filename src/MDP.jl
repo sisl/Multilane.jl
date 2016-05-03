@@ -105,65 +105,24 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             pos = car.pos
             vel = car.vel
             lane_change = car.lane_change
+            behavior = get(car.behavior)
+
+            neighborhood = get_neighborhood(mdp.dmodel,s,i)
+
             lane_ = round(max(1,min(pos[2]+lane_change,nb_col)))
-
-            neighborhood = get_adj_cars(pp,s.env_cars,i,a)
-
-            dvel_ms = get_idm_dv(get(car.behavior).p_idm, dt, vel,get(neighborhood.ahead_dv,0,0.),get(neighborhood.ahead_dist,0,1000.)) #call idm model
-            #bound by the acceleration/braking terms in idm models
-            #NOTE restricting available velocities
-            dvel_ms = min(max(dvel_ms/dt,-get(car.behavior).p_idm.b),get(car.behavior).p_idm.a)*dt
-            vel_ = vel + dvel_ms
             pos_ = pos[1] + dt*(vel-agent_vel)
             if (pos_ > pp.lane_length) || (pos_ < 0.)
                 push!(car_states,CarState((-1.,1),1.,0,BEHAVIORS[1]))
                 continue
             end
-            #TODO add noise to position transition
+            #if in between lanes, continue lanechange with prob behavior.rationality, else go other direction
 
-            #sample velocity
-            #accelerate normally or dont accelerate
-            if rand(rng) < 1- get(car.behavior).rationality
-                vel_ = vel
-            end
+            vel_ = vel + dt*generate_accel(behavior,mdp.dmodel,s,neighborhood,i,rng)
+
             vel_ = max(min(vel_,pp.v_max),pp.v_min)
             #sample lanechange
             #if in between lanes, continue lanechange with prob behavior.rationality, else go other direction
-            #TODO add safety check here
-            if mod(lane_,2) == 0. #in between lanes
-                r = rand(rng)
-                #if on the off chance its not changing lanes, make it, the jerk
-                if lane_change == 0.
-                    lane_change = rand(rng,-1:2:1)
-                end
-                lanechange = r < get(car.behavior).rationality ? lane_change : -1*lane_change
-
-                if is_lanechange_dangerous(neighborhood,dt,pp.l_car,lanechange)
-                    lanechange *= -1.
-                end
-
-            else
-                #sample normally
-                lanechange_ = get_mobil_lane_change(pp,car,neighborhood)
-                #if frnot neighbor is lanechanging, don't lane change
-                if neighborhood.ahead_dv != 0.
-                    lanechange_ = 0.
-                end
-                lane_change_other = setdiff([-1;0;1],[lanechange_])
-                #safety criterion is hard
-                if is_lanechange_dangerous(neighborhood,dt,pp.l_car,1)
-                    lane_change_other = setdiff(lane_change_other,[1])
-                end
-                if is_lanechange_dangerous(neighborhood,dt,pp.l_car,-1)
-                    lane_change_other = setdiff(lane_change_other,[-1])
-                end
-
-                lanechange_other_probs = ((1-get(car.behavior).rationality)/length(lane_change_other))*ones(length(lane_change_other))
-                lanechange_probs = WeightVec([get(car.behavior).rationality;lanechange_other_probs])
-                lanechange = sample(rng,[lanechange_;lane_change_other],lanechange_probs)
-                #NO LANECHANGING
-                #lanechange = 0
-            end
+            lanechange_ = generate_lane_change(behavior,mdp.dmodel,s,neighborhood,i,rng)
 
             #if near top, remove from valid_col_top
             if pp.lane_length - pos_ <= pp.l_car*1.5
@@ -185,7 +144,7 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
                 end
             end
 
-            push!(car_states,CarState((pos_,lane_),vel_,lanechange,car.behavior))
+            push!(car_states,CarState((pos_,lane_),vel_,lanechange_,car.behavior))
         else
             #TODO: push this to a second loop after this loop
             r = rand(rng)

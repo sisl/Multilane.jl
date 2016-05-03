@@ -154,14 +154,14 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 		lane_change = env_car.lane_change
 		behavior = get(env_car.behavior)
 		lane_ = max(1,min(pos[2]+lane_change,nb_col))
-		neighborhood = get_adj_cars(pp,s.env_cars,i,a)
 
-		dv = get(neighborhood.ahead_dv,0,0.)
-		ds = get(neighborhood.ahead_dist,0,1000.)
+		neighborhood = get_neighborhood(mdp.dmodel,s,i)
+
+		dv, ds = get_dv_ds(mdp.dmodel,s,neighborhood,i,2)
 
         # TODO first do a quick check to see if the cars are even close
 
-		dvel_ms = get_idm_dv(behavior.p_idm,dt,vel,dv,ds) #call idm model
+		#dvel_ms = get_idm_dv(behavior.p_idm,dt,vel,dv,ds) #call idm model
 		dp =  dt*(vel-agent_vel)#dt*(pp.VELOCITIES[vel]-pp.VELOCITIES[s.agent_vel])#+0.5*dt*dvel_ms #x+vt+1/2at2 #XXX remove at2 term
 		dy = (lane_-pos[2])*pp.y_interval # XXX this doesn't seem right
 		#dy = lane_change*pp.y_interval

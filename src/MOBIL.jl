@@ -34,8 +34,8 @@ function is_lanechange_dangerous(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{In
 	dt = dmodel.phys_param.dt
 	l_car = dmodel.phys_param.l_car
 
-	dvlf, slf = get_dv_ds(dmodel,s,nbhd,idx,5+dir)
-	dvlb, slb = get_dv_ds(dmodel,s,nbhd,idx,2+dir)
+	dvlf, slf = get_dv_ds(dmodel,s,nbhd,idx,round(Int, 5+dir))
+	dvlb, slb = get_dv_ds(dmodel,s,nbhd,idx,round(Int, 2+dir))
 
 	#distance at next time step
 	#dv ref: ahead: me - him; behind: him - me
@@ -125,6 +125,9 @@ function get_rear_accel(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx:
 		return 0., 0.
 	end
 
+	if isnull(s.env_cars[nbhd[5+dir]].behavior)
+		return 0., 0.
+	end
 	if !(typeof(get(s.env_cars[nbhd[5+dir]].behavior)) <: IDMMOBILBehavior)
 		#TODO figure out
 		# need some kind of api to interface with other behavior model types
@@ -190,9 +193,6 @@ function get_mobil_lane_change(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,
 	#calculate incentives
 	left_crit = a_self_left-a_self+p_mobil.p*(a_follower_left_-a_follower_left+a_follower_-a_follower)
 	right_crit = a_self_right-a_self+p_mobil.p*(a_follower_right_-a_follower_right+a_follower_-a_follower)
-
-	println(left_crit)
-	println(right_crit)
 
 	#check safety criterion, also check if there is physically space
 	if (a_follower_right_ < -p_mobil.b_safe) && (a_follower_left_ < -p_mobil.b_safe)
