@@ -26,7 +26,7 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLSt
 	nbr = neighborhood[2]
 
 	dv = nbr != 0 ? vel - s.env_cars[nbr].vel : 0.
-	ds = nbr != 0 ? s.env_cars[nbr].pos[1] - car.pos[1] + pp.l_car : 1000.
+	ds = nbr != 0 ? s.env_cars[nbr].x - car.x + pp.l_car : 1000.
 
 	dvel = get_idm_dv(get(car.behavior).p_idm,dt,vel,dv,ds) #call idm model
 	dvel = min(max(dvel/dt,-get(car.behavior).p_idm.b),get(car.behavior).p_idm.a)
@@ -45,7 +45,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s
 	dt = pp.dt
 	car = s.env_cars[idx]
 	lane_change = car.lane_change
-	lane_ = round(max(1,min(car.pos[2]+lane_change,2*pp.nb_lanes-1)))
+	lane_ = round(max(1,min(car.y+lane_change,2*pp.nb_lanes-1)))
 
 	if mod(lane_,2) == 0. #in between lanes
 		r = rand(rng)
@@ -100,7 +100,8 @@ JerkModel() = AvoidModel(true)
 Base.hash(a::AvoidModel, h::UInt64=zero(UInt64)) = hash(a.jerk,h)
 
 function closest_car(dmodel::IDMMOBILModel, s::MLState, nbhd::Array{Int,1}, idx::Int, lookahead_only::Bool)
-	x, y = s.env_cars[idx].pos
+	x = s.env_cars[idx].x
+    y = s.env_cars[idx].y
 	dy = dmodel.phys_param.y_interval
 
 	closest = 0
@@ -110,7 +111,7 @@ function closest_car(dmodel::IDMMOBILModel, s::MLState, nbhd::Array{Int,1}, idx:
 		if nbhd[i] == 0
 			continue
 		end
-		dist = norm([x - car.pos[1]; (y - car.pos[2])*dy])
+		dist = norm([x - car.x; (y - car.y)*dy])
 		if dist < min_dist
 			min_dist = dist
 			closest = i
@@ -126,7 +127,7 @@ function closest_car(dmodel::IDMMOBILModel, s::MLState, nbhd::Array{Int,1}, idx:
 			continue
 		end
 		car = s.env_cars[nbhd[i]]
-		dists = norm([x - car.pos[1]; (y - car.pos[2])*dy])
+		dists = norm([x - car.x; (y - car.y)*dy])
 		if dist < min_dist
 			min_dist = dist
 			closest = i
@@ -143,13 +144,13 @@ function generate_accel(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, n
 		return 0.
 	end
 
-	x = s.env_cars[idx].pos[1]
+	x = s.env_cars[idx].x
 	cc = s.env_cars[closest_car]
 
 	if p.jerk #TODO fix this so it doesn't always accelerate if there's no space
-    accel = cs.pos[1] - x > 2*dmodel.phys_param.l_car ? 1 : -3. #slam brakes
+    accel = cs.x - x > 2*dmodel.phys_param.l_car ? 1 : -3. #slam brakes
   else
-    accel = -sign(cs.pos[1] - x)
+    accel = -sign(cs.x - x)
   end
 
 	return accel*dmodel.phys_param.dt #XXX times accel interval?
@@ -162,10 +163,10 @@ function generate_lane_change(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLSt
 		return 0.
 	end
 
-	pos = s.env_cars[idx].pos[2]
+	pos = s.env_cars[idx].y
 	cc = s.env_cars[closest_car]
 
-	lanechange = -sign(cc.pos[2] - pos)
+	lanechange = -sign(cc.y - pos)
 	#if same lane, go in direction with more room
 	if lanechange == 0
 		if pos >= 2*dmodel.phys_param.nb_lanes - 1 - pos >= pos #more room to left >= biases to left

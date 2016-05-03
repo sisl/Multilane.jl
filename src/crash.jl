@@ -109,8 +109,8 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 
   pp = mdp.dmodel.phys_param
   nb_col = 2*pp.nb_lanes-1
-	agent_pos = s.env_cars[1].pos[1]#pp.lane_length/2.
-	agent_y = s.env_cars[1].pos[2]*pp.y_interval
+	agent_pos = s.env_cars[1].x#pp.lane_length/2.
+	agent_y = s.env_cars[1].y*pp.y_interval
 	agent_vel = s.env_cars[1].vel
 
 	#treat agent_pos, agent_y as (0,0)
@@ -146,14 +146,13 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 		if i == 1
 			continue
 		end
-		pos = env_car.pos
-		if pos[1] < 0.
+		if env_car.x < 0.
 			continue
 		end
 		vel = env_car.vel
 		lane_change = env_car.lane_change
 		behavior = get(env_car.behavior)
-		lane_ = max(1,min(pos[2]+lane_change,nb_col))
+		lane_ = max(1,min(env_car.y+lane_change,nb_col))
 
 		neighborhood = get_neighborhood(mdp.dmodel,s,i)
 
@@ -163,10 +162,10 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 
 		#dvel_ms = get_idm_dv(behavior.p_idm,dt,vel,dv,ds) #call idm model
 		dp =  dt*(vel-agent_vel)#dt*(pp.VELOCITIES[vel]-pp.VELOCITIES[s.agent_vel])#+0.5*dt*dvel_ms #x+vt+1/2at2 #XXX remove at2 term
-		dy = (lane_-pos[2])*pp.y_interval # XXX this doesn't seem right
+		dy = (lane_-env_car.y)*pp.y_interval # XXX this doesn't seem right
 		#dy = lane_change*pp.y_interval
-		p = pos[1]#pp.POSITIONS[pos[1]]
-		y = pos[2]*pp.y_interval
+		p = env_car.x
+		y = env_car.y*pp.y_interval
 
 		y1 = [p;y]
 		y2 = [p+dp;y+dy]

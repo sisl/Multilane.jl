@@ -102,13 +102,13 @@ function draw_direction(phys_param::PhysicalParam, x::Float64, y::Float64, v_nom
 end
 
 function draw_sedan(pp::PhysicalParam, s::CarState, v_nom::Float64, frame::Float64=0., INTERVAL::Float64=0.)
-	if s.pos[1] < 0.
+	if s.x < 0.
 		#oob
 		return
 	end
 	lane_length = pp.lane_length
-	x_ctr = s.pos[1]+frame
-	y_ctr = pp.y_interval*s.pos[2] - INTERVAL*floor(Integer,x_ctr/lane_length)*(frame == 0. ? 0.: 1.)
+	x_ctr = s.x+frame
+	y_ctr = pp.y_interval*s.y - INTERVAL*floor(Integer,x_ctr/lane_length)*(frame == 0. ? 0.: 1.)
 	x_ctr = mod(x_ctr,lane_length)
 	color = get(BEHAVIOR_COLORS,s.behavior.p_mobil.p,"#B404AE") #PLACEHOLDER
 	draw_direction(pp,x_ctr,y_ctr,v_nom,s)
