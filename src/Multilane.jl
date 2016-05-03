@@ -30,11 +30,14 @@ export
     IDMMOBILModel,
     IDMParam,
     MOBILParam,
-    CarNeighborhood,
     IDMMOBILBehavior
 
 export
-    get_adj_cars, #XXX dep
+    NoCrashRewardModel,
+    NoCrashIDMMOBILModel,
+    NoCrashMDP
+
+export
     get_neighborhood, #testing VVV
     get_dv_ds,
     is_lanechange_dangerous,
@@ -53,6 +56,7 @@ include("MDP.jl")
 include("IDM.jl")
 include("MOBIL.jl")
 include("behavior.jl")
+include("no_crash_model.jl")
 include("visualization.jl")
 
 end # module

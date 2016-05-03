@@ -5,13 +5,15 @@ type NoCrashRewardModel <: AbstractMLRewardModel
     dangerous_brake_threshold::Float64 # if the deceleration is greater than this cost_emergency_brake will be accured
     desired_lane::Int
 end
+#XXX temporary
+NoCrashRewardModel() = NoCrashRewardModel(-10.,100.,-3.,1)
 
 type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     nb_cars::Int
     phys_param::PhysicalParam
 
-    behaviors::Vector{(Symbol, BehaviorModel)}
-    behavior_probabilities::WeightVector
+    behaviors::Vector{BehaviorModel}
+    behavior_probabilities::WeightVec
 
     adjustment_acceleration::Float64
     lane_change_vel::Float64
@@ -22,6 +24,29 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     vel_sigma::Float64 # std of new car speed about v0
     lane_weights::Array{Float64,1} # dirichlet alpha values for each lane: first is for rightmost lane
     dist_lambda::Float64 # exponential distr param for first car's distance from top of lane
+
+    #XXX temporary
+    function NoCrashIDMMOBILModel(nb_cars::Int,pp::PhysicalParam)
+      self = new()
+      self.nb_cars = nb_cars
+      self.phys_param = pp
+
+      # XXX VVV TEMP XXX
+      self.behaviors = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
+                                          enumerate(product(["cautious","normal","aggressive"],
+                                          [pp.v_slow+0.5;pp.v_med;pp.v_fast],
+                                          [pp.l_car]))]
+      self.behavior_probabilities = WeightVec(ones(length(self.behaviors)))
+      self.adjustment_acceleration = 1. #XXX
+      self.lane_change_vel = 1. #XXX
+      self.p_appear = 0.5
+      self.appear_clearance = 4.
+      self.vel_sigma = 2.
+      self.lane_weights = ones(pp.nb_lanes)
+      self.dist_lambda = 0.1 #idx
+
+      return self
+    end
 end
 
 typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
@@ -33,11 +58,11 @@ immutable NoCrashActionSpace
     emergency_brake::MLAction
 end
 # TODO for performance, make this a macro?
-const NB_NORMAL_ACTIONS::Int = 9
+const NB_NORMAL_ACTIONS = 9
 
 function NoCrashActionSpace(mdp::NoCrashMDP)
     accels = (-mdp.adjustment_acceleration, 0.0, mdp.adjustment_acceleration)
-    lane_changes = (-1, 0 1)
+    lane_changes = (-1, 0, 1)
     NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in Iterators.product(accels, lane_changes)]
     return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: emergency brake will be calculated later based on the state
 end
@@ -121,6 +146,9 @@ Returns true if cars at y1 and y1 occupy the same lane
 function occupation_overlap(y1::Float64, y2::Float64)
     return abs(y1-y2) < 1.0 || ceil(Int, y1) == floor(Int, y2) || floor(Int, y1) == ceil(Int, y2)
 end
+
+#XXX temp
+create_state(p::NoCrashMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState((-1.,1,),1.,0,p.dmodel.behaviors[1]) for _ = 1:p.dmodel.nb_cars])
 
 function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
