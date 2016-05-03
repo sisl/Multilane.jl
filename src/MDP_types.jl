@@ -50,8 +50,7 @@ Base.hash(a::CarState,h::UInt64=zero(UInt64)) = hash(a.vel,hash(a.pos,hash(a.lan
 
 type MLState
   crashed::Bool # A crash occurs at the state transition. All crashed states are considered equal
-	#agent_pos::Int #row
-	#agent_vel::Float64
+	#TODO goal lane?
 	env_cars::Array{CarState,1} #NOTE ego car is first car
 end #MLState
 #XXX convenience functions

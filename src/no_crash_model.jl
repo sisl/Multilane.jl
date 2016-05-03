@@ -93,6 +93,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     agent_vel_ = s.agent_vel + a.acc*dt
     agent_vel_ = max(pp.v_slow,min(agent_vel_,pp.v_fast))
 
+
     ## Calculate deltas ##
     #====================#
 
@@ -105,8 +106,11 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
     changers = IntSet()
     for i in 2:nb_cars
-        dvs[i] = dt*generate_accel(mdp.dmodel, neighborhood, s, i, rng)
-        sp.env_cars[i].lane_change = generate_lane_change(mdp.dmodel, neighborhood, s, i, rng)
+        neighborhood = get_neighborhood(mdp.dmodel, s, i)
+        # To distinguish between different models--is there a better way?
+        behavior = get(s.env_cars[i].behavior)
+        dvs[i] = dt*generate_accel(behavior, mdp.dmodel, neighborhood, s, i, rng)
+        sp.env_cars[i].lane_change = generate_lane_change(behavior, mdp.dmodel, neighborhood, s, i, rng)
         dys[i] = sp.env_cars[i].lane_change * dmodel.lane_change_vel * dt
         if sp.env_cars[i].lane_change
             push!(changers, i)
@@ -138,7 +142,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
                     # check if they are moving towards each other
                     if dys[i]*dys[j] < 0.0 && abs(car_i.pos[2]+dys[2] - car_j.pos[2]+dys[2]) < 2.0
-                        
+
                         # make j stay in his lane
                         dys[j] = 0.0
                         car_states_[j].lane_change = 0.0
@@ -155,11 +159,14 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     for i in 1:nb_cars
         sp.env_cars[i].pos[1] = s.env_cars[i].pos[1] + dt*(s.env_cars[i].vel - s.env_cars[1].vel)
         sp.env_cars[i].pos[2] = s.env_cars[i].pos[2] + dys[i]
-        sp.env_cars[i].vel = s.env_cars[i].vel + dvs[i]
+        sp.env_cars[i].vel = max(min(s.env_cars[i].vel + dvs[i],pp.v_max),pp.v_min)
+
         # note lane change is updated above
         if sp.env_cars[i].pos[1] < 0.0 || sp.env_cars[i].pos[1] >= lane_length
             push!(exits, i)
         end
+
+        # TODO: save which spots are free for a car new car to arrive in?
     end
     deleteat!(sp.env_cars, exits)
     nbcars -= length(exits)
@@ -172,4 +179,11 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         if rng
     end
     =#
+
+    return sp
+end
+
+function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_state(mdp))
+  #TODO how to make a state that's not instant death?
+  
 end
