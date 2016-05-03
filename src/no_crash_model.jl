@@ -13,9 +13,10 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     behavior_probabilities::WeightVector
 
     adjustment_acceleration::Float64
+    lane_change_vel::Float64
 end
 
-typealias NoCrashMPD MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
+typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
 
 # action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {EMERGENCY_BRAKE}
 immutable NoCrashActionSpace
@@ -26,7 +27,7 @@ end
 # TODO for performance, make this a macro?
 const NB_NORMAL_ACTIONS::Int = 9
 
-function NoCrashActionSpace(mdp::NoCrashMPD)
+function NoCrashActionSpace(mdp::NoCrashMDP)
     accels = (-mdp.adjustment_acceleration, 0.0, mdp.adjustment_acceleration)
     lane_changes = (-1, 0 1)
     NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in Iterators.product(accels, lane_changes)]
@@ -79,12 +80,12 @@ function e_brake_acc(mdp::NoCrashMDP, s::MLState)
     # calculate necessary acceleration
 end
 
-function generate_sr(mdp::NoCrashMPD, s::MLState, a::MLAction, rng::AbstractRNG)
+function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
     nb_cars = length(s.env_cars)
-    car_states_ = resize!(sp.env_cars,0)
+    resize!(sp.env_cars, nb_cars)
 
     agent_lane_ = s.agent_pos + a.lane_change
     agent_lane_ = max(1,min(agent_lane_,nb_col)) #can't leave the grid
@@ -93,6 +94,8 @@ function generate_sr(mdp::NoCrashMPD, s::MLState, a::MLAction, rng::AbstractRNG)
     agent_vel_ = max(pp.v_slow,min(agent_vel_,pp.v_fast))
 
     ## Calculate deltas ##
+    #====================#
+
     dvs = Array(Float64, nb_cars)
     dys = Array(Float64, nb_cars)
 
@@ -100,23 +103,32 @@ function generate_sr(mdp::NoCrashMPD, s::MLState, a::MLAction, rng::AbstractRNG)
     dvs[1] = a.acc*dt
     dys[1] = a.lane_change
 
+    changers = IntSet()
     for i in 2:nb_cars
-        
+        dvs[i] = dt*generate_accel(mdp.dmodel, neighborhood, s, i, rng)
+        sp.env_cars[i].lane_change = generate_lane_change(mdp.dmodel, neighborhood, s, i, rng)
+        dys[i] = sp.env_cars[i].lane_change * dmodel.lane_change_vel * dt
+        if sp.env_cars[i].lane_change
+            push!(changers, i)
+        end
     end
 
     ## Consistency checking ##
-    sorted_inds = sort!(collect(1:nb_cars), by=i->s.env_cars[i].pos[1]) # this might be slow because anonymous functions are slow
+    #========================#
 
-    for i_unsorted in 1:nb_cars-1
-        i = sorted_inds[i_unsorted]
-        j = sorted_inds[i_unsorted+1]
+    sorted_changers = sort!(collect(changers), by=i->s.env_cars[i].pos[1]) # this might be slow because anonymous functions are slow
+
+    # iterate through pairs
+    iter_state = start(sorted_changers)
+    j, iter_state = next(sorted_changers, iter_state)
+    while !done(sorted_changers, state)
+        i = j
+        j, iter_state = next(sorted_changers, iter_state)
         car_i = s.env_cars[i]
         car_j = s.env_cars[j]
 
-        # check if both cars are trying to change into the same lane at the same spot
-
-        # check if they are both starting to change lanes
-        if dys[i] != 0.0 && dys[j] != 0.0 && isinteger(car_i.pos[2]) && isinteger(car_j.pos[2])
+        # check if they are both starting to change lanes on this step
+        if isinteger(car_i.pos[2]) && isinteger(car_j.pos[2])
 
             # make sure there is a conflict longitudinally
             if car_i.pos[1] - car_j.pos[1] <= pp.l_car
@@ -136,88 +148,28 @@ function generate_sr(mdp::NoCrashMPD, s::MLState, a::MLAction, rng::AbstractRNG)
         end
     end
 
-    ## Dynamics
+    ## Dynamics and Exits ##
+    #======================#
 
-
-    for (i,car) in enumerate(s.env_cars)
-        
-        @assert car.behavior.rationality == 1.0 # ignore this for now
-
-        if car.pos[1] >= 0.
-            pos = car.pos
-            vel = car.vel
-            lane_change = car.lane_change
-            lane_ = max(1,min(pos[2]+lane_change,nb_col))
-
-            #XXX need to take into account the ego vehicle
-            neighborhood = get_adj_cars(pp, s.env_cars, i)
-
-            #call idm model
-            dvel_ms = get_idm_dv(car.behavior.p_idm,
-                                 dt, vel,
-                                 get(neighborhood.ahead_dv, 0, 0.),
-                                 get(neighborhood.ahead_dist, 0, 1000.))
-
-            dvel_ms = min(max(dvel_ms/dt, -car.behavior.p_idm.b), car.behavior.p_idm.a)*dt
-            vel_ = vel + dvel_ms
-            pos_ = pos[1] + dt*(vel-s.agent_vel)
-
-
-            if (pos_ > pp.lane_length) || (pos_ < 0.)
-                push!(car_states, CarState((-1.,1),1.,0,BEHAVIORS[1]))
-                continue
-            end
-
-            vel_ = max(min(vel_, pp.v_max), pp.v_min)
-
-            #sample lanechange
-            #TODO add safety check here
-            if mod(lane_,2) == 0 #in between lanes
-                @assert lane_change != 0 # shouldn't be in-between lanes if this is zero
-
-            else
-                #sample normally
-                lanechange_ = get_mobil_lane_change(pp, car, neighborhood)
-                #if frnot neighbor is lanechanging, don't lane change
-                if neighborhood.ahead_dv != 0 
-                    lanechange_ = 0
-                end
-                lane_change_other = setdiff([-1;0;1],[lanechange_])
-                #safety criterion is hard
-                if is_lanechange_dangerous(neighborhood,dt,pp.l_car,1)
-                    lane_change_other = setdiff(lane_change_other,[1])
-                end
-                if is_lanechange_dangerous(neighborhood,dt,pp.l_car,-1)
-                    lane_change_other = setdiff(lane_change_other,[-1])
-                end
-
-                lanechange_other_probs = ((1-car.behavior.rationality)/length(lane_change_other))*ones(length(lane_change_other))
-                lanechange_probs = WeightVec([car.behavior.rationality;lanechange_other_probs])
-                lanechange = sample(rng,[lanechange_;lane_change_other],lanechange_probs)
-                #NO LANECHANGING
-                #lanechange = 0
-            end
-
-            push!(car_states,CarState((pos_,lane_),vel_,lanechange,car.behavior))
-        else
-            #TODO: push this to a second loop after this loop
-            r = rand(rng)
-            if r < 1.-mdp.dmodel.encounter_prob
-                push!(encounter_inds,i)
-                #continue
-            end
-            push!(car_states,car)
+    exits = IntSet()
+    for i in 1:nb_cars
+        sp.env_cars[i].pos[1] = s.env_cars[i].pos[1] + dt*(s.env_cars[i].vel - s.env_cars[1].vel)
+        sp.env_cars[i].pos[2] = s.env_cars[i].pos[2] + dys[i]
+        sp.env_cars[i].vel = s.env_cars[i].vel + dvs[i]
+        # note lane change is updated above
+        if sp.env_cars[i].pos[1] < 0.0 || sp.env_cars[i].pos[1] >= lane_length
+            push!(exits, i)
         end
     end
+    deleteat!(sp.env_cars, exits)
+    nbcars -= length(exits)
+
+    ## Generate new cars ##
+    #=====================#
+
+    #=
+    for j in 1:(pp.nb_env_cars-nb_cars)
+        if rng
+    end
     =#
-
 end
-
-# """
-# Detect if two cars are moving into the same lane.
-# 
-# Assumes that i is the index of a car that is ahead of or even with j longitudinally
-# """
-# function lanechange_conflict(state::MLState, i::Int, j::Int)
-#     
-# end
