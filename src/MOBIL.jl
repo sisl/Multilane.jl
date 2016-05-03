@@ -23,113 +23,150 @@ function MOBILParam(s::AbstractString)
 	return MOBILParam(p=p)
 end
 
-type CarNeighborhood
-	ahead_dist::Dict{Int,Float64} #(-1,0,1) for right,self, and left lane
-	behind_dist::Dict{Int,Float64}
-	ahead_dv::Dict{Int,Float64}
-	behind_dv::Dict{Int,Float64}
-	ahead_idm::Dict{Int,Union{IDMParam,Float64}}
-	behind_idm::Dict{Int,Union{IDMParam,Float64}}
-	ahead_lanechange::Int
-end
-#CarNeighborhood(x,y,z) = CarNeighborhood(x,deepcopy(x),deepcopy(x),deepcopy(x),y,deepcopy(y),z)
-CarNeighborhood() = CarNeighborhood(Dict{Int,Float64}(), #ahead_dist
-																		Dict{Int,Float64}(), #behind_dist
-																		Dict{Int,Float64}(), #ahead_dv
-																		Dict{Int,Float64}(), #behind_dv
-																		Dict{Int,IDMParam}(), #ahead_idm
-																		Dict{Int,IDMParam}(), #behind_idm
-																		0) #ahead lanechange
+function is_lanechange_dangerous(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,dir::Real)
 
-function is_lanechange_dangerous(nbhd::CarNeighborhood,dt::Float64,l_car::Float64,dir::Real)
-	slf = get(nbhd.behind_dist,dir,1000.)
-	slb = get(nbhd.ahead_dist,dir,1000.)
-	dvlf = get(nbhd.behind_dv,dir,0.)
-	dvlb = get(nbhd.ahead_dv,dir,0.)
+	#check if dir is oob
+	lane_ = s.env_cars[idx].pos[2] + dir
+	if (lane_ > dmodel.phys_param.nb_lanes*2 - 1) || (lane_ < 1.)
+		return true
+	end
+	#check if will hit car next to you?
+	dt = dmodel.phys_param.dt
+	l_car = dmodel.phys_param.l_car
+
+	dvlf, slf = get_dv_ds(dmodel,s,nbhd,idx,5+dir)
+	dvlb, slb = get_dv_ds(dmodel,s,nbhd,idx,2+dir)
+
+	#distance at next time step
+	#dv ref: ahead: me - him; behind: him - me
+	#ds ref: ahead: him - me - l_car; behind: me - him - l_car
 	dslf = slf-dvlf*dt
 	dslb = slb-dvlb*dt
 	diff = 0.0 #something >=0--the safety distance
-	#println(slf)
-	#println(slb)
-	#println(dslf)
-	#println(dslb)
 
 	return (slf < diff*l_car) || (slb < diff*l_car) || dslb < diff*l_car ||
 				dslf < diff*l_car
 
 end
 
-function get_adj_cars(p::PhysicalParam,arr::Array{CarState,1},i::Int,a::MLAction)
-	##TODO: update CarNeighborhood with stuff for the IDM parameters
-	neighborhood = CarNeighborhood()
-
-	x = arr[i]
-
-	#going offroad is not allowed
+function get_neighborhood(dmodel::IDMMOBILModel,s::MLState,idx::Int)
+	nbhd = zeros(Int,6)
+	dists = Inf*ones(6)
+	"""
+	Each index corresponds to the index (in the car state) that corresponds to
+	the position, 0 if there is no such car
+	indices:
+	6      |     3
+	5    |car|   2 ->
+	4      |     1
+	where 1/2/3 is the front, 3/6 is left
+	"""
+	x = s.env_cars[idx]
+	#rightmost lane: no one to the right
 	if x.pos[2] <= 1.
-		#can't go right
-		neighborhood.ahead_dist[-1] = -100.
-		neighborhood.behind_dist[-1] = -100.
-	# elseif x.pos[2] >= p.NB_POS/length(p.POSITIONS)
-    # XXX is the line below the same as the line above??
-	elseif x.pos[2] >= 2*p.nb_lanes-1.
-		#can't go left
-		neighborhood.ahead_dist[1] = -100.
-		neighborhood.behind_dist[1] = -100.
+		dists[[1;4]] = [-1.;-1.]
+	#leftmost lane: no one to the left
+	elseif x.pos[2] >= 2*dmodel.phys_param.nb_lanes - 1.
+		dists[[3;6]] = [-1.;-1.]
 	end
 
-	for (j,car) in enumerate(arr)
-		if i == j
+	for (i,car) in enumerate(s.env_cars)
+		#i am not a neighbor
+		if i == idx
 			continue
 		end
-		pos = car.pos
-		vel = car.vel
-		if car.pos[1] < 0.
+		pos = car.pos[1]
+		lane = car.pos[2]
+		#this car is oob
+		if pos < 0.
 			continue
 		end
-		dlane = pos[2]-x.pos[2]
-		if abs(dlane) > 2. #not in or adjacent to current lane
+		dlane = lane - x.pos[2] #NOTE float: convert to int
+		#too distant to be a neighbor
+		if abs(dlane) > 2.
 			continue
 		elseif abs(dlane) <= 1.
 			dlane = 0
-		else #abs(dlane) == 2
-			dlane = sign(dlane)
+		else
+			dlane = convert(Int,sign(dlane))
 		end
-		#if abs(dlane) == 1 or 0, consider to be in same lane; 2 next lane, more, ignore
 
-		dist = pos[1]-x.pos[1]#p.POSITIONS[pos[1]]-p.POSITIONS[x.pos[1]]
-		dv = x.vel-vel#p.VELOCITIES[x.vel]-p.VELOCITIES[vel]
+		d = pos-x.pos[1]
 
-		if (dist >= 0) && ((dist - p.l_car) < get(neighborhood.ahead_dist,dlane,1000.))
-			neighborhood.ahead_dist[dlane] = dist - p.l_car
-			neighborhood.ahead_dv[dlane] = dv
-			neighborhood.ahead_idm[dlane] = !isnull(car.behavior)?get(car.behavior).p_idm:a.acc #pointless
-			if dlane == 0
-				neighborhood.ahead_lanechange = car.lane_change
-			end
-		elseif (dist < 0) && ((-1*dist - p.l_car) < get(neighborhood.behind_dist,dlane,1000.))
-			neighborhood.behind_dist[dlane] = -1*dist - p.l_car
-			neighborhood.behind_dv[dlane] = -1*dv
-			neighborhood.behind_idm[dlane] = !isnull(car.behavior)?get(car.behavior).p_idm:a.acc
+		offset = d >= 0. ? 2 : 5
+
+		if abs(d) < dists[offset+dlane]
+			dists[offset+dlane] = abs(d)
+			nbhd[offset+dlane] = i
 		end
 	end
 
-	return neighborhood #PLACEHOLDER
-
+	return nbhd
 end
 
-function get_mobil_lane_change(p::PhysicalParam,state::CarState,neighborhood::CarNeighborhood)
+function get_dv_ds(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,idy::Int)
+	"""
+	idx is the car from whom the perspective is
+	idy is the other car
+	"""
+	car = s.env_cars[idx]
+	nbr = nbhd[idy]
+	#dv: if ahead: me - him; behind: him - me
+	dv = nbr != 0 ? -1*sign((idy-3.5))*(car.vel - s.env_cars[nbr].vel) : 0.
+	ds = nbr != 0 ? abs(s.env_cars[nbr].pos[1] - car.pos[1]) - dmodel.phys_param.l_car : 1000.
+
+	return dv, ds
+end
+
+function get_rear_accel(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,dir::Int)
+
+	#there is no car behind in that spot
+	if nbhd[5+dir] == 0
+		return 0., 0.
+	end
+
+	if !(typeof(get(s.env_cars[nbhd[5+dir]].behavior)) <: IDMMOBILBehavior)
+		#TODO figure out
+		# need some kind of api to interface with other behavior model types
+		# for now: just assume 0, 0 (no effect if they're not IDM)
+		a = 0.
+		return a, a
+	end
+	v = s.env_cars[idx].vel
+
+	#behind - me
+	dv_behind, s_behind = get_dv_ds(dmodel,s,nbhd,idx,5+dir)
+	v_behind = v - dv_behind
+
+	#me - front
+	#what would the relative velocity, distance be if idx wasn't there
+	dv_behind_, s_behind_ = get_dv_ds(dmodel,s,nbhd,idx,2+dir)
+	dv_behind_ += dv_behind
+	s_behind_ += s_behind + dmodel.phys_param.l_car
+
+	dt = dmodel.phys_param.dt
+	#TODO generalize to get_dv?
+	behind_idm = get(s.env_cars[nbhd[5+dir]].behavior).p_idm
+	a_follower = get_idm_dv(behind_idm,dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
+	a_follower_ = get_idm_dv(behind_idm,dt,v_behind,dv_behind_,s_behind_)/dt
+
+	return a_follower, a_follower_
+end
+
+function get_mobil_lane_change(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,rng::AbstractRNG=MersenneTwister(123))
 	#TODO: catch if the parameters don't exist
 
 	#need 6 distances: distance to person behind me, ahead of me
 	#				potential distance to person behind me, ahead of me
 	#				in other lane(s)
 	#need sets of idm parameters
+	p = dmodel.phys_param
 	dt = p.dt
+	state = s.env_cars[idx]
 	p_idm_self = get(state.behavior).p_idm
 	p_mobil = get(state.behavior).p_mobil
 	#println(neighborhood)
-	if isempty(neighborhood.ahead_dv) && isempty(neighborhood.behind_dv)
+	if sum(nbhd) == 0
 		return 0 #no reason to change lanes if you're all alone
 	end
 
@@ -138,90 +175,36 @@ function get_mobil_lane_change(p::PhysicalParam,state::CarState,neighborhood::Ca
 		return state.lane_change #continue going in the direction you're going
 	end
 
-	v = state.vel#p.VELOCITIES[state.vel]
-	#get_idm_dv(param,velocity,dv,s)
+	v = state.vel
 	#get predicted and potential accelerations
-	a_self = get_idm_dv(p_idm_self,dt,v,get(neighborhood.ahead_dv,0,0.),get(neighborhood.ahead_dist,0,1000.))/dt
-	a_self_left = get_idm_dv(p_idm_self,dt,v,get(neighborhood.ahead_dv,1,0.),get(neighborhood.ahead_dist,1,1000.))/dt
-	a_self_right = get_idm_dv(p_idm_self,dt,v,get(neighborhood.ahead_dv,-1,0.),get(neighborhood.ahead_dist,-1,1000.))/dt
 
-	if get(neighborhood.behind_idm,0,0.) == 0.
-		a_follower = 0.
-		a_follower_ = 0.
-	else
-		v_behind = v + neighborhood.behind_dv[0]
-		dv_behind = neighborhood.behind_dv[0]
-		s_behind = get(neighborhood.behind_dist,0,1000.)
-		dv_behind_ = dv_behind + get(neighborhood.ahead_dv,0,0.)
-		s_behind_ = s_behind + get(neighborhood.ahead_dist,0,1000.) + p.l_car
-		if typeof(neighborhood.behind_idm[0]) <: Float64
-			a_follower = neighborhood.behind_idm[0]
-			a_follower_ = neighborhood.behind_idm[0]
-		else
-			a_follower = get_idm_dv(neighborhood.behind_idm[0],dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
-			a_follower_ = get_idm_dv(neighborhood.behind_idm[0],dt,v_behind,dv_behind_,s_behind_)/dt
-		end
-	end
+	#TODO generalize to get_dv()?
+	a_self = get_idm_dv(p_idm_self,dt,v,get_dv_ds(dmodel,s,nbhd,idx,2)...)/dt
+	a_self_left = get_idm_dv(p_idm_self,dt,v,get_dv_ds(dmodel,s,nbhd,idx,3)...)/dt
+	a_self_right = get_idm_dv(p_idm_self,dt,v,get_dv_ds(dmodel,s,nbhd,idx,1)...)/dt
 
-	if get(neighborhood.behind_idm,1,0.) == 0.
-		a_follower_left = 0.
-		a_follower_left_ = 0.
-	else
-		v_left = v + neighborhood.behind_dv[1]
-		dv_left = neighborhood.behind_dv[1] + get(neighborhood.ahead_dv,1,0.)
-		s_left = get(neighborhood.behind_dist,1,1000.) + get(neighborhood.ahead_dist,1,1000.)+p.l_car
-		dv_left_ = get(neighborhood.behind_dv,1,0.)
-		s_left_ = get(neighborhood.behind_dist,1,1000.)
-		if typeof(neighborhood.behind_idm[1]) <: Float64
-			a_follower_left_ = neighborhood.behind_idm[1]
-			a_follower_left = neighborhood.behind_idm[1]
-		else
-			a_follower_left = get_idm_dv(neighborhood.behind_idm[1],dt,v_left,dv_left,s_left)/dt
-			a_follower_left_ = get_idm_dv(neighborhood.behind_idm[1],dt,v_left,dv_left_,s_left_)/dt
-		end
-	end
-
-	if get(neighborhood.behind_idm,-1,0.) == 0.
-		a_follower_right = 0.
-		a_follower_right_ = 0.
-	else
-		v_right = v + neighborhood.behind_dv[-1]
-		dv_right = neighborhood.behind_dv[-1] + get(neighborhood.ahead_dv,-1,0.)
-		s_right = neighborhood.behind_dist[-1] + get(neighborhood.ahead_dist,-1,1000.) + p.l_car
-
-		dv_right_ = neighborhood.behind_dv[-1]
-		s_right_ = neighborhood.behind_dist[-1]
-		if typeof(neighborhood.behind_idm[-1]) <: Float64
-			a_follower_right = neighborhood.behind_idm[-1]
-			a_follower_right_ = neighborhood.behind_idm[-1]
-		else
-			a_follower_right = get_idm_dv(neighborhood.behind_idm[-1],dt,v_right,dv_right,s_right)/dt
-			a_follower_right_ = get_idm_dv(neighborhood.behind_idm[-1],dt,v_right,dv_right_,s_right_)/dt
-		end
-	end
-
+	a_follower, a_follower_ = get_rear_accel(dmodel,s,nbhd,idx,0)
+	a_follower_left_, a_follower_left = get_rear_accel(dmodel,s,nbhd,idx,1)
+	a_follower_right_, a_follower_right = get_rear_accel(dmodel,s,nbhd,idx,-1)
 
 	#calculate incentives
 	left_crit = a_self_left-a_self+p_mobil.p*(a_follower_left_-a_follower_left+a_follower_-a_follower)
 	right_crit = a_self_right-a_self+p_mobil.p*(a_follower_right_-a_follower_right+a_follower_-a_follower)
 
+	println(left_crit)
+	println(right_crit)
 
 	#check safety criterion, also check if there is physically space
 	if (a_follower_right_ < -p_mobil.b_safe) && (a_follower_left_ < -p_mobil.b_safe)
 		return 0 #neither safe
 	end
-	if is_lanechange_dangerous(neighborhood,dt,p.l_car,1) || (a_follower_left_ < -p_mobil.b_safe)
+	if is_lanechange_dangerous(dmodel,s,nbhd,idx,1) || (a_follower_left_ < -p_mobil.b_safe)
 		left_crit -= 10000000.
 	end
 
-	if is_lanechange_dangerous(neighborhood,dt,p.l_car,-1) || (a_follower_right_ < -p_mobil.b_safe)
+	if is_lanechange_dangerous(dmodel,s,nbhd,idx,-1) || (a_follower_right_ < -p_mobil.b_safe)
 		right_crit -= 10000000.
 	end
-
-	#println(neighborhood)
-	#r = state.behavior.rationality
-	#v0 = p_idm_self.v0
-	#println("$(r) $(v0) left: $left_crit,$slf,$slb,$dslf,$dslb\n right: $right_crit,$slf_,$slb_,$dslf_,$dslb_")
 
 	#check if going left or right is preferable
 	dir_flag = left_crit >= right_crit ? 1.:-1.

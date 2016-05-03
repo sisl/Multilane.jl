@@ -16,7 +16,7 @@ import Base: ==, hash, length
 using Interact
 
 # package code goes here
-export 
+export
     PhysicalParam,
     CarState,
     MLState,
@@ -32,7 +32,11 @@ export
     IDMMOBILBehavior
 
 export
-    get_adj_cars,
+    get_adj_cars, #XXX dep
+    get_neighborhood, #testing VVV
+    get_dv_ds,
+    is_lanechange_dangerous,
+    get_rear_accel, #testing ^^^
     get_idm_dv,
     get_mobil_lane_change,
     is_crash,
