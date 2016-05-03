@@ -214,7 +214,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             end
             # pick one
             spot = rand(rng, clear_spots)
-            behavior = sample(mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
+            behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
             if spot[2] # at front
                 push!(sp.env_cars, CarState((pp.lane_length, spot[1]), sp.env_car[1], pp.lane_length, behavior))
             else # at back
@@ -263,7 +263,7 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
         continue
       end
       #sample Behavior TODO sample(rng,v,wv) in utils?
-      behavior = sample(mdp.dmodel.behaviors,
+      behavior = sample(rng, mdp.dmodel.behaviors,
                         mdp.dmodel.behavior_probabilities)
       #sample velocity
       #TODO need generic interface with behavior models for desired speed
@@ -279,7 +279,7 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
         s.env_cars[idx].pos = (x,lane,)
       else
         #mean of v0*T - min_dist
-        lam = 1/(behavior.p_idm.T*behavior.p_idm.v0 - mdp.dmodel.appear_clearance)
+        lam = 1./(behavior.p_idm.T*behavior.p_idm.v0 - mdp.dmodel.appear_clearance)
         assert(lam > 0.)
         dist_distr = Exponential(lam)
         dist = rand(dist_distr) + mdp.dmodel.appear_clearance

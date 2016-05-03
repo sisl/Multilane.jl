@@ -31,7 +31,7 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLSt
 	dvel = get_idm_dv(get(car.behavior).p_idm,dt,vel,dv,ds) #call idm model
 	dvel = min(max(dvel/dt,-get(car.behavior).p_idm.b),get(car.behavior).p_idm.a)
 	#accelerate normally or dont accelerate
-	if rand(rng) < 1- get(car.behavior).rationality
+	if rand(rng) < 1 - get(car.behavior).rationality
 			dvel = 0
 	end
 	#make sure it wont result in an inconsistent thing?
@@ -45,7 +45,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s
 	dt = pp.dt
 	car = s.env_cars[idx]
 	lane_change = car.lane_change
-	lane_ = round(max(1,min(car.pos[2]+lane_change,nb_col)))
+	lane_ = round(max(1,min(car.pos[2]+lane_change,2*pp.nb_lanes-1)))
 
 	if mod(lane_,2) == 0. #in between lanes
 		r = rand(rng)
@@ -55,14 +55,14 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s
 		end
 		lanechange = r < get(car.behavior).rationality ? lane_change : -1*lane_change
 
-		if is_lanechange_dangerous(neighborhood,dt,pp.l_car,lanechange)
-				lanechange *= -1.
+		if is_lanechange_dangerous(dmodel, s, neighborhood, idx,lanechange)
+				lanechange *= -1
 		end
 
 		return lanechange
 	end
 	#sample normally
-	lanechange_ = get_mobil_lane_change(pp,car,neighborhood)
+	lanechange_ = get_mobil_lane_change(dmodel, s, neighborhood,idx)
 	#if frnot neighbor is lanechanging, don't lane change
 	nbr = neighborhood[2]
 	ahead_dy = nbr != 0 ? s.env_cars[nbr].lane_change : 0
@@ -71,10 +71,10 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s
 	end
 	lane_change_other = setdiff([-1;0;1],[lanechange_])
 	#safety criterion is hard
-	if is_lanechange_dangerous(neighborhood,dt,pp.l_car,1)
+	if is_lanechange_dangerous(dmodel,s,neighborhood,idx,1)
 			lane_change_other = setdiff(lane_change_other,[1])
 	end
-	if is_lanechange_dangerous(neighborhood,dt,pp.l_car,-1)
+	if is_lanechange_dangerous(dmodel, s, neighborhood,idx,-1)
 			lane_change_other = setdiff(lane_change_other,[-1])
 	end
 
