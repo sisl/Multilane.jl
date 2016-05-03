@@ -109,8 +109,42 @@ end
 Calculates the emergency braking acceleration
 """
 function e_brake_acc(mdp::NoCrashMDP, s::MLState)
+    if length(s.env_cars) < 2
+        return 0.0
+    end
+    dt = mdp.dmodel.phys_param.dt
+    v_min = mdp.dmodel.phys_param.v_min
+    l_car = mdp.dmodel.phys_param.l_car
+    ego = s.env_cars[1]
+
+    car_in_front = 0
+    smallest_gap = Inf
     # find car immediately in front
-    # calculate necessary acceleration
+    if length(s.env_cars > 1)
+        for i in 2:nb_cars
+            if occupation_overlap(s.env_cars[i].pos[2], ego.pos[2]) # occupying same lane
+                gap = s.env_cars[i].pos[1] - ego.pos[1]
+                if gap >= 0.0 && gap < smallest_gap
+                    car_in_front = i
+                    smallest_gap = gap
+                end
+            end
+        end
+        # calculate necessary acceleration
+        if car_in_front == 0
+            return 0.0
+        else
+            other = s.env_cars[car_in_front]
+            return (gap - l_car + other.vel*dt + v_min*dt - 2.0*ego.vel*dt) / dt^2
+        end
+    end
+end
+
+"""
+Returns true if cars at y1 and y1 occupy the same lane
+"""
+function occupation_overlap(y1::Float64, y2::Float64)
+    return abs(y1-y2) < 1.0 || ceil(Int, y1) == floor(Int, y2) || floor(Int, y1) == ceil(Int, y2)
 end
 
 #XXX temp
@@ -250,6 +284,8 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             end
         end
     end
+
+    sp.crashed = is_crash(mdp, s, a)
 
     return (sp, r)
 end
