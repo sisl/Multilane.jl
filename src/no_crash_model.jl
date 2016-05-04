@@ -205,34 +205,36 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
     sorted_changers = sort!(collect(changers), by=i->s.env_cars[i].x, rev=true) # this might be slow because anonymous functions are slow
 
-    # iterate through pairs
-    iter_state = start(sorted_changers)
-    j, iter_state = next(sorted_changers, iter_state)
-    while !done(sorted_changers, state)
-        i = j
-        j, iter_state = next(sorted_changers, iter_state)
-        car_i = s.env_cars[i]
-        car_j = s.env_cars[j]
+    if length(sorted_changers) >= 2 #something to compare
+      # iterate through pairs
+      iter_state = start(sorted_changers)
+      j, iter_state = next(sorted_changers, iter_state)
+      while !done(sorted_changers, state)
+          i = j
+          j, iter_state = next(sorted_changers, iter_state)
+          car_i = s.env_cars[i]
+          car_j = s.env_cars[j]
 
-        # check if they are both starting to change lanes on this step
-        if isinteger(car_i.y) && isinteger(car_j.y)
+          # check if they are both starting to change lanes on this step
+          if isinteger(car_i.y) && isinteger(car_j.y)
 
-            # make sure there is a conflict longitudinally
-            if car_i.x - car_j.x <= pp.l_car
+              # make sure there is a conflict longitudinally
+              if car_i.x - car_j.x <= pp.l_car
 
-                # check if they are near each other lanewise
-                if abs(car_i.y - car_j.y) <= 2.0
+                  # check if they are near each other lanewise
+                  if abs(car_i.y - car_j.y) <= 2.0
 
-                    # check if they are moving towards each other
-                    if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[2] - car_j.y+dys[2]) < 2.0
+                      # check if they are moving towards each other
+                      if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[2] - car_j.y+dys[2]) < 2.0
 
-                        # make j stay in his lane
-                        dys[j] = 0.0
-                        lcs[j] = 0.0
-                    end
-                end
-            end
-        end
+                          # make j stay in his lane
+                          dys[j] = 0.0
+                          lcs[j] = 0.0
+                      end
+                  end
+              end
+          end
+      end
     end
 
     ## Dynamics and Exits ##
@@ -254,7 +256,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             yp = floor(car.y)
         end
 
-        if xp < 0.0 || xp >= lane_length
+        if xp < 0.0 || xp >= pp.lane_length
             push!(exits, i)
         else
             sp.env_cars[i] = CarState(xp, yp, velp, lcs[i], car.behavior)
