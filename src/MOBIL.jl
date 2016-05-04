@@ -23,19 +23,19 @@ function MOBILParam(s::AbstractString)
 	return MOBILParam(p=p)
 end
 
-function is_lanechange_dangerous(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,dir::Real)
+function is_lanechange_dangerous(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,dir::Real)
 
 	#check if dir is oob
 	lane_ = s.env_cars[idx].y + dir
-	if (lane_ > dmodel.phys_param.nb_lanes*2 - 1) || (lane_ < 1.)
+	if (lane_ > pp.nb_lanes*2 - 1) || (lane_ < 1.)
 		return true
 	end
 	#check if will hit car next to you?
-	dt = dmodel.phys_param.dt
-	l_car = dmodel.phys_param.l_car
+	dt = pp.dt
+	l_car = pp.l_car
 
-	dvlf, slf = get_dv_ds(dmodel,s,nbhd,idx,round(Int, 5+dir))
-	dvlb, slb = get_dv_ds(dmodel,s,nbhd,idx,round(Int, 2+dir))
+	dvlf, slf = get_dv_ds(pp,s,nbhd,idx,round(Int, 5+dir))
+	dvlb, slb = get_dv_ds(pp,s,nbhd,idx,round(Int, 2+dir))
 
 	#distance at next time step
 	#dv ref: ahead: me - him; behind: him - me
@@ -49,7 +49,7 @@ function is_lanechange_dangerous(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{In
 
 end
 
-function get_neighborhood(dmodel::IDMMOBILModel,s::MLState,idx::Int)
+function get_neighborhood(pp::PhysicalParam,s::MLState,idx::Int)
 	nbhd = zeros(Int,6)
 	dists = Inf*ones(6)
 	"""
@@ -66,7 +66,7 @@ function get_neighborhood(dmodel::IDMMOBILModel,s::MLState,idx::Int)
 	if x.y <= 1.
 		dists[[1;4]] = [-1.;-1.]
 	#leftmost lane: no one to the left
-	elseif x.y >= 2*dmodel.phys_param.nb_lanes - 1.
+elseif x.y >= 2*pp.nb_lanes - 1.
 		dists[[3;6]] = [-1.;-1.]
 	end
 
@@ -104,7 +104,7 @@ function get_neighborhood(dmodel::IDMMOBILModel,s::MLState,idx::Int)
 	return nbhd
 end
 
-function get_dv_ds(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,idy::Int)
+function get_dv_ds(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,idy::Int)
 	"""
 	idx is the car from whom the perspective is
 	idy is the other car
@@ -113,12 +113,12 @@ function get_dv_ds(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,
 	nbr = nbhd[idy]
 	#dv: if ahead: me - him; behind: him - me
 	dv = nbr != 0 ? -1*sign((idy-3.5))*(car.vel - s.env_cars[nbr].vel) : 0.
-	ds = nbr != 0 ? abs(s.env_cars[nbr].x - car.x) - dmodel.phys_param.l_car : 1000.
+	ds = nbr != 0 ? abs(s.env_cars[nbr].x - car.x) - pp.l_car : 1000.
 
 	return dv, ds
 end
 
-function get_rear_accel(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,dir::Int)
+function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,dir::Int)
 
 	#there is no car behind in that spot
 	if nbhd[5+dir] == 0
@@ -138,16 +138,16 @@ function get_rear_accel(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx:
 	v = s.env_cars[idx].vel
 
 	#behind - me
-	dv_behind, s_behind = get_dv_ds(dmodel,s,nbhd,idx,5+dir)
+	dv_behind, s_behind = get_dv_ds(pp,s,nbhd,idx,5+dir)
 	v_behind = v - dv_behind
 
 	#me - front
 	#what would the relative velocity, distance be if idx wasn't there
-	dv_behind_, s_behind_ = get_dv_ds(dmodel,s,nbhd,idx,2+dir)
+	dv_behind_, s_behind_ = get_dv_ds(pp,s,nbhd,idx,2+dir)
 	dv_behind_ += dv_behind
-	s_behind_ += s_behind + dmodel.phys_param.l_car
+	s_behind_ += s_behind + pp.l_car
 
-	dt = dmodel.phys_param.dt
+	dt = pp.dt
 	#TODO generalize to get_dv?
 	behind_idm = get(s.env_cars[nbhd[5+dir]].behavior).p_idm
 	a_follower = get_idm_dv(behind_idm,dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
@@ -156,15 +156,14 @@ function get_rear_accel(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx:
 	return a_follower, a_follower_
 end
 
-function get_mobil_lane_change(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,1},idx::Int,rng::AbstractRNG=MersenneTwister(123))
+function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,rng::AbstractRNG=MersenneTwister(123))
 	#TODO: catch if the parameters don't exist
 
 	#need 6 distances: distance to person behind me, ahead of me
 	#				potential distance to person behind me, ahead of me
 	#				in other lane(s)
 	#need sets of idm parameters
-	p = dmodel.phys_param
-	dt = p.dt
+	dt = pp.dt
 	state = s.env_cars[idx]
 	p_idm_self = get(state.behavior).p_idm
 	p_mobil = get(state.behavior).p_mobil
@@ -182,13 +181,13 @@ function get_mobil_lane_change(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,
 	#get predicted and potential accelerations
 
 	#TODO generalize to get_dv()?
-	a_self = get_idm_dv(p_idm_self,dt,v,get_dv_ds(dmodel,s,nbhd,idx,2)...)/dt
-	a_self_left = get_idm_dv(p_idm_self,dt,v,get_dv_ds(dmodel,s,nbhd,idx,3)...)/dt
-	a_self_right = get_idm_dv(p_idm_self,dt,v,get_dv_ds(dmodel,s,nbhd,idx,1)...)/dt
+	a_self = get_idm_dv(p_idm_self,dt,v,get_dv_ds(pp,s,nbhd,idx,2)...)/dt
+	a_self_left = get_idm_dv(p_idm_self,dt,v,get_dv_ds(pp,s,nbhd,idx,3)...)/dt
+	a_self_right = get_idm_dv(p_idm_self,dt,v,get_dv_ds(pp,s,nbhd,idx,1)...)/dt
 
-	a_follower, a_follower_ = get_rear_accel(dmodel,s,nbhd,idx,0)
-	a_follower_left_, a_follower_left = get_rear_accel(dmodel,s,nbhd,idx,1)
-	a_follower_right_, a_follower_right = get_rear_accel(dmodel,s,nbhd,idx,-1)
+	a_follower, a_follower_ = get_rear_accel(pp,s,nbhd,idx,0)
+	a_follower_left_, a_follower_left = get_rear_accel(pp,s,nbhd,idx,1)
+	a_follower_right_, a_follower_right = get_rear_accel(pp,s,nbhd,idx,-1)
 
 	#calculate incentives
 	left_crit = a_self_left-a_self+p_mobil.p*(a_follower_left_-a_follower_left+a_follower_-a_follower)
@@ -198,11 +197,11 @@ function get_mobil_lane_change(dmodel::IDMMOBILModel,s::MLState,nbhd::Array{Int,
 	if (a_follower_right_ < -p_mobil.b_safe) && (a_follower_left_ < -p_mobil.b_safe)
 		return 0 #neither safe
 	end
-	if is_lanechange_dangerous(dmodel,s,nbhd,idx,1) || (a_follower_left_ < -p_mobil.b_safe)
+	if is_lanechange_dangerous(pp,s,nbhd,idx,1) || (a_follower_left_ < -p_mobil.b_safe)
 		left_crit -= 10000000.
 	end
 
-	if is_lanechange_dangerous(dmodel,s,nbhd,idx,-1) || (a_follower_right_ < -p_mobil.b_safe)
+	if is_lanechange_dangerous(pp,s,nbhd,idx,-1) || (a_follower_right_ < -p_mobil.b_safe)
 		right_crit -= 10000000.
 	end
 
