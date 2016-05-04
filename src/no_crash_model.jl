@@ -55,7 +55,7 @@ typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewar
 immutable NoCrashActionSpace
     NORMAL_ACTIONS::Vector{MLAction} # all the actions except emergency brake
     acceptable::IntSet
-    emergency_brake::MLAction
+    brake::MLAction
 end
 # TODO for performance, make this a macro?
 const NB_NORMAL_ACTIONS = 9
@@ -78,16 +78,16 @@ function actions(mdp::NoCrashMDP, s::MLState, as::NoCrashActionSpace) # no imple
             push!(acceptable, i)
         end
     end
-    emergency_brake = MLAction(e_brake_acc(mdp, s), 0)
-    return NoCrashActionSpace(as.NORMAL_ACTIONS, acceptable, emergency_brake)
+    brake = MLAction(e_brake_acc(mdp, s), 0)
+    return NoCrashActionSpace(as.NORMAL_ACTIONS, acceptable, brake)
 end
 
 iterator(as::NoCrashActionSpace) = as
 Base.start(as::NoCrashActionSpace) = 1
 function Base.next(as::NoCrashActionSpace, state::Integer)
-    while !(state in as)
+    while !(state in as.acceptable)
         if state > NB_NORMAL_ACTIONS
-            return (s.emergency_brake, state+1)
+            return (s.brake, state+1)
         end
         state += 1
     end
@@ -106,9 +106,9 @@ function rand(rng::AbstractRNG, as::NoCrashActionSpace, a::MLAction=MLAction())
 end
 
 """
-Calculates the emergency braking acceleration
+Calculates the braking acceleration
 """
-function e_brake_acc(mdp::NoCrashMDP, s::MLState)
+function brake_acc(mdp::NoCrashMDP, s::MLState)
     if length(s.env_cars) < 2
         return 0.0
     end
@@ -202,7 +202,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     ## Consistency checking ##
     #========================#
 
-    sorted_changers = sort!(collect(changers), by=i->s.env_cars[i].x) # this might be slow because anonymous functions are slow
+    sorted_changers = sort!(collect(changers), by=i->s.env_cars[i].x, rev=true) # this might be slow because anonymous functions are slow
 
     # iterate through pairs
     iter_state = start(sorted_changers)
@@ -240,9 +240,9 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     exits = IntSet()
     for i in 1:nb_cars
         car = s.env_cars[i]
-        xp = car.x + dt*(car.vel - s.env_cars[1].vel)
+        xp = car.x + dt*(car.vel - s.env_cars[1].vel + dvs[i]/2.0)
         yp = car.y + dys[i]
-        velp = max(min(car.vel + dvs[i],pp.v_max),pp.v_min)
+        velp = max(min(car.vel + dvs[i],pp.v_max), pp.v_min)
         # note lane change is updated above
 
         # check if a lane was crossed and snap back to it
@@ -260,7 +260,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         end
     end
     deleteat!(sp.env_cars, exits)
-    nbcars -= length(exits)
+    nb_cars -= length(exits)
 
     ## Generate new cars ##
     #=====================#
