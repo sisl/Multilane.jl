@@ -8,7 +8,7 @@ import POMDPs: create_action, create_state, rand, reward
 using GenerativeModels
 import GenerativeModels: generate_s, generate_sr
 
-import Distributions: Dirichlet, Exponential, rand
+import Distributions: Dirichlet, Exponential, Gamma, rand
 
 import Iterators.product
 

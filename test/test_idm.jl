@@ -54,9 +54,9 @@ function test_get_dv_ds()
 	cs = CarState[CarState(6.,3,31.,0,bs[1])]
 	dmodel = IDMMOBILModel(length(cs), pp)
 	s = MLState(false,cs)
-	nbhd = get_neighborhood(dmodel,s,1)
+	nbhd = get_neighborhood(pp,s,1)
 	for nbr = 1:6
-		dv, ds = get_dv_ds(dmodel,s,nbhd,1,nbr)
+		dv, ds = get_dv_ds(pp,s,nbhd,1,nbr)
 		assert(dv,0.)
 		assert(ds,1000.)
 	end
@@ -73,23 +73,23 @@ function test_get_dv_ds()
 
 	dmodel = IDMMOBILModel(length(cs), pp)
 	s = MLState(false,cs)
-	nbhd = get_neighborhood(dmodel,s,7)
-	dv, ds = get_dv_ds(dmodel,s,nbhd,7,1)
+	nbhd = get_neighborhood(pp,s,7)
+	dv, ds = get_dv_ds(pp,s,nbhd,7,1)
 	assert(dv,4.)
 	assert(ds,_ds)
-	dv, ds = get_dv_ds(dmodel,s,nbhd,7,2)
+	dv, ds = get_dv_ds(pp,s,nbhd,7,2)
 	assert(dv,1.)
 	assert(ds,_ds)
-	dv, ds = get_dv_ds(dmodel,s,nbhd,7,3)
+	dv, ds = get_dv_ds(pp,s,nbhd,7,3)
 	assert(dv,-4.)
 	assert(ds,_ds)
-	dv, ds = get_dv_ds(dmodel,s,nbhd,7,4)
+	dv, ds = get_dv_ds(pp,s,nbhd,7,4)
 	assert(dv,-4.)
 	assert(ds,_ds)
-	dv, ds = get_dv_ds(dmodel,s,nbhd,7,5)
+	dv, ds = get_dv_ds(pp,s,nbhd,7,5)
 	assert(dv,-1.)
 	assert(ds,_ds)
-	dv, ds = get_dv_ds(dmodel,s,nbhd,7,6)
+	dv, ds = get_dv_ds(pp,s,nbhd,7,6)
 	assert(dv,4.)
 	assert(ds,_ds)
 
@@ -108,65 +108,65 @@ function test_idm_dv()
 	cs = CarState[CarState(1.,3,27.,0,IDMMOBILBehavior("aggressive",35.,4.,1)),CarState(36.,3,27.,0,IDMMOBILBehavior("cautious",27.,4.,1))]
 	s = MLState(false,cs)
 	dmodel = IDMMOBILModel(length(cs),pp)
-	nbhd = get_neighborhood(dmodel,s,1)
+	nbhd = get_neighborhood(pp,s,1)
 	v = cs[1].vel
-	dv, ds = get_dv_ds(dmodel,s,nbhd,1,2)
+	dv, ds = get_dv_ds(pp,s,nbhd,1,2)
 	a = get_idm_dv(get(cs[1].behavior).p_idm,pp.dt,v,dv,ds)/pp.dt
 	println("Fast going slow behind slow: v=$v,dv=$dv,s=$ds,a=$a")
 	cs = CarState[CarState(1.,3,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1)),CarState(36.,3,27.,0,IDMMOBILBehavior("cautious",27.,4.,1))]
 	s = MLState(false,cs)
 	dmodel = IDMMOBILModel(length(cs),pp)
-	nbhd = get_neighborhood(dmodel,s,1)
+	nbhd = get_neighborhood(pp,s,1)
 	v = cs[1].vel
-	dv, ds = get_dv_ds(dmodel,s,nbhd,1,2)
+	dv, ds = get_dv_ds(pp,s,nbhd,1,2)
 	a = get_idm_dv(get(cs[1].behavior).p_idm,pp.dt,v,dv,ds)/pp.dt
 	println("Fast going fast behind slow: v=$v,dv=$dv,s=$ds,a=$a")
 	cs = CarState[CarState(1.,3,35.,0,IDMMOBILBehavior("cautious",27.,4.,1)),CarState(36.,3,27.,0,IDMMOBILBehavior("cautious",27.,4.,1))]
 	s = MLState(false,cs)
 	dmodel = IDMMOBILModel(length(cs),pp)
-	nbhd = get_neighborhood(dmodel,s,1)
+	nbhd = get_neighborhood(pp,s,1)
 	v = cs[1].vel
-	dv, ds = get_dv_ds(dmodel,s,nbhd,1,2)
+	dv, ds = get_dv_ds(pp,s,nbhd,1,2)
 	a = get_idm_dv(get(cs[1].behavior).p_idm,pp.dt,v,dv,ds)/pp.dt
 	println("slow going fast behind slow: v=$v,dv=$dv,s=$ds,a=$a")
 	cs = CarState[CarState(1.,3,27.,0,IDMMOBILBehavior("cautious",27.,4.,1)),CarState(36.,3,27.,0,IDMMOBILBehavior("cautious",27.,4.,1))]
 	s = MLState(false,cs)
 	dmodel = IDMMOBILModel(length(cs),pp)
-	nbhd = get_neighborhood(dmodel,s,1)
+	nbhd = get_neighborhood(pp,s,1)
 	v = cs[1].vel
-	dv, ds = get_dv_ds(dmodel,s,nbhd,1,2)
+	dv, ds = get_dv_ds(pp,s,nbhd,1,2)
 	a = get_idm_dv(get(cs[1].behavior).p_idm,pp.dt,v,dv,ds)/pp.dt
 	println("slow going slow behind slow: v=$v,dv=$dv,s=$ds,a=$a")
 	cs = CarState[CarState(1.,3,35.,0,IDMMOBILBehavior("cautious",27.,4.,1))]
 	s = MLState(false,cs)
 	dmodel = IDMMOBILModel(length(cs),pp)
-	nbhd = get_neighborhood(dmodel,s,1)
+	nbhd = get_neighborhood(pp,s,1)
 	v = cs[1].vel
-	dv, ds = get_dv_ds(dmodel,s,nbhd,1,2)
+	dv, ds = get_dv_ds(pp,s,nbhd,1,2)
 	a = get_idm_dv(get(cs[1].behavior).p_idm,pp.dt,v,dv,ds)/pp.dt
 	println("slow going fast: v=$v,dv=$dv,s=$ds,a=$a")
 	cs = CarState[CarState(1.,3,27.,0,IDMMOBILBehavior("cautious",35.,4.,1))]
 	s = MLState(false,cs)
 	dmodel = IDMMOBILModel(length(cs),pp)
-	nbhd = get_neighborhood(dmodel,s,1)
+	nbhd = get_neighborhood(pp,s,1)
 	v = cs[1].vel
-	dv, ds = get_dv_ds(dmodel,s,nbhd,1,2)
+	dv, ds = get_dv_ds(pp,s,nbhd,1,2)
 	a = get_idm_dv(get(cs[1].behavior).p_idm,pp.dt,v,dv,ds)/pp.dt
 	println("fast going slow: v=$v,dv=$dv,s=$ds,a=$a")
 	cs = CarState[CarState(1.,3,31.,0,IDMMOBILBehavior("cautious",27.,4.,1))]
 	s = MLState(false,cs)
 	dmodel = IDMMOBILModel(length(cs),pp)
-	nbhd = get_neighborhood(dmodel,s,1)
+	nbhd = get_neighborhood(pp,s,1)
 	v = cs[1].vel
-	dv, ds = get_dv_ds(dmodel,s,nbhd,1,2)
+	dv, ds = get_dv_ds(pp,s,nbhd,1,2)
 	a = get_idm_dv(get(cs[1].behavior).p_idm,pp.dt,v,dv,ds)/pp.dt
 	println("slow going med: v=$v,dv=$dv,s=$ds,a=$a")
 	cs = CarState[CarState(1.,3,31.,0,IDMMOBILBehavior("cautious",35.,4.,1))]
 	s = MLState(false,cs)
 	dmodel = IDMMOBILModel(length(cs),pp)
-	nbhd = get_neighborhood(dmodel,s,1)
+	nbhd = get_neighborhood(pp,s,1)
 	v = cs[1].vel
-	dv, ds = get_dv_ds(dmodel,s,nbhd,1,2)
+	dv, ds = get_dv_ds(pp,s,nbhd,1,2)
 	a = get_idm_dv(get(cs[1].behavior).p_idm,pp.dt,v,dv,ds)/pp.dt
 	println("fast going med: v=$v,dv=$dv,s=$ds,a=$a")
 end

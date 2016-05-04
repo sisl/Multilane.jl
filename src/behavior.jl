@@ -23,10 +23,7 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLSt
 	car = s.env_cars[idx]
 	vel = car.vel
 
-	nbr = neighborhood[2]
-
-	dv = nbr != 0 ? vel - s.env_cars[nbr].vel : 0.
-	ds = nbr != 0 ? s.env_cars[nbr].x - car.x + pp.l_car : 1000.
+	dv, ds = get_dv_ds(pp,s,neighborhood,idx,2)
 
 	dvel = get_idm_dv(get(car.behavior).p_idm,dt,vel,dv,ds) #call idm model
 	dvel = min(max(dvel/dt,-get(car.behavior).p_idm.b),get(car.behavior).p_idm.a)
@@ -52,14 +49,14 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s
         @assert lane_change != 0
 		lanechange = r < get(car.behavior).rationality ? lane_change : -1*lane_change
 
-		if is_lanechange_dangerous(dmodel, s, neighborhood, idx,lanechange)
+		if is_lanechange_dangerous(pp, s, neighborhood, idx,lanechange)
 				lanechange *= -1
 		end
 
 		return lanechange
 	end
 	#sample normally
-	lanechange_ = get_mobil_lane_change(dmodel, s, neighborhood,idx)
+	lanechange_ = get_mobil_lane_change(pp, s, neighborhood,idx)
 	#if frnot neighbor is lanechanging, don't lane change
 	nbr = neighborhood[2]
 	ahead_dy = nbr != 0 ? s.env_cars[nbr].lane_change : 0
@@ -68,10 +65,10 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s
 	end
 	lane_change_other = setdiff([-1;0;1],[lanechange_])
 	#safety criterion is hard
-	if is_lanechange_dangerous(dmodel,s,neighborhood,idx,1)
+	if is_lanechange_dangerous(pp,s,neighborhood,idx,1)
 			lane_change_other = setdiff(lane_change_other,[1])
 	end
-	if is_lanechange_dangerous(dmodel, s, neighborhood,idx,-1)
+	if is_lanechange_dangerous(pp, s, neighborhood,idx,-1)
 			lane_change_other = setdiff(lane_change_other,[-1])
 	end
 

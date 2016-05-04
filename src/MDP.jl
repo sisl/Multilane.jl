@@ -108,7 +108,7 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             lane_change = car.lane_change
             behavior = get(car.behavior)
 
-            neighborhood = get_neighborhood(mdp.dmodel,s,i)
+            neighborhood = get_neighborhood(pp,s,i)
 
             lane_ = round(max(1,min(y+lane_change,nb_col)))
             pos_ = x + dt*(vel-agent_vel)

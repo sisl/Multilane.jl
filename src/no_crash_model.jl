@@ -23,7 +23,7 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
 
     vel_sigma::Float64 # std of new car speed about v0
     lane_weights::Array{Float64,1} # dirichlet alpha values for each lane: first is for rightmost lane
-    dist_lambda::Float64 # exponential distr param for first car's distance from top of lane
+    dist_var::Float64 # variance of distance--can back out rate, shape param from this
 
     #XXX temporary
     function NoCrashIDMMOBILModel(nb_cars::Int,pp::PhysicalParam)
@@ -43,7 +43,7 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
       self.appear_clearance = 4.
       self.vel_sigma = 2.
       self.lane_weights = ones(pp.nb_lanes)
-      self.dist_lambda = 0.1 #idx
+      self.dist_var = 2 #idk
 
       return self
     end
@@ -148,7 +148,7 @@ function occupation_overlap(y1::Float64, y2::Float64)
 end
 
 #XXX temp
-create_state(p::NoCrashMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState((-1.,1,),1.,0,p.dmodel.behaviors[1]) for _ = 1:p.dmodel.nb_cars])
+create_state(p::NoCrashMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState(-1.,1,1.,0,p.dmodel.behaviors[1]) for _ = 1:p.dmodel.nb_cars])
 
 function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
@@ -307,22 +307,22 @@ end
 function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_state(mdp))
 
   pp = mdp.dmodel.phys_param
-
   #Unif # cars in initial scene
   _nb_cars = rand(rng,1:mdp.dmodel.nb_cars)
-
   #place ego car
-  s.env_cars[1].x = pp.lane_length/2. #this is fixed
-  s.env_cars[1].y = rand(rng,1:(pp.nb_lanes*2-1))
-  #ego velocity
-  s.env_cars[1].vel = max(min(randn(rng)*mdp.dmodel.vel_sigma + pp.v_med, pp.v_max), pp.v_min)
 
+  pos_x = pp.lane_length/2. #this is fixed
+  pos_y = rand(rng,1:(pp.nb_lanes*2-1))
+  #ego velocity
+  vel = max(min(randn(rng)*mdp.dmodel.vel_sigma + pp.v_med, pp.v_max), pp.v_min)
+
+  s.env_cars[1] = CarState(pos_x,pos_y,vel,0,Nullable{BehaviorModel}())
   # XXX dirichlet and exponential are from distributions--does not accept rng!!!
   dir_distr = Dirichlet(mdp.dmodel.lane_weights)
   cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
 
   # TODO remove nb_cars - sum(cars_per_lane)
-  dist_distr1 = Exponential(mdp.dmodel.dist_lambda)
+  dist_distr1 = Exponential(1./mdp.dmodel.dist_var)
 
   idx = 2
   for (_lane,nb_cars) in enumerate(cars_per_lane)
@@ -343,6 +343,8 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
       #sample Behavior TODO sample(rng,v,wv) in utils?
       behavior = sample(rng, mdp.dmodel.behaviors,
                         mdp.dmodel.behavior_probabilities)
+
+      #TODO check where the ego car is!!!
       #sample velocity
       #TODO need generic interface with behavior models for desired speed
       vel = randn(rng)*mdp.dmodel.vel_sigma + behavior.p_idm.v0
@@ -356,22 +358,23 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
         end
       else
         #mean of v0*T - min_dist
-        lam = 1./(behavior.p_idm.T*behavior.p_idm.v0 - mdp.dmodel.appear_clearance)
-        assert(lam > 0.)
-        dist_distr = Exponential(lam)
-        dist = rand(dist_distr) + mdp.dmodel.appear_clearance
+        mu = behavior.p_idm.T*behavior.p_idm.v0 - mdp.dmodel.appear_clearance
+        var = mdp.dmodel.dist_var
+        assert(mu > 0.)
+        dist_distr = Gamma((mu^2)/(var^2),(var^2)/mu)
+        dist = rand(dist_distr) + mdp.dmodel.appear_clearance + mdp.dmodel.phys_param.l_car
         x = s.env_cars[idx-1].x-dist
+        #in ego lane
+        if lane == (pos_y+1)/2.
+          #do something idk
+        end
         if x < 0.
           break_flag = true
           continue
         end
       end
-      s.env_cars[idx].x = x
-      s.env_cars[idx].y = lane
-
-      s.env_cars[idx].vel = vel
-      #TODO lanechanging? initialized as zero
-      s.env_cars[idx].behavior = Nullable{IDMMOBILBehavior}(behavior)
+      car = CarState(x,lane,vel,0,behavior)
+      s.env_cars[idx] = car
       idx += 1
     end
 

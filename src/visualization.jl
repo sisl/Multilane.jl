@@ -110,13 +110,19 @@ function draw_sedan(pp::PhysicalParam, s::CarState, v_nom::Float64, frame::Float
 	x_ctr = s.x+frame
 	y_ctr = pp.y_interval*s.y - INTERVAL*floor(Integer,x_ctr/lane_length)*(frame == 0. ? 0.: 1.)
 	x_ctr = mod(x_ctr,lane_length)
-	color = get(BEHAVIOR_COLORS,s.behavior.p_mobil.p,"#B404AE") #PLACEHOLDER
+  #Fix nullable TODO
+  if isnull(s.behavior)
+    p = -1.
+  else
+    p = get(s.behavior).p_mobil.p
+   end
+   color = get(BEHAVIOR_COLORS,p,"#B404AE") #PLACEHOLDER
 	draw_direction(pp,x_ctr,y_ctr,v_nom,s)
 	draw_sedan(pp,x_ctr,y_ctr,color)
 	annotate("$(round(s.vel,2))",xy=(x_ctr,y_ctr))
 end
 
-function visualize(mdp::MLMDP{MLState, MLAction, IDMMOBILModel},
+function visualize(mdp::MLMDP,
                    s::MLState, a::MLAction; debug::Bool=false, frame::Float64=0., nb_rows::Int=1)
 	#Placeholder!
 	clf()
@@ -172,7 +178,7 @@ function visualize(mdp::MLMDP{MLState, MLAction, IDMMOBILModel},
 	#draw self car
 	#TODO
 	x_ctr = W/2. + frame
-	y_ctr = pp.y_interval*s.agent_pos - ROW_INTERVAL*floor(Integer,x_ctr/lane_length)
+	y_ctr = pp.y_interval*s.env_cars[1].y - ROW_INTERVAL*floor(Integer,x_ctr/lane_length)
 	x_ctr = mod(x_ctr,lane_length)
 	color = "#31B404" #PLACEHOLDER, an awful lime green
 	draw_sedan(pp,x_ctr,y_ctr,color)
@@ -180,16 +186,16 @@ function visualize(mdp::MLMDP{MLState, MLAction, IDMMOBILModel},
 	hw = 0.5*pp.w_car
 	hl = 1.*hw
 	w = 0.75*hw
-	dx = a.vel*2.5*hl
+	dx = a.acc*2.5*hl
 	dy = a.lane_change*pp.y_interval
 	dy = dy != 0. ? dy - sign(dy)*hl: dy
 	arrow(x_ctr,y_ctr,dx,dy,width=w,head_width=hw,head_length=hl,fc="#DF7401", ec="#0404B4",alpha=0.75)
 	####END TODO
-	annotate("$(round(s.agent_vel,2))",xy=(x_ctr,y_ctr))
+  v_nom = s.env_cars[1].vel
+	annotate("$(round(v_nom,2))",xy=(x_ctr,y_ctr))
 
-	v_nom = s.agent_vel
 	#draw environment cars
-	for car in s.env_cars
+	for car in s.env_cars[2:end]
 		draw_sedan(pp,car,v_nom,frame,ROW_INTERVAL)
 	end
 	#println("e")
