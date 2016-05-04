@@ -61,9 +61,9 @@ end
 const NB_NORMAL_ACTIONS = 9
 
 function NoCrashActionSpace(mdp::NoCrashMDP)
-    accels = (-mdp.adjustment_acceleration, 0.0, mdp.adjustment_acceleration)
+    accels = (-mdp.dmodel.adjustment_acceleration, 0.0, mdp.dmodel.adjustment_acceleration)
     lane_changes = (-1, 0, 1)
-    NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in Iterators.product(accels, lane_changes)]
+    NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in product(accels, lane_changes)]
     return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: emergency brake will be calculated later based on the state
 end
 
@@ -120,8 +120,8 @@ function e_brake_acc(mdp::NoCrashMDP, s::MLState)
     car_in_front = 0
     smallest_gap = Inf
     # find car immediately in front
-    if length(s.env_cars > 1)
-        for i in 2:nb_cars
+    if length(s.env_cars) > 1 # XXX ???
+        for i in 2:length(s.env_cars)#nb_cars
             if occupation_overlap(s.env_cars[i].y, ego.y) # occupying same lane
                 gap = s.env_cars[i].x - ego.x
                 if gap >= 0.0 && gap < smallest_gap
@@ -202,6 +202,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     ## Consistency checking ##
     #========================#
 
+    # in increasing x? (back to front?) (add ..., reverse=true)
     sorted_changers = sort!(collect(changers), by=i->s.env_cars[i].x) # this might be slow because anonymous functions are slow
 
     # iterate through pairs
