@@ -1,11 +1,11 @@
 
-push!(LOAD_PATH,joinpath("..","src"))
+#push!(LOAD_PATH,joinpath("..","src"))
 
-using Multilane
+#using Multilane
 #using GenerativeModels
 #using MCTS
-using POMDPs
-using POMDPToolbox
+#using POMDPs
+#using POMDPToolbox
 
 #Set up problem configuration
 nb_lanes = 4

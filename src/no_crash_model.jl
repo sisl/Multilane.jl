@@ -135,7 +135,7 @@ function brake_acc(mdp::NoCrashMDP, s::MLState)
             return 0.0
         else
             other = s.env_cars[car_in_front]
-            return (gap - l_car + other.vel*dt + v_min*dt - 2.0*ego.vel*dt) / dt^2
+            return (smallest_gap - l_car + other.vel*dt + v_min*dt - 2.0*ego.vel*dt) / dt^2
         end
     end
 end
@@ -157,9 +157,6 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     nb_cars = length(s.env_cars)
     resize!(sp.env_cars, nb_cars)
     r = 0.0 # reward
-
-    #XXX issue
-    #sp.env_cars[1].lane_change = a.lane_change
 
     ## Calculate deltas ##
     #====================#
@@ -255,6 +252,9 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         if ceil(yp) == floor(car.y)
             yp = floor(car.y)
         end
+
+        # enforce max/min y position constraints
+        yp = min(max(yp,1.),2*pp.nb_lanes - 1)
 
         if xp < 0.0 || xp >= pp.lane_length
             push!(exits, i)
