@@ -39,7 +39,7 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLSt
 	return dvel
 end
 
-function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLState,neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 
 	pp = dmodel.phys_param
 	dt = pp.dt
@@ -49,10 +49,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s
 
 	if mod(lane_,2) == 0. #in between lanes
 		r = rand(rng)
-		#if on the off chance its not changing lanes, make it, the jerk
-		if lane_change == 0.
-				lane_change = rand(rng,-1:2:1)
-		end
+        @assert lane_change != 0
 		lanechange = r < get(car.behavior).rationality ? lane_change : -1*lane_change
 
 		if is_lanechange_dangerous(dmodel, s, neighborhood, idx,lanechange)

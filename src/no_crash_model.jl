@@ -141,10 +141,10 @@ function e_brake_acc(mdp::NoCrashMDP, s::MLState)
 end
 
 """
-Returns true if cars at y1 and y1 occupy the same lane
+Returns true if cars at y1 and y2 occupy the same lane
 """
 function occupation_overlap(y1::Float64, y2::Float64)
-    return abs(y1-y2) < 1.0 || ceil(Int, y1) == floor(Int, y2) || floor(Int, y1) == ceil(Int, y2)
+    return abs(y1-y2) < 1.0 || ceil(y1) == floor(y2) || floor(y1) == ceil(y2)
 end
 
 #XXX temp
@@ -159,14 +159,17 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     r = 0.0 # reward
 
     sp.env_cars[1].lane_change = a.lane_change
+
     ## Calculate deltas ##
     #====================#
 
     dvs = Array(Float64, nb_cars)
     dys = Array(Float64, nb_cars)
+    lcs = Array(Float64, nb_cars)
 
     # agent
     dvs[1] = a.acc*dt
+    lcs[1] = a.lane_change
     dys[1] = a.lane_change
 
     if a.acc < -mdp.rmodel.dangerous_brake_threshold
@@ -189,8 +192,8 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             r -= mdp.rmodel.cost_emergency_brake
         end
 
-        sp.env_cars[i].lane_change = generate_lane_change(behavior, mdp.dmodel, neighborhood, s, i, rng)
-        dys[i] = sp.env_cars[i].lane_change * dmodel.lane_change_vel * dt
+        lcs[i] = generate_lane_change(behavior, mdp.dmodel, neighborhood, s, i, rng)
+        dys[i] = lcs[i] * dmodel.lane_change_vel * dt
         if sp.env_cars[i].lane_change
             push!(changers, i)
         end
@@ -224,7 +227,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
                         # make j stay in his lane
                         dys[j] = 0.0
-                        car_states_[j].lane_change = 0.0
+                        lcs[j] = 0.0
                     end
                 end
             end
@@ -236,13 +239,24 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
     exits = IntSet()
     for i in 1:nb_cars
-        sp.env_cars[i].x = s.env_cars[i].x + dt*(s.env_cars[i].vel - s.env_cars[1].vel)
-        sp.env_cars[i].y = s.env_cars[i].y + dys[i]
-        sp.env_cars[i].vel = max(min(s.env_cars[i].vel + dvs[i],pp.v_max),pp.v_min)
-
+        car = s.env_cars[i]
+        xp = car.x + dt*(car.vel - s.env_cars[1].vel)
+        yp = car.y + dys[i]
+        velp = max(min(car.vel + dvs[i],pp.v_max),pp.v_min)
         # note lane change is updated above
-        if sp.env_cars[i].x < 0.0 || sp.env_cars[i].x >= lane_length
+
+        # check if a lane was crossed and snap back to it
+        if floor(yp) == ceil(car.y)
+            yp = ceil(car.y)
+        end
+        if ceil(yp) == floor(car.y)
+            yp = floor(car.y)
+        end
+
+        if xp < 0.0 || xp >= lane_length
             push!(exits, i)
+        else
+            sp.env_cars[i] = CarState(xp, yp, velp, lcs[i], car.behavior)
         end
     end
     deleteat!(sp.env_cars, exits)

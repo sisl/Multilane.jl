@@ -54,7 +54,7 @@ type MLState
 	env_cars::Array{CarState,1} #NOTE ego car is first car
 end #MLState
 
-function MLState(pos::Real,vel::Real,cars::Array{CarState,1},x::Real=50.)
+function MLState(pos::Real, vel::Real, cars::Array{CarState,1}, x::Real=50.)
   #x = mdp.phys_param.lane_length/2.
   insert!(cars,1,CarState(x,pos,vel,0,Nullable{BehaviorModel}()))
   return MLState(false,cars)
