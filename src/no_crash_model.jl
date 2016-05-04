@@ -78,7 +78,7 @@ function actions(mdp::NoCrashMDP, s::MLState, as::NoCrashActionSpace) # no imple
             push!(acceptable, i)
         end
     end
-    brake = MLAction(e_brake_acc(mdp, s), 0)
+    brake = MLAction(brake_acc(mdp, s), 0)
     return NoCrashActionSpace(as.NORMAL_ACTIONS, acceptable, brake)
 end
 
@@ -87,7 +87,7 @@ Base.start(as::NoCrashActionSpace) = 1
 function Base.next(as::NoCrashActionSpace, state::Integer)
     while !(state in as.acceptable)
         if state > NB_NORMAL_ACTIONS
-            return (s.brake, state+1)
+            return (as.brake, state+1)
         end
         state += 1
     end
@@ -120,8 +120,8 @@ function brake_acc(mdp::NoCrashMDP, s::MLState)
     car_in_front = 0
     smallest_gap = Inf
     # find car immediately in front
-    if length(s.env_cars > 1)
-        for i in 2:nb_cars
+    if length(s.env_cars) > 1 # TODO check
+        for i in 2:length(s.env_cars)#nb_cars
             if occupation_overlap(s.env_cars[i].y, ego.y) # occupying same lane
                 gap = s.env_cars[i].x - ego.x
                 if gap >= 0.0 && gap < smallest_gap
@@ -158,7 +158,8 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     resize!(sp.env_cars, nb_cars)
     r = 0.0 # reward
 
-    sp.env_cars[1].lane_change = a.lane_change
+    #XXX issue
+    #sp.env_cars[1].lane_change = a.lane_change
 
     ## Calculate deltas ##
     #====================#
@@ -181,20 +182,20 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
     changers = IntSet()
     for i in 2:nb_cars
-        neighborhood = get_neighborhood(mdp.dmodel, s, i)
+        neighborhood = get_neighborhood(pp, s, i)
 
         # To distinguish between different models--is there a better way?
         behavior = get(s.env_cars[i].behavior)
 
-        acc = generate_accel(behavior, mdp.dmodel, neighborhood, s, i, rng)
+        acc = generate_accel(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dvs[i] = dt*acc
         if acc < -mdp.rmodel.dangerous_brake_threshold
             r -= mdp.rmodel.cost_emergency_brake
         end
 
-        lcs[i] = generate_lane_change(behavior, mdp.dmodel, neighborhood, s, i, rng)
-        dys[i] = lcs[i] * dmodel.lane_change_vel * dt
-        if sp.env_cars[i].lane_change
+        lcs[i] = generate_lane_change(behavior, mdp.dmodel, s, neighborhood, i, rng)
+        dys[i] = lcs[i] * mdp.dmodel.lane_change_vel * dt
+        if sp.env_cars[i].lane_change != 0
             push!(changers, i)
         end
     end

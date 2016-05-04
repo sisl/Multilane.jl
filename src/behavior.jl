@@ -17,7 +17,7 @@ generate_accel(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLStat
 generate_lane_change(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState,neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
 
 
-function generate_accel(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function generate_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 	pp = dmodel.phys_param
 	dt = pp.dt
 	car = s.env_cars[idx]
@@ -25,10 +25,10 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLSt
 
 	dv, ds = get_dv_ds(pp,s,neighborhood,idx,2)
 
-	dvel = get_idm_dv(get(car.behavior).p_idm,dt,vel,dv,ds) #call idm model
-	dvel = min(max(dvel/dt,-get(car.behavior).p_idm.b),get(car.behavior).p_idm.a)
+	dvel = get_idm_dv(bmodel.p_idm,dt,vel,dv,ds) #call idm model
+	dvel = min(max(dvel/dt,-bmodel.p_idm.b),bmodel.p_idm.a)
 	#accelerate normally or dont accelerate
-	if rand(rng) < 1 - get(car.behavior).rationality
+	if rand(rng) < 1 - bmodel.rationality
 			dvel = 0
 	end
 	#make sure it wont result in an inconsistent thing?
@@ -36,7 +36,7 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLSt
 	return dvel
 end
 
-function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 
 	pp = dmodel.phys_param
 	dt = pp.dt
@@ -47,7 +47,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s
 	if mod(lane_,2) == 0. #in between lanes
 		r = rand(rng)
         @assert lane_change != 0
-		lanechange = r < get(car.behavior).rationality ? lane_change : -1*lane_change
+		lanechange = r < bmodel.rationality ? lane_change : -1*lane_change
 
 		if is_lanechange_dangerous(pp, s, neighborhood, idx,lanechange)
 				lanechange *= -1
@@ -72,8 +72,8 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::IDMMOBILModel, s
 			lane_change_other = setdiff(lane_change_other,[-1])
 	end
 
-	lanechange_other_probs = ((1-get(car.behavior).rationality)/length(lane_change_other))*ones(length(lane_change_other))
-	lanechange_probs = WeightVec([get(car.behavior).rationality;lanechange_other_probs])
+	lanechange_other_probs = ((1-bmodel.rationality)/length(lane_change_other))*ones(length(lane_change_other))
+	lanechange_probs = WeightVec([bmodel.rationality;lanechange_other_probs])
 	lanechange = sample(rng,[lanechange_;lane_change_other],lanechange_probs)
 	#NO LANECHANGING
 	#lanechange = 0
