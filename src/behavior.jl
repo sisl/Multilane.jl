@@ -42,7 +42,10 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	dt = pp.dt
 	car = s.env_cars[idx]
 	lane_change = car.lane_change
-	lane_ = round(max(1,min(car.y+lane_change,2*pp.nb_lanes-1)))
+	#if moving starts one timestep after deciding to lanechange
+	#lane_ = round(max(1,min(car.y+lane_change,2*pp.nb_lanes-1)))
+	#if increment y in the same timestep as deciding to lanechange
+	lane_ = car.y
 
 	if mod(lane_,2) == 0. #in between lanes
 		r = rand(rng)
@@ -78,7 +81,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	#NO LANECHANGING
 	#lanechange = 0
 
-	return lanechange
+	return lanechange * dmodel.lane_change_vel
 end
 
 #############################################################################

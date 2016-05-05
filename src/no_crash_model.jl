@@ -328,6 +328,8 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
   dir_distr = Dirichlet(mdp.dmodel.lane_weights)
   cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
 
+  resize!(s.env_cars,sum(cars_per_lane)+1)
+
   # TODO remove nb_cars - sum(cars_per_lane)
   dist_distr1 = Exponential(1./mdp.dmodel.dist_var)
 
