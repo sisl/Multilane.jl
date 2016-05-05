@@ -6,7 +6,7 @@ using POMDPs
 import POMDPs: actions, discount, isterminal, iterator
 import POMDPs: create_action, create_state, rand, reward
 using GenerativeModels
-import GenerativeModels: generate_s, generate_sr
+import GenerativeModels: generate_s, generate_sr, initial_state
 
 import Distributions: Dirichlet, Exponential, Gamma, rand
 
