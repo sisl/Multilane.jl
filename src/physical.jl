@@ -14,6 +14,7 @@ type PhysicalParam
 	v_med::Float64
 	v_max::Float64
 	v_min::Float64
+    brake_limit::Float64
 	nb_env_cars::Int # maximum
     nb_lanes::Int
 	lane_length::Float64
@@ -30,7 +31,8 @@ type PhysicalParam
 							nb_env_cars::Int=1,
 							lane_length::Float64=12.,
 							v_max::Float64=v_fast+0.,
-							v_min::Float64=v_slow-0.)
+							v_min::Float64=v_slow-0.,
+                            brake_limit::Float64=20.)
 
 		assert(v_fast >= v_med)
 		assert(v_med >= v_slow)
@@ -47,6 +49,7 @@ type PhysicalParam
 		self.v_med = v_med
 		self.v_max = v_max
 		self.v_min = v_min
+        self.brake_limit = brake_limit
 		self.nb_env_cars = nb_env_cars
         self.nb_lanes = nb_lanes
 		self.lane_length = lane_length

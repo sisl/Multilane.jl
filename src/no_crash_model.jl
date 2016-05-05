@@ -1,8 +1,8 @@
 type NoCrashRewardModel <: AbstractMLRewardModel
-    cost_emergency_brake::Float64
+    cost_dangerous_brake::Float64
     reward_in_desired_lane::Float64
 
-    dangerous_brake_threshold::Float64 # if the deceleration is greater than this cost_emergency_brake will be accured
+    dangerous_brake_threshold::Float64 # if the deceleration is greater than this cost_dangerous_brake will be accured
     desired_lane::Int
 end
 #XXX temporary
@@ -51,11 +51,11 @@ end
 
 typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
 
-# action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {EMERGENCY_BRAKE}
+# action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {brake}
 immutable NoCrashActionSpace
-    NORMAL_ACTIONS::Vector{MLAction} # all the actions except emergency brake
+    NORMAL_ACTIONS::Vector{MLAction} # all the actions except brake
     acceptable::IntSet
-    brake::MLAction
+    brake::MLAction # this action will be EITHER braking at half the dangerous brake threshold OR the braking necessary to prevent a collision at all time in the future
 end
 # TODO for performance, make this a macro?
 const NB_NORMAL_ACTIONS = 9
@@ -64,7 +64,7 @@ function NoCrashActionSpace(mdp::NoCrashMDP)
     accels = (-mdp.dmodel.adjustment_acceleration, 0.0, mdp.dmodel.adjustment_acceleration)
     lane_changes = (-1, 0, 1)
     NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in product(accels, lane_changes)]
-    return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: emergency brake will be calculated later based on the state
+    return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: brake will be calculated later based on the state
 end
 
 function actions(mdp::NoCrashMDP)
@@ -74,11 +74,12 @@ end
 function actions(mdp::NoCrashMDP, s::MLState, as::NoCrashActionSpace) # no implementation without the third arg to enforce efficiency
     acceptable = IntSet()
     for i in 1:NB_NORMAL_ACTIONS
-        if !is_crash(mdp, s, as.NORMAL_ACTIONS[i]) # TODO: Make this faster by doing it all at once and saving some calculations
+        if is_safe(mdp, s, as.NORMAL_ACTIONS[i]) # TODO: Make this faster by doing it all at once and saving some calculations
             push!(acceptable, i)
         end
     end
-    brake = MLAction(brake_acc(mdp, s), 0)
+    brake_acc = min(max_safe_acc(mdp,s), -mdp.rmodel.dangerous_brake_threshold/2.0)
+    brake = MLAction(brake_acc, 0)
     return NoCrashActionSpace(as.NORMAL_ACTIONS, acceptable, brake)
 end
 
@@ -106,23 +107,25 @@ function rand(rng::AbstractRNG, as::NoCrashActionSpace, a::MLAction=MLAction())
 end
 
 """
-Calculates the emergency braking acceleration
+Calculates the maximum safe acceleration that will allow the car to avoid a collision if the car in front slams on its brakes
 """
-function brake_acc(mdp::NoCrashMDP, s::MLState)
+function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
     if length(s.env_cars) < 2
         return 0.0
     end
     dt = mdp.dmodel.phys_param.dt
     v_min = mdp.dmodel.phys_param.v_min
     l_car = mdp.dmodel.phys_param.l_car
+    bp = mdp.dmodel.phys_param.brake_limit
     ego = s.env_cars[1]
 
     car_in_front = 0
     smallest_gap = Inf
+    ego_y = isinteger(ego.y) ? ego.y + lane_change : ego.y
     # find car immediately in front
     if length(s.env_cars) > 1 # TODO check
         for i in 2:length(s.env_cars)#nb_cars
-            if occupation_overlap(s.env_cars[i].y, ego.y) # occupying same lane
+            if occupation_overlap(s.env_cars[i].y, ego_y) # occupying same lane
                 gap = s.env_cars[i].x - ego.x
                 if gap >= 0.0 && gap < smallest_gap
                     car_in_front = i
@@ -134,10 +137,20 @@ function brake_acc(mdp::NoCrashMDP, s::MLState)
         if car_in_front == 0
             return 0.0
         else
-            other = s.env_cars[car_in_front]
-            return (smallest_gap - l_car + other.vel*dt + v_min*dt - 2.0*ego.vel*dt) / dt^2
+            vo = s.env_cars[car_in_front].vel
+            v = ego.vel
+            g = smallest_gap
+            # VVV see mathematica notebook
+            return (bp*dt + 4.*v - sqrt(16.*g*bp + bp^2*dt^2 - 8.*bp*dt*v + 8.*vo^2)) / (4.*dt)
         end
     end
+end
+
+"""
+Tests whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes
+"""
+function is_safe(mdp::NoCrashMDP, s::MLState, a::MLAction)
+    return a.acc <= max_safe_acc(mdp, s, a.lane_change)
 end
 
 """
@@ -171,7 +184,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     dys[1] = a.lane_change
 
     if a.acc < -mdp.rmodel.dangerous_brake_threshold
-        r -= mdp.rmodel.cost_emergency_brake
+        r -= mdp.rmodel.cost_dangerous_brake
     end
     if s.env_cars[1].y == mdp.rmodel.desired_lane
         r += mdp.rmodel.reward_in_desired_lane
@@ -187,7 +200,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         acc = generate_accel(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dvs[i] = dt*acc
         if acc < -mdp.rmodel.dangerous_brake_threshold
-            r -= mdp.rmodel.cost_emergency_brake
+            r -= mdp.rmodel.cost_dangerous_brake
         end
 
         lcs[i] = generate_lane_change(behavior, mdp.dmodel, s, neighborhood, i, rng)
