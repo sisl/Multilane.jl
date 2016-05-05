@@ -74,7 +74,14 @@ end
 function actions(mdp::NoCrashMDP, s::MLState, as::NoCrashActionSpace) # no implementation without the third arg to enforce efficiency
     acceptable = IntSet()
     for i in 1:NB_NORMAL_ACTIONS
-        if is_safe(mdp, s, as.NORMAL_ACTIONS[i]) # TODO: Make this faster by doing it all at once and saving some calculations
+        a = as.NORMAL_ACTIONS[i]
+        ego_y = s.env_cars[1].y
+        # prevent going off the road
+        if ego_y == 1. && a.lane_change < 0. || ego_y == mdp.dmodel.phys_param.nb_lanes && a.lane_change > 0.0
+            continue
+        end
+        # prevent running into the person in front
+        if is_safe(mdp, s, as.NORMAL_ACTIONS[i])
             push!(acceptable, i)
         end
     end
@@ -107,7 +114,7 @@ function rand(rng::AbstractRNG, as::NoCrashActionSpace, a::MLAction=MLAction())
 end
 
 """
-Calculates the maximum safe acceleration that will allow the car to avoid a collision if the car in front slams on its brakes
+Calculate the maximum safe acceleration that will allow the car to avoid a collision if the car in front slams on its brakes
 """
 function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
     if length(s.env_cars) < 2
@@ -126,8 +133,8 @@ function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
     if length(s.env_cars) > 1 # TODO check
         for i in 2:length(s.env_cars)#nb_cars
             if occupation_overlap(s.env_cars[i].y, ego_y) # occupying same lane
-                gap = s.env_cars[i].x - ego.x
-                if gap >= 0.0 && gap < smallest_gap
+                gap = s.env_cars[i].x - ego.x - l_car
+                if gap >= -l_car && gap < smallest_gap
                     car_in_front = i
                     smallest_gap = gap
                 end
@@ -147,10 +154,37 @@ function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
 end
 
 """
-Tests whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes
+Calculate the maximum distance that the car could achieve if it uses the maximum acceleration
+
+The first argument is a behavior model so that this can be dispatched based on the behavior model
+"""
+function max_dx(b::IDMMOBILBehavior, cs::CarState, dt)
+    return cs.x + (cs.vel + b.p_idm.a/2.0)*dt
+end
+
+"""
+Tests whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
 """
 function is_safe(mdp::NoCrashMDP, s::MLState, a::MLAction)
-    return a.acc <= max_safe_acc(mdp, s, a.lane_change)
+    if a.acc <= max_safe_acc(mdp, s, a.lane_change)
+        return false
+    end
+    # check whether we will go into anyone else's lane so close that they might hit us
+    if isinteger(s.env_cars[1].y) && a.lane_change != 0.0
+        new_lane = s.env_cars[1].y + (a.lane_change > 0. ? 1. : -1.)
+        dt = mdp.dmodel.phys_param.dt
+        l_car = mdp.dmodel.phys_param.l_car
+        for i in 2:length(s.env_cars)
+            car = s.env_cars[i]
+            ego = s.env_cars[1]
+            if occupation_overlap(new_lane, car.y) && car.x < ego.x
+                if ego.x + (ego.vel + dt*a.acc/2.0)*dt - (car.x + max_dx(car.behavior, car, dt)) < mdp.dmodel.phys_param.l_car
+                    return false
+                end
+            end
+        end
+    end
+    return true
 end
 
 """
@@ -163,8 +197,7 @@ end
 #XXX temp
 create_state(p::NoCrashMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState(-1.,1,1.,0,p.dmodel.behaviors[1]) for _ = 1:p.dmodel.nb_cars])
 
-using Debug
-@debug function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -175,6 +208,7 @@ using Debug
     ## Calculate deltas ##
     #====================#
 
+    dxs = Array(Float64, nb_cars)
     dvs = Array(Float64, nb_cars)
     dys = Array(Float64, nb_cars)
     lcs = Array(Float64, nb_cars)
@@ -200,6 +234,7 @@ using Debug
 
         acc = generate_accel(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dvs[i] = dt*acc
+        dxs[i] = (s.env_cars[i].vel + dvs[i]/2.)*dt
         if acc < -mdp.rmodel.dangerous_brake_threshold
             r -= mdp.rmodel.cost_dangerous_brake
         end
@@ -236,7 +271,7 @@ using Debug
                   if abs(car_i.y - car_j.y) <= 2.0
 
                       # check if they are moving towards each other
-                      if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[2] - car_j.y+dys[2]) < 2.0
+                      if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[i] - car_j.y+dys[j]) < 2.0
 
                           # make j stay in his lane
                           dys[j] = 0.0
@@ -254,7 +289,7 @@ using Debug
     exits = IntSet()
     for i in 1:nb_cars
         car = s.env_cars[i]
-        xp = car.x + dt*(car.vel - s.env_cars[1].vel + dvs[i]/2.0)
+        xp = car.x + dt*(car.vel - dvs[i]/2.0) - dxs[1]
         yp = car.y + dys[i]
         velp = max(min(car.vel + dvs[i],pp.v_max), pp.v_min)
         # note lane change is updated above
@@ -291,12 +326,6 @@ using Debug
         for i in 1:nb_cars
             lowlane = floor(Int, s.env_cars[i].y)
             highlane = ceil(Int, s.env_cars[i].y)
-            if lowlane < 1.0 || highlane > pp.nb_lanes
-                @show i
-                @show s.env_cars[i].y
-                @show pp.nb_lanes
-                @bp
-            end
             front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
             back = s.env_cars[i].x - pp.l_car
             clearances[(lowlane, true)] = min(front, clearances[(lowlane, true)])

@@ -22,14 +22,15 @@ mdp = NoCrashMDP(dmodel, rmodel, _discount);
 
 rng = MersenneTwister(5)
 
-s = initial_state(mdp::NoCrashMDP,rng)
+s = initial_state(mdp::NoCrashMDP, rng)
+# @show s.env_cars[1]
 #visualize(mdp,s,MLAction(0,0))
 
 policy = RandomPolicy(mdp)
 
 sim = HistoryRecorder(rng=rng, max_steps=100) # initialize a random number generator
 
-simulate(sim, mdp, policy, Multilane.initial_state(mdp, sim.rng))
+simulate(sim, mdp, policy, s)
 
 # check for crashes
 for i in 1:length(sim.state_hist)-1
