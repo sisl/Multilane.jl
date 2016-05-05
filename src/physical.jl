@@ -15,7 +15,6 @@ type PhysicalParam
 	v_max::Float64
 	v_min::Float64
     brake_limit::Float64
-	nb_env_cars::Int # maximum
     nb_lanes::Int
 	lane_length::Float64
 	function PhysicalParam(nb_lanes::Int;dt::Float64=0.75,
@@ -27,8 +26,6 @@ type PhysicalParam
 							v_fast::Float64=35.,
 							v_slow::Float64=27.,
 							v_med::Float64=31.,
-							nb_vel_bins::Int=100,
-							nb_env_cars::Int=1,
 							lane_length::Float64=12.,
 							v_max::Float64=v_fast+0.,
 							v_min::Float64=v_slow-0.,
@@ -50,7 +47,6 @@ type PhysicalParam
 		self.v_max = v_max
 		self.v_min = v_min
         self.brake_limit = brake_limit
-		self.nb_env_cars = nb_env_cars
         self.nb_lanes = nb_lanes
 		self.lane_length = lane_length
 

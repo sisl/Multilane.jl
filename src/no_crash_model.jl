@@ -150,7 +150,8 @@ end
 #XXX temp
 create_state(p::NoCrashMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState(-1.,1,1.,0,p.dmodel.behaviors[1]) for _ = 1:p.dmodel.nb_cars])
 
-function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+using Debug
+@debug function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -266,37 +267,41 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     ## Generate new cars ##
     #=====================#
 
-    for j in 1:(pp.nb_env_cars-nb_cars)
-        if rand(rng) <= mdp.dmodel.p_appear
-            # calculate clearance for all the lanes
-            clearances = Dict{Tuple{Int,Bool},Float64}() # integer is lane, bool is true if front, false if back
-            for i in 1:pp.nb_lanes, j in (true,false)
-                clearances[(i,j)] = Inf
+    if nb_cars < mdp.dmodel.nb_cars && rand(rng) <= mdp.dmodel.p_appear
+        # calculate clearance for all the lanes
+        clearances = Dict{Tuple{Int,Bool},Float64}() # integer is lane, bool is true if front, false if back
+        for i in 1:pp.nb_lanes, j in (true,false)
+            clearances[(i,j)] = Inf
+        end
+        for i in 1:nb_cars
+            lowlane = floor(Int, s.env_cars[i].y)
+            highlane = ceil(Int, s.env_cars[i].y)
+            if lowlane < 1.0 || highlane > pp.nb_lanes
+                @show i
+                @show s.env_cars[i].y
+                @show pp.nb_lanes
+                @bp
             end
-            for i in nb_cars
-                lowlane = floor(Int, s.env_cars[i].y)
-                highlane = ceil(Int, s.env_cars[i].y)
-                front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
-                back = s.env_cars[i].x - pp.l_car
-                clearances[(lowlane, true)] = min(front, clearances[(lowlane, true)])
-                clearances[(highlane, true)] = min(front, clearances[(highlane, true)])
-                clearances[(lowlane, false)] = min(back, clearances[(lowlane, false)])
-                clearances[(highlane, false)] = min(back, clearances[(highlane, false)])
+            front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
+            back = s.env_cars[i].x - pp.l_car
+            clearances[(lowlane, true)] = min(front, clearances[(lowlane, true)])
+            clearances[(highlane, true)] = min(front, clearances[(highlane, true)])
+            clearances[(lowlane, false)] = min(back, clearances[(lowlane, false)])
+            clearances[(highlane, false)] = min(back, clearances[(highlane, false)])
+        end
+        clear_spots = Array(Tuple{Int,Bool}, 0)
+        for i in 1:pp.nb_lanes, j in (true,false)
+            if clearances[(i,j)] >= mdp.dmodel.appear_clearance
+                push!(clear_spots, (i,j))
             end
-            clear_spots = Array(Tuple{Int,Bool}, 0)
-            for i in 1:pp.nb_lanes, j in (true,false)
-                if clearances[(i,j)] >= mdp.dmodel.appear_clearance
-                    push!(clear_spots, (i,j))
-                end
-            end
-            # pick one
-            spot = rand(rng, clear_spots)
-            behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
-            if spot[2] # at front
-                push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_car[1], pp.lane_length, behavior))
-            else # at back
-                push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_car[1], 0.0, behavior))
-            end
+        end
+        # pick one
+        spot = rand(rng, clear_spots)
+        behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
+        if spot[2] # at front
+            push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_cars[1].vel, 0.0, behavior))
+        else # at back
+            push!(sp.env_cars, CarState(0.0, spot[1], sp.env_cars[1].vel, 0.0, behavior))
         end
     end
 
