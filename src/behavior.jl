@@ -78,7 +78,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	#NO LANECHANGING
 	#lanechange = 0
 
-	return lanechange
+	return lanechange * dmodel.lane_change_vel
 end
 
 #############################################################################
