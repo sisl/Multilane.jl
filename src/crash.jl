@@ -152,7 +152,7 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 		vel = env_car.vel
 		lane_change = env_car.lane_change
 		behavior = get(env_car.behavior)
-		lane_ = max(1,min(env_car.y+lane_change,nb_col))
+		lane_ = max(1,min(env_car.y+lane_change,pp.nb_lanes))
 
 		neighborhood = get_neighborhood(pp,s,i)
 

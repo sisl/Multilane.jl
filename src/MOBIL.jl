@@ -27,7 +27,7 @@ function is_lanechange_dangerous(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1}
 
 	#check if dir is oob
 	lane_ = s.env_cars[idx].y + dir
-	if (lane_ > pp.nb_lanes*2 - 1) || (lane_ < 1.)
+	if (lane_ > pp.nb_lanes) || (lane_ < 1.)
 		return true
 	end
 	#check if will hit car next to you?
@@ -66,7 +66,7 @@ function get_neighborhood(pp::PhysicalParam,s::MLState,idx::Int)
 	if x.y <= 1.
 		dists[[1;4]] = [-1.;-1.]
 	#leftmost lane: no one to the left
-elseif x.y >= 2*pp.nb_lanes - 1.
+	elseif x.y >= pp.nb_lanes
 		dists[[3;6]] = [-1.;-1.]
 	end
 
@@ -83,9 +83,9 @@ elseif x.y >= 2*pp.nb_lanes - 1.
 		end
 		dlane = lane - x.y #NOTE float: convert to int
 		#too distant to be a neighbor
-		if abs(dlane) > 2.
+		if abs(dlane) > 1.
 			continue
-		elseif abs(dlane) <= 1.
+		elseif abs(dlane) <= 0.5
 			dlane = 0
 		else
 			dlane = convert(Int,sign(dlane))
@@ -173,7 +173,7 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 	end
 
 	##if between lanes, return +1 if moving left, -1 if moving right
-	if state.y % 2 == 0 #even is between lanes
+	if state.y-0.5 % 1 == 0 #even is between lanes
 		return state.lane_change #continue going in the direction you're going
 	end
 
@@ -204,7 +204,6 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 	if is_lanechange_dangerous(pp,s,nbhd,idx,-1) || (a_follower_right_ < -p_mobil.b_safe)
 		right_crit -= 10000000.
 	end
-
 	#check if going left or right is preferable
 	dir_flag = left_crit >= right_crit ? 1.:-1.
 	#check incentive criterion

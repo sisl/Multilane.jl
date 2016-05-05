@@ -151,7 +151,7 @@ function visualize(mdp::MLMDP,
 
 	for row = 0:(nb_rows-1)
 		#road
-		Y_ABS = -1*row*ROW_INTERVAL
+		Y_ABS = -1*row*ROW_INTERVAL + 2. #XXX hack
 		draw_box(0,Y_ABS,W,H,"#424242") #a gray
 
 		#draw hard borders on top and bottom
