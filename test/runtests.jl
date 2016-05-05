@@ -69,8 +69,8 @@ test_mdp_types()
 test_crash()
 test_model()
 
-println("Running an OriginalMDP example...")
-include("run_example.jl")
+# println("Running an OriginalMDP example...")
+# include("run_example.jl")
 
 println("Running a NoCrashMDP example...")
 include("run_nocrash.jl")
