@@ -307,7 +307,7 @@ end
 
 function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_state(mdp))
 
-  srand(rand(rng, Int))
+  srand(rng)
   pp = mdp.dmodel.phys_param
   #Unif # cars in initial scene
   _nb_cars = rand(rng,1:mdp.dmodel.nb_cars)
