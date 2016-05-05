@@ -48,7 +48,7 @@ end
 function test_get_dv_ds()
 	println("\t\tTesting get_dv_ds()")
 	nb_lanes = 3
-	pp = PhysicalParam(nb_lanes,nb_vel_bins=5,lane_length=12.)
+	pp = PhysicalParam(nb_lanes,lane_length=12.)
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[pp.v_slow;pp.v_med;pp.v_fast],[pp.l_car]))]
 	#CASE: just agent car
 	cs = CarState[CarState(6.,2,31.,0,bs[1])]
@@ -101,7 +101,7 @@ function test_idm_dv()
 	#TODO: calculate by hand...? or use existing examples if can be found
 	nb_lanes = 2
 	_a = MLAction(0.,0.)
-	pp = PhysicalParam(nb_lanes,nb_vel_bins=5,lane_length=48.)
+	pp = PhysicalParam(nb_lanes,lane_length=48.)
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[pp.v_slow;pp.v_med;pp.v_fast],[pp.l_car]))]
 	#CASE: it's faster, but there's no space--is this even a real case?
 	#CASE: it's faster and there is space

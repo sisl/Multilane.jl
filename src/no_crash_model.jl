@@ -74,7 +74,14 @@ end
 function actions(mdp::NoCrashMDP, s::MLState, as::NoCrashActionSpace) # no implementation without the third arg to enforce efficiency
     acceptable = IntSet()
     for i in 1:NB_NORMAL_ACTIONS
-        if is_safe(mdp, s, as.NORMAL_ACTIONS[i]) # TODO: Make this faster by doing it all at once and saving some calculations
+        a = as.NORMAL_ACTIONS[i]
+        ego_y = s.env_cars[1].y
+        # prevent going off the road
+        if ego_y == 1. && a.lane_change < 0. || ego_y == mdp.dmodel.phys_param.nb_lanes && a.lane_change > 0.0
+            continue
+        end
+        # prevent running into the person in front
+        if is_safe(mdp, s, as.NORMAL_ACTIONS[i])
             push!(acceptable, i)
         end
     end
@@ -107,7 +114,7 @@ function rand(rng::AbstractRNG, as::NoCrashActionSpace, a::MLAction=MLAction())
 end
 
 """
-Calculates the maximum safe acceleration that will allow the car to avoid a collision if the car in front slams on its brakes
+Calculate the maximum safe acceleration that will allow the car to avoid a collision if the car in front slams on its brakes
 """
 function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
     if length(s.env_cars) < 2
@@ -126,8 +133,8 @@ function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
     if length(s.env_cars) > 1 # TODO check
         for i in 2:length(s.env_cars)#nb_cars
             if occupation_overlap(s.env_cars[i].y, ego_y) # occupying same lane
-                gap = s.env_cars[i].x - ego.x
-                if gap >= 0.0 && gap < smallest_gap
+                gap = s.env_cars[i].x - ego.x - l_car
+                if gap >= -l_car && gap < smallest_gap
                     car_in_front = i
                     smallest_gap = gap
                 end
@@ -147,10 +154,37 @@ function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
 end
 
 """
-Tests whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes
+Calculate the maximum distance that the car could achieve if it uses the maximum acceleration
+
+The first argument is a behavior model so that this can be dispatched based on the behavior model
+"""
+function max_dx(b::IDMMOBILBehavior, cs::CarState, dt)
+    return cs.x + (cs.vel + b.p_idm.a/2.0)*dt
+end
+
+"""
+Tests whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
 """
 function is_safe(mdp::NoCrashMDP, s::MLState, a::MLAction)
-    return a.acc <= max_safe_acc(mdp, s, a.lane_change)
+    if a.acc <= max_safe_acc(mdp, s, a.lane_change)
+        return false
+    end
+    # check whether we will go into anyone else's lane so close that they might hit us
+    if isinteger(s.env_cars[1].y) && a.lane_change != 0.0
+        new_lane = s.env_cars[1].y + (a.lane_change > 0. ? 1. : -1.)
+        dt = mdp.dmodel.phys_param.dt
+        l_car = mdp.dmodel.phys_param.l_car
+        for i in 2:length(s.env_cars)
+            car = s.env_cars[i]
+            ego = s.env_cars[1]
+            if occupation_overlap(new_lane, car.y) && car.x < ego.x
+                if ego.x + (ego.vel + dt*a.acc/2.0)*dt - (car.x + max_dx(car.behavior, car, dt)) < mdp.dmodel.phys_param.l_car
+                    return false
+                end
+            end
+        end
+    end
+    return true
 end
 
 """
@@ -174,6 +208,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     ## Calculate deltas ##
     #====================#
 
+    dxs = Array(Float64, nb_cars)
     dvs = Array(Float64, nb_cars)
     dys = Array(Float64, nb_cars)
     lcs = Array(Float64, nb_cars)
@@ -199,6 +234,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
         acc = generate_accel(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dvs[i] = dt*acc
+        dxs[i] = (s.env_cars[i].vel + dvs[i]/2.)*dt
         if acc < -mdp.rmodel.dangerous_brake_threshold
             r -= mdp.rmodel.cost_dangerous_brake
         end
@@ -235,7 +271,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
                   if abs(car_i.y - car_j.y) <= 2.0
 
                       # check if they are moving towards each other
-                      if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[2] - car_j.y+dys[2]) < 2.0
+                      if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[i] - car_j.y+dys[j]) < 2.0
 
                           # make j stay in his lane
                           dys[j] = 0.0
@@ -253,7 +289,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     exits = IntSet()
     for i in 1:nb_cars
         car = s.env_cars[i]
-        xp = car.x + dt*(car.vel - s.env_cars[1].vel + dvs[i]/2.0)
+        xp = car.x + dt*(car.vel - dvs[i]/2.0) - dxs[1]
         yp = car.y + dys[i]
         velp = max(min(car.vel + dvs[i],pp.v_max), pp.v_min)
         # note lane change is updated above
@@ -282,37 +318,35 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     ## Generate new cars ##
     #=====================#
 
-    for j in 1:(pp.nb_env_cars-nb_cars)
-        if rand(rng) <= mdp.dmodel.p_appear
-            # calculate clearance for all the lanes
-            clearances = Dict{Tuple{Int,Bool},Float64}() # integer is lane, bool is true if front, false if back
-            for i in 1:pp.nb_lanes, j in (true,false)
-                clearances[(i,j)] = Inf
+    if nb_cars < mdp.dmodel.nb_cars && rand(rng) <= mdp.dmodel.p_appear
+        # calculate clearance for all the lanes
+        clearances = Dict{Tuple{Int,Bool},Float64}() # integer is lane, bool is true if front, false if back
+        for i in 1:pp.nb_lanes, j in (true,false)
+            clearances[(i,j)] = Inf
+        end
+        for i in 1:nb_cars
+            lowlane = floor(Int, s.env_cars[i].y)
+            highlane = ceil(Int, s.env_cars[i].y)
+            front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
+            back = s.env_cars[i].x - pp.l_car
+            clearances[(lowlane, true)] = min(front, clearances[(lowlane, true)])
+            clearances[(highlane, true)] = min(front, clearances[(highlane, true)])
+            clearances[(lowlane, false)] = min(back, clearances[(lowlane, false)])
+            clearances[(highlane, false)] = min(back, clearances[(highlane, false)])
+        end
+        clear_spots = Array(Tuple{Int,Bool}, 0)
+        for i in 1:pp.nb_lanes, j in (true,false)
+            if clearances[(i,j)] >= mdp.dmodel.appear_clearance
+                push!(clear_spots, (i,j))
             end
-            for i in nb_cars
-                lowlane = floor(Int, s.env_cars[i].y)
-                highlane = ceil(Int, s.env_cars[i].y)
-                front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
-                back = s.env_cars[i].x - pp.l_car
-                clearances[(lowlane, true)] = min(front, clearances[(lowlane, true)])
-                clearances[(highlane, true)] = min(front, clearances[(highlane, true)])
-                clearances[(lowlane, false)] = min(back, clearances[(lowlane, false)])
-                clearances[(highlane, false)] = min(back, clearances[(highlane, false)])
-            end
-            clear_spots = Array(Tuple{Int,Bool}, 0)
-            for i in 1:pp.nb_lanes, j in (true,false)
-                if clearances[(i,j)] >= mdp.dmodel.appear_clearance
-                    push!(clear_spots, (i,j))
-                end
-            end
-            # pick one
-            spot = rand(rng, clear_spots)
-            behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
-            if spot[2] # at front
-                push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_car[1], pp.lane_length, behavior))
-            else # at back
-                push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_car[1], 0.0, behavior))
-            end
+        end
+        # pick one
+        spot = rand(rng, clear_spots)
+        behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
+        if spot[2] # at front
+            push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_cars[1].vel, 0.0, behavior))
+        else # at back
+            push!(sp.env_cars, CarState(0.0, spot[1], sp.env_cars[1].vel, 0.0, behavior))
         end
     end
 

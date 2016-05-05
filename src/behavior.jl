@@ -49,7 +49,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 
 	if mod(lane_-0.5,1) == 0. #in between lanes
 		r = rand(rng)
-    @assert lane_change != 0
+        @assert lane_change != 0
 		lanechange = r < bmodel.rationality ? lane_change : -1*lane_change
 
 		if is_lanechange_dangerous(pp, s, neighborhood, idx,lanechange)

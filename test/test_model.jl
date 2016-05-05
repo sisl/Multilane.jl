@@ -49,5 +49,5 @@ end
 function test_model()
     println("\tTesting Model...")
     test_occupation()
-    # test_encounter()
+    test_encounter()
 end

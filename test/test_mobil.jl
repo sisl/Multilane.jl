@@ -33,7 +33,7 @@ function test_get_neighborhood()
 	println("\t\tTesting get_neighborhood")
 	##TODO: assertions
 	nb_lanes = 3
-	pp = PhysicalParam(nb_lanes,nb_vel_bins=5,lane_length=12.)
+	pp = PhysicalParam(nb_lanes,lane_length=12.)
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[pp.v_slow;pp.v_med;pp.v_fast],[pp.l_car]))]
 	#CASE: just agent car
 	cs = CarState[CarState(6.,2,31.,0,bs[1])]
@@ -127,7 +127,7 @@ function test_is_lanechange_dangerous()
 
 	nb_lanes = 3
 	_a = MLAction(0,0)
-	pp = PhysicalParam(nb_lanes,nb_vel_bins=5,lane_length=12.)
+	pp = PhysicalParam(nb_lanes,lane_length=12.)
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[pp.v_slow;pp.v_med;pp.v_fast],[pp.l_car]))]
 	#CASE: no one, in the way
 	cs = CarState[CarState(6.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1))]
@@ -187,7 +187,7 @@ function test_get_rear_accel()
 	println("\t\tTesting get_rear_accel")
 	nb_lanes = 3
 	_a = MLAction(0,0)
-	pp = PhysicalParam(nb_lanes,nb_vel_bins=5,lane_length=12.)
+	pp = PhysicalParam(nb_lanes,lane_length=12.)
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[pp.v_slow;pp.v_med;pp.v_fast],[pp.l_car]))]
 	#No one in that position
 	cs = CarState[CarState(6.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1))]
@@ -224,7 +224,7 @@ function test_get_mobil_lane_change()
 	println("\t\tTesting get_mobil_lane_change")
 	nb_lanes = 2
 	_a = MLAction(0,0)
-	pp = PhysicalParam(nb_lanes,nb_vel_bins=5,lane_length=12.)
+	pp = PhysicalParam(nb_lanes,lane_length=12.)
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[pp.v_slow;pp.v_med;pp.v_fast],[pp.l_car]))]
 	#CASE: it's faster, but there's no space--is this even a real case?
 	#CASE: it's faster and there is space
