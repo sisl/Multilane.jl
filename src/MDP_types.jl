@@ -38,11 +38,11 @@ immutable CarState
     x::Float64
     y::Float64
 	vel::Float64 #v_x
-	lane_change::Float64 #-1,0, or +1, corresponding to to the right lane, no lane change, or to the left lane (also v_y/heading)
+	lane_change::Float64 # ydot
 	behavior::Nullable{BehaviorModel}
 
 	function CarState(x::Float64, y::Real ,vel::Float64, lane_change::Real, behavior::Union{Nullable{BehaviorModel},BehaviorModel})
-		assert(abs(lane_change) <= 1.) #XXX might not be appropriate with new def of lane_change
+		# assert(abs(lane_change) <= 1.) #XXX might not be appropriate with new def of lane_change
 		return new(x, y, vel, lane_change, behavior)
 	end
 end #carstate
@@ -81,7 +81,7 @@ end
 
 immutable MLAction
     acc::Float64
-    lane_change::Float64 #-1,0, or +1, corresponding to to the right lane, no lane change, or to the left lane
+    lane_change::Float64 # ydot
 end
 MLAction() = MLAction(0,0)
 ==(a::MLAction,b::MLAction) = (a.acc==b.acc) && (a.lane_change==b.lane_change)

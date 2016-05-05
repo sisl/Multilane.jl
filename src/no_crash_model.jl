@@ -62,7 +62,7 @@ const NB_NORMAL_ACTIONS = 9
 
 function NoCrashActionSpace(mdp::NoCrashMDP)
     accels = (-mdp.dmodel.adjustment_acceleration, 0.0, mdp.dmodel.adjustment_acceleration)
-    lane_changes = (-1, 0, 1)
+    lane_changes = (-mdp.dmodel.lane_change_vel, 0.0, mdp.dmodel.lane_change_vel)
     NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in product(accels, lane_changes)]
     return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: emergency brake will be calculated later based on the state
 end
@@ -168,7 +168,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     # agent
     dvs[1] = a.acc*dt
     lcs[1] = a.lane_change
-    dys[1] = a.lane_change
+    dys[1] = a.lane_change*dt
 
     if a.acc < -mdp.rmodel.dangerous_brake_threshold
         r -= mdp.rmodel.cost_emergency_brake
@@ -191,7 +191,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         end
 
         lcs[i] = generate_lane_change(behavior, mdp.dmodel, s, neighborhood, i, rng)
-        dys[i] = lcs[i] * mdp.dmodel.lane_change_vel * dt
+        dys[i] = lcs[i] * dt
         if sp.env_cars[i].lane_change != 0
             push!(changers, i)
         end
