@@ -38,7 +38,7 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
                                           [pp.l_car]))]
       self.behavior_probabilities = WeightVec(ones(length(self.behaviors)))
       self.adjustment_acceleration = 1. #XXX
-      self.lane_change_vel = 1. #XXX
+      self.lane_change_vel = 1./0.75 #XXX
       self.p_appear = 0.5
       self.appear_clearance = 4.
       self.vel_sigma = 2.
@@ -199,7 +199,6 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
     ## Consistency checking ##
     #========================#
-
     sorted_changers = sort!(collect(changers), by=i->s.env_cars[i].x, rev=true) # this might be slow because anonymous functions are slow
 
     if length(sorted_changers) >= 2 #something to compare
@@ -236,7 +235,6 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
     ## Dynamics and Exits ##
     #======================#
-
     exits = IntSet()
     for i in 1:nb_cars
         car = s.env_cars[i]
