@@ -1,6 +1,7 @@
 push!(LOAD_PATH,joinpath("..","src"))
 using Multilane
 using Base.Test
+using GenerativeModels
 
 import Iterators.product
 import Base.assert
