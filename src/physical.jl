@@ -23,7 +23,7 @@ type PhysicalParam
 							l_car::Float64=4.,
 							v_nominal::Float64=31.,
 							w_lane::Float64=4.,
-							y_interval::Float64=2.,
+							y_interval::Float64=4.,
 							v_fast::Float64=35.,
 							v_slow::Float64=27.,
 							v_med::Float64=31.,
@@ -57,4 +57,3 @@ type PhysicalParam
 		return self
 	end
 end
-

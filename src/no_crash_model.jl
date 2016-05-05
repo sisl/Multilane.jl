@@ -267,7 +267,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         end
 
         # enforce max/min y position constraints
-        yp = min(max(yp,1.),2*pp.nb_lanes - 1)
+        yp = min(max(yp,1.), pp.nb_lanes)
 
         if xp < 0.0 || xp >= pp.lane_length
             push!(exits, i)
@@ -329,7 +329,7 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
   #place ego car
 
   pos_x = pp.lane_length/2. #this is fixed
-  pos_y = rand(rng,1:(pp.nb_lanes*2-1))
+  pos_y = rand(rng,1:(pp.nb_lanes))
   #ego velocity
   vel = max(min(randn(rng)*mdp.dmodel.vel_sigma + pp.v_med, pp.v_max), pp.v_min)
 
@@ -347,7 +347,7 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
   last_back = 1 #last car to be sampled behind ego car -- starts with ego car
 
   idx = 2
-  for (_lane,nb_cars) in enumerate(cars_per_lane)
+  for (lane,nb_cars) in enumerate(cars_per_lane)
 
     if nb_cars <= 0
       continue
@@ -356,7 +356,7 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
     # if there's no room to generate the remaining cars
     break_flag = false
 
-    lane = 2*_lane - 1
+    #lane = 2*_lane - 1
     #from front to back
     for i = 1:nb_cars
       if break_flag
@@ -367,7 +367,6 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
                         mdp.dmodel.behavior_probabilities)
       #TODO need generic interface with behavior models for desired speed
 
-      #TODO check where the ego car is!!!
       if lane == pos_y
         #ego car in this lane: alternate sampling
         sample_front = rand(rng,Bool)

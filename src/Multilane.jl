@@ -12,7 +12,7 @@ import Distributions: Dirichlet, Exponential, Gamma, rand
 
 import Iterators.product
 
-import Base: ==, hash, length
+import Base: ==, hash, length, vec
 
 # for visualization
 using Interact
