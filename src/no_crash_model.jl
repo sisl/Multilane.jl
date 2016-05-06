@@ -2,11 +2,11 @@ type NoCrashRewardModel <: AbstractMLRewardModel
     cost_dangerous_brake::Float64
     reward_in_desired_lane::Float64
 
-    dangerous_brake_threshold::Float64 # if the deceleration is greater than this cost_dangerous_brake will be accured
+    dangerous_brake_threshold::Float64 # (POSITIVE NUMBER) if the deceleration is greater than this cost_dangerous_brake will be accured
     desired_lane::Int
 end
 #XXX temporary
-NoCrashRewardModel() = NoCrashRewardModel(-10.,100.,-3.,1)
+NoCrashRewardModel() = NoCrashRewardModel(-10.,100.,3.,1)
 
 type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     nb_cars::Int
@@ -80,7 +80,7 @@ function actions(mdp::NoCrashMDP, s::MLState, as::NoCrashActionSpace) # no imple
         if ego_y == 1. && a.lane_change < 0. || ego_y == mdp.dmodel.phys_param.nb_lanes && a.lane_change > 0.0
             continue
         end
-        # prevent running into the person in front
+        # prevent running into the person in front or to the side
         if is_safe(mdp, s, as.NORMAL_ACTIONS[i])
             push!(acceptable, i)
         end
@@ -117,9 +117,6 @@ end
 Calculate the maximum safe acceleration that will allow the car to avoid a collision if the car in front slams on its brakes
 """
 function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
-    if length(s.env_cars) < 2
-        return 0.0
-    end
     dt = mdp.dmodel.phys_param.dt
     v_min = mdp.dmodel.phys_param.v_min
     l_car = mdp.dmodel.phys_param.l_car
@@ -142,15 +139,16 @@ function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
         end
         # calculate necessary acceleration
         if car_in_front == 0
-            return 0.0
+            return Inf
         else
             vo = s.env_cars[car_in_front].vel
             v = ego.vel
             g = smallest_gap
             # VVV see mathematica notebook
-            return (bp*dt + 4.*v - sqrt(16.*g*bp + bp^2*dt^2 - 8.*bp*dt*v + 8.*vo^2)) / (4.*dt)
+            return - (bp*dt + 4.*v - sqrt(16.*g*bp + bp^2*dt^2 - 8.*bp*dt*v + 8.*vo^2)) / (4.*dt)
         end
     end
+    return Inf
 end
 
 """
@@ -166,7 +164,7 @@ end
 Tests whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
 """
 function is_safe(mdp::NoCrashMDP, s::MLState, a::MLAction)
-    if a.acc <= max_safe_acc(mdp, s, a.lane_change)
+    if a.acc >= max_safe_acc(mdp, s, a.lane_change)
         return false
     end
     # check whether we will go into anyone else's lane so close that they might hit us
@@ -197,8 +195,7 @@ end
 #XXX temp
 create_state(p::NoCrashMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState(-1.,1,1.,0,p.dmodel.behaviors[1]) for _ = 1:p.dmodel.nb_cars])
 
-using Debug
-@debug function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -291,7 +288,7 @@ using Debug
     exits = IntSet()
     for i in 1:nb_cars
         car = s.env_cars[i]
-        xp = car.x + dxs[i] - dxs[1]
+        xp = car.x + (dxs[i] - dxs[1])
         yp = car.y + dys[i]
         velp = max(min(car.vel + dvs[i],pp.v_max), pp.v_min)
         # note lane change is updated above
@@ -314,7 +311,6 @@ using Debug
             sp.env_cars[i] = CarState(xp, yp, velp, lcs[i], car.behavior)
         end
     end
-    @bp 1 in exits
     deleteat!(sp.env_cars, exits)
     nb_cars -= length(exits)
 
@@ -354,7 +350,8 @@ using Debug
     end
 
     sp.crashed = is_crash(mdp, s, a)
-    @assert isapprox(sp.env_cars[1].x, s.env_cars[1].x)# ego should not move
+
+    @assert sp.env_cars[1].x == s.env_cars[1].x # ego should not move
 
     return (sp, r)
 end
