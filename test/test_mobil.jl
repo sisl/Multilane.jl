@@ -292,5 +292,4 @@ function test_mobil()
 	test_get_rear_accel()
 	test_get_mobil_lane_change()
     failure_2()
-	#NOTE: not working, but since we'll probably be limited to 1 car in the foreseeable future, this isn't the highest priority thing
 end
