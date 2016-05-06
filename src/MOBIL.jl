@@ -77,10 +77,9 @@ function get_neighborhood(pp::PhysicalParam,s::MLState,idx::Int)
 		end
 		pos = car.x
 		lane = car.y
-		#this car is oob
-		if pos < 0.
-			continue
-		end
+
+        @assert pos >= 0.
+
 		dlane = lane - x.y #NOTE float: convert to int
 		#too distant to be a neighbor
 		if abs(dlane) > 1.

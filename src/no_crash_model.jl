@@ -311,7 +311,6 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             sp.env_cars[i] = CarState(xp, yp, velp, lcs[i], car.behavior)
         end
     end
-    @bp 1 in exits
     deleteat!(sp.env_cars, exits)
     nb_cars -= length(exits)
 
