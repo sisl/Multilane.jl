@@ -2,11 +2,11 @@ type NoCrashRewardModel <: AbstractMLRewardModel
     cost_dangerous_brake::Float64
     reward_in_desired_lane::Float64
 
-    dangerous_brake_threshold::Float64 # if the deceleration is greater than this cost_dangerous_brake will be accured
+    dangerous_brake_threshold::Float64 # (POSITIVE NUMBER) if the deceleration is greater than this cost_dangerous_brake will be accured
     desired_lane::Int
 end
 #XXX temporary
-NoCrashRewardModel() = NoCrashRewardModel(-10.,100.,-3.,1)
+NoCrashRewardModel() = NoCrashRewardModel(-10.,100.,3.,1)
 
 type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     nb_cars::Int
@@ -145,7 +145,7 @@ function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
             v = ego.vel
             g = smallest_gap
             # VVV see mathematica notebook
-            return (bp*dt + 4.*v - sqrt(16.*g*bp + bp^2*dt^2 - 8.*bp*dt*v + 8.*vo^2)) / (4.*dt)
+            return - (bp*dt + 4.*v - sqrt(16.*g*bp + bp^2*dt^2 - 8.*bp*dt*v + 8.*vo^2)) / (4.*dt)
         end
     end
     return Inf
@@ -289,7 +289,7 @@ using Debug
     exits = IntSet()
     for i in 1:nb_cars
         car = s.env_cars[i]
-        xp = car.x + dxs[i] - dxs[1]
+        xp = car.x + (dxs[i] - dxs[1])
         yp = car.y + dys[i]
         velp = max(min(car.vel + dvs[i],pp.v_max), pp.v_min)
         # note lane change is updated above
@@ -352,6 +352,7 @@ using Debug
     end
 
     sp.crashed = is_crash(mdp, s, a)
+
     @assert sp.env_cars[1].x == s.env_cars[1].x # ego should not move
 
     return (sp, r)
