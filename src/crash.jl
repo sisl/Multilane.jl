@@ -136,12 +136,14 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 	d = norm([2*l_car;2*w_car])
 	if debug
 		subplot(212)
-		for x in X
-			plot(vec(x[1,:]),vec(x[2,:]),color="k")
+		for _x in X
+			plot(vec(_x[1,:]),vec(_x[2,:]),color="k")
 		end
 	end
 
 	dt = pp.dt
+	dx1 = s.env_cars[1].vel + a.acc*dt/2.
+
 	for (i,env_car) in enumerate(s.env_cars)
 		if i == 1
 			continue
@@ -160,8 +162,9 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 
         # TODO first do a quick check to see if the cars are even close
 
-		#dvel_ms = get_idm_dv(behavior.p_idm,dt,vel,dv,ds) #call idm model
-		dp =  dt*(vel-agent_vel)#dt*(pp.VELOCITIES[vel]-pp.VELOCITIES[s.agent_vel])#+0.5*dt*dvel_ms #x+vt+1/2at2 #XXX remove at2 term
+		acc = get_idm_dv(behavior.p_idm,dt,vel,dv,ds) #call idm model
+		dx = (vel + acc/2.*dt)
+		dp =  dt*(dx - dx1)#dt*(pp.VELOCITIES[vel]-pp.VELOCITIES[s.agent_vel])#+0.5*dt*dvel_ms #x+vt+1/2at2 #XXX remove at2 term
 		dy = (lane_-env_car.y)*pp.y_interval # XXX this doesn't seem right
 		#dy = lane_change*pp.y_interval
 		p = env_car.x

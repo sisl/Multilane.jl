@@ -177,7 +177,8 @@ function visualize(mdp::MLMDP,
 
 	#draw self car
 	#TODO
-	x_ctr = W/2. + frame
+	#x_ctr = W/2. + frame
+  x_ctr = s.env_cars[1].x + frame
 	y_ctr = pp.y_interval*s.env_cars[1].y - ROW_INTERVAL*floor(Integer,x_ctr/lane_length)
 	x_ctr = mod(x_ctr,lane_length)
 	color = "#31B404" #PLACEHOLDER, an awful lime green
