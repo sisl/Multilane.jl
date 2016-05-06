@@ -178,7 +178,7 @@ function is_safe(mdp::NoCrashMDP, s::MLState, a::MLAction)
             car = s.env_cars[i]
             ego = s.env_cars[1]
             if occupation_overlap(new_lane, car.y) && car.x < ego.x
-                if ego.x + (ego.vel + dt*a.acc/2.0)*dt - (car.x + max_dx(car.behavior, car, dt)) < mdp.dmodel.phys_param.l_car
+                if ego.x + (ego.vel + dt*a.acc/2.0)*dt - (car.x + max_dx(get(car.behavior), car, dt)) < mdp.dmodel.phys_param.l_car
                     return false
                 end
             end
@@ -197,7 +197,8 @@ end
 #XXX temp
 create_state(p::NoCrashMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState(-1.,1,1.,0,p.dmodel.behaviors[1]) for _ = 1:p.dmodel.nb_cars])
 
-function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+using Debug
+@debug function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -289,7 +290,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     exits = IntSet()
     for i in 1:nb_cars
         car = s.env_cars[i]
-        xp = car.x + dt*(car.vel - dvs[i]/2.0) - dxs[1]
+        xp = car.x + dxs[i] - dxs[1]
         yp = car.y + dys[i]
         velp = max(min(car.vel + dvs[i],pp.v_max), pp.v_min)
         # note lane change is updated above
@@ -311,6 +312,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             sp.env_cars[i] = CarState(xp, yp, velp, lcs[i], car.behavior)
         end
     end
+    @bp 1 in exits
     deleteat!(sp.env_cars, exits)
     nb_cars -= length(exits)
 
@@ -350,6 +352,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     end
 
     sp.crashed = is_crash(mdp, s, a)
+    @assert sp.env_cars[1].x == s.env_cars[1].x
 
     return (sp, r)
 end
