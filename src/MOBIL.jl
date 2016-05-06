@@ -127,13 +127,7 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 	if isnull(s.env_cars[nbhd[5+dir]].behavior)
 		return 0., 0.
 	end
-	if !(typeof(get(s.env_cars[nbhd[5+dir]].behavior)) <: IDMMOBILBehavior)
-		#TODO figure out
-		# need some kind of api to interface with other behavior model types
-		# for now: just assume 0, 0 (no effect if they're not IDM)
-		a = 0.
-		return a, a
-	end
+
 	v = s.env_cars[idx].vel
 
 	#behind - me
@@ -148,7 +142,12 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 
 	dt = pp.dt
 	#TODO generalize to get_dv?
-	behind_idm = get(s.env_cars[nbhd[5+dir]].behavior).p_idm
+	if !(typeof(get(s.env_cars[nbhd[5+dir]].behavior)) <: IDMMOBILBehavior)
+		# assume some default idm model TODO
+		behind_idm = IDMParam("normal",31.,4.)
+	else
+		behind_idm = get(s.env_cars[nbhd[5+dir]].behavior).p_idm
+	end
 	a_follower = get_idm_dv(behind_idm,dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
 	a_follower_ = get_idm_dv(behind_idm,dt,v_behind,dv_behind_,s_behind_)/dt
 
