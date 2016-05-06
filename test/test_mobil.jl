@@ -268,6 +268,20 @@ function test_get_mobil_lane_change()
 	assert(get_mobil_lane_change(pp,s,nbhd,2),-1)
 end
 
+function failure_2()
+    println("\t\tTesting specific failure: car runs into ego")
+    nb_lanes = 4
+    pp = PhysicalParam(nb_lanes,lane_length=100.) #2.=>col_length=8
+    _discount = 1.
+    nb_cars=10
+    rmodel = NoCrashRewardModel()
+    dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
+    mdp = NoCrashMDP(dmodel, rmodel, _discount);
+    s = Multilane.MLState(false,[Multilane.CarState(50.0,1.0,27.0,0.0,Nullable{Multilane.BehaviorModel}()),Multilane.CarState(45.66875308699299,2.0,29.042803490064543,-0.6666666666666666,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,35.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),1.0,9)),Multilane.CarState(85.41074952313767,3.0,29.831781823255017,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,31.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),1.0,6)),Multilane.CarState(13.78112065279241,3.0,27.0,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),1.0,8)),Multilane.CarState(5.897872040018292,1.0,27.39955827605183,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),1.0,8))])
+    a = MLAction(0.0,0.0)
+    @test !is_crash(mdp, s, a)
+end
+
 function test_mobil()
 	println("\tTesting MOBIL Units...")
 	test_mobil_creation()
@@ -277,5 +291,6 @@ function test_mobil()
 	test_is_lanechange_dangerous()
 	test_get_rear_accel()
 	test_get_mobil_lane_change()
+    failure_2()
 	#NOTE: not working, but since we'll probably be limited to 1 car in the foreseeable future, this isn't the highest priority thing
 end
