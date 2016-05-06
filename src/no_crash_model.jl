@@ -445,7 +445,7 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
 
   end
 
-  resize!(s.env_cars,idx)
+  resize!(s.env_cars,idx-1)
 
   return s
 
