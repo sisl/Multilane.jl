@@ -47,7 +47,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	#if increment y in the same timestep as deciding to lanechange
 	lane_ = car.y
 
-	if mod(lane_,2) == 0. #in between lanes
+	if mod(lane_-0.5,1) == 0. #in between lanes
 		r = rand(rng)
         @assert lane_change != 0
 		lanechange = r < bmodel.rationality ? lane_change : -1*lane_change
@@ -81,7 +81,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	#NO LANECHANGING
 	#lanechange = 0
 
-	return lanechange * dmodel.lane_change_vel
+	return lanechange * dmodel.lane_change_vel / dmodel.phys_param.y_interval
 end
 
 #############################################################################

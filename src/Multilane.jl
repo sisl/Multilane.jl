@@ -35,7 +35,8 @@ export
 export
     NoCrashRewardModel,
     NoCrashIDMMOBILModel,
-    NoCrashMDP
+    NoCrashMDP,
+    Simple
 
 export
     get_neighborhood, #testing VVV

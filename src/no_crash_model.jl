@@ -38,7 +38,7 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
                                           [pp.l_car]))]
       self.behavior_probabilities = WeightVec(ones(length(self.behaviors)))
       self.adjustment_acceleration = 1. #XXX
-      self.lane_change_vel = 1./0.75 #XXX
+      self.lane_change_vel = 2.0/0.75 #XXX
       self.p_appear = 0.5
       self.appear_clearance = 4.
       self.vel_sigma = 2.
@@ -62,7 +62,7 @@ const NB_NORMAL_ACTIONS = 9
 
 function NoCrashActionSpace(mdp::NoCrashMDP)
     accels = (-mdp.dmodel.adjustment_acceleration, 0.0, mdp.dmodel.adjustment_acceleration)
-    lane_changes = (-mdp.dmodel.lane_change_vel, 0.0, mdp.dmodel.lane_change_vel)
+    lane_changes = (-mdp.dmodel.lane_change_vel/ (mdp.dmodel.phys_param.y_interval), 0.0, mdp.dmodel.lane_change_vel/ (mdp.dmodel.phys_param.y_interval))
     NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in product(accels, lane_changes)]
     return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: brake will be calculated later based on the state
 end
@@ -296,13 +296,14 @@ using Debug
         # note lane change is updated above
 
         # check if a lane was crossed and snap back to it
+        """
         if floor(yp) == ceil(car.y)
             yp = ceil(car.y)
         end
         if ceil(yp) == floor(car.y)
             yp = floor(car.y)
         end
-
+        """
         # enforce max/min y position constraints
         yp = min(max(yp,1.), pp.nb_lanes)
 
