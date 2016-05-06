@@ -123,7 +123,7 @@ function draw_sedan(pp::PhysicalParam, s::CarState, v_nom::Float64, frame::Float
 end
 
 function visualize(mdp::MLMDP,
-                   s::MLState, a::MLAction; debug::Bool=false, frame::Float64=0., nb_rows::Int=1)
+                   s::MLState, a::MLAction, sp=create_state(mdp); debug::Bool=false, frame::Float64=0., nb_rows::Int=1, two_frame_crash::Bool=false)
 	#Placeholder!
 	clf()
 	if debug
@@ -202,10 +202,16 @@ function visualize(mdp::MLMDP,
 	#println("e")
 
 	#if is_crash, add crash graphic
-	if is_crash(mdp,s,a,debug)
-		#subplot(211)
-		draw_bang(x_ctr,y_ctr)
-	end
+  if two_frame_crash
+    if is_crash(mdp,s,sp,debug)
+  		draw_bang(x_ctr,y_ctr)
+    end
+  else
+  	if is_crash(mdp,s,a,debug)
+  		#subplot(211)
+  		draw_bang(x_ctr,y_ctr)
+  	end
+  end
 	axis("equal")
 	xlim(-pp.l_car,W)
 	return gcf()

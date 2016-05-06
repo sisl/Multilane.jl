@@ -193,3 +193,78 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 
 	return false
 end
+
+function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, sp::MLState, debug::Bool=false)
+	pp = mdp.dmodel.phys_param
+	dt = pp.dt
+  nb_col = 2*pp.nb_lanes-1
+	agent_pos = s.env_cars[1].x#pp.lane_length/2.
+	agent_y = s.env_cars[1].y*pp.y_interval
+	agent_vel = s.env_cars[1].vel
+
+	#treat agent_pos, agent_y as (0,0)
+	w_car = pp.w_car
+	l_car = pp.l_car
+	#TODO: make it so that X takes in to account the fact that the agent car can change lanes
+	w_car_ = w_car
+
+	agent_y_ = sp.env_cars[1].y*pp.y_interval
+	if agent_y_ <= agent_y
+		w_car_ += agent_y - agent_y_
+		agent_y = agent_y_
+	else
+		w_car_ += agent_y_ - agent_y
+	end
+	X = Array{Float64,2}[[agent_pos agent_pos; agent_y agent_y+w_car_],[agent_pos+l_car agent_pos+l_car; agent_y agent_y+w_car_],
+						[agent_pos agent_pos+l_car; agent_y agent_y],[agent_pos agent_pos+l_car; agent_y+w_car_ agent_y+w_car_]]
+
+	#center of the ego car
+	x = [agent_pos; agent_y]
+	x2 = [sp.env_cars[1].x; agent_y_]
+	#corner-corner distance between two sedan
+	d = norm([2*l_car;2*w_car])
+	if debug
+		subplot(212)
+		for _x in X
+			plot(vec(_x[1,:]),vec(_x[2,:]),color="k")
+		end
+	end
+
+	for (i,(env_car,env_car_)) in enumerate(zip(s.env_cars,sp.env_cars))
+		if i == 1
+			continue
+		end
+		if env_car.x < 0.
+			continue
+		end
+		p = env_car.x
+		y = env_car.y*pp.y_interval
+		p_ = env_car_.x
+		yp = env_car_.y
+
+		dp = p_ - p
+		dy = yp - y
+
+		y1 = [p;y]
+		y2 = [p_;yp]
+		if norm(x-y1) > d && norm(x-y2) > d && norm(x2-y1) > d && norm(x2-y2) > d
+			continue
+		end
+		##TODO: make consistent with new formulation
+		Y1 = Array{Float64,2}[[p p; y y+w_car],[p+l_car p+l_car; y y+w_car],[p p+l_car; y y],[p p+l_car; y+w_car y+w_car]]
+		Y2 = Array{Float64,2}[xy + [dp dp; dy dy] for xy in Y1]
+		Y3 = Array{Float64,2}[[p p_; y yp],[p+l_car p_+l_car; y yp],[p p_; y+w_car yp+w_car],[p+l_car p_+l_car; y+w_car yp+w_car]]
+
+		Y = Array{Float64,2}[Y1;Y2;Y3]
+		if debug
+			for Yi in Y
+				plot(vec(Yi[1,:]),vec(Yi[2,:]),color="b")
+			end
+		end
+		if poly_intersect(X,Y)
+			return true
+		end
+	end
+
+	return false
+end
