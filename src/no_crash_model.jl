@@ -80,7 +80,7 @@ function actions(mdp::NoCrashMDP, s::MLState, as::NoCrashActionSpace) # no imple
         if ego_y == 1. && a.lane_change < 0. || ego_y == mdp.dmodel.phys_param.nb_lanes && a.lane_change > 0.0
             continue
         end
-        # prevent running into the person in front
+        # prevent running into the person in front or to the side
         if is_safe(mdp, s, as.NORMAL_ACTIONS[i])
             push!(acceptable, i)
         end
@@ -117,9 +117,6 @@ end
 Calculate the maximum safe acceleration that will allow the car to avoid a collision if the car in front slams on its brakes
 """
 function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
-    if length(s.env_cars) < 2
-        return 0.0
-    end
     dt = mdp.dmodel.phys_param.dt
     v_min = mdp.dmodel.phys_param.v_min
     l_car = mdp.dmodel.phys_param.l_car
@@ -142,7 +139,7 @@ function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
         end
         # calculate necessary acceleration
         if car_in_front == 0
-            return 0.0
+            return Inf
         else
             vo = s.env_cars[car_in_front].vel
             v = ego.vel
@@ -151,6 +148,7 @@ function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
             return (bp*dt + 4.*v - sqrt(16.*g*bp + bp^2*dt^2 - 8.*bp*dt*v + 8.*vo^2)) / (4.*dt)
         end
     end
+    return Inf
 end
 
 """
@@ -166,7 +164,7 @@ end
 Tests whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
 """
 function is_safe(mdp::NoCrashMDP, s::MLState, a::MLAction)
-    if a.acc <= max_safe_acc(mdp, s, a.lane_change)
+    if a.acc >= max_safe_acc(mdp, s, a.lane_change)
         return false
     end
     # check whether we will go into anyone else's lane so close that they might hit us

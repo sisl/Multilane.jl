@@ -2,6 +2,7 @@ push!(LOAD_PATH,joinpath("..","src"))
 using Multilane
 using Base.Test
 using GenerativeModels
+using POMDPs
 
 import Iterators.product
 import Base.assert
@@ -62,6 +63,7 @@ include("test_mobil.jl")
 include("test_types.jl")
 include("test_crash.jl")
 include("test_model.jl")
+include("test_actions.jl")
 
 println("Running Unit Tests...")
 test_idm()
@@ -69,6 +71,7 @@ test_mobil()
 test_mdp_types()
 test_crash()
 test_model()
+test_actions()
 
 # println("Running an OriginalMDP example...")
 # include("run_example.jl")
