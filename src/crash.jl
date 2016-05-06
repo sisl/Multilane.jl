@@ -108,6 +108,7 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 	#going offroad is considered grashing
 
   pp = mdp.dmodel.phys_param
+	dt = pp.dt
   nb_col = 2*pp.nb_lanes-1
 	agent_pos = s.env_cars[1].x#pp.lane_length/2.
 	agent_y = s.env_cars[1].y*pp.y_interval
@@ -120,10 +121,10 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 	w_car_ = w_car
 	diff = 0.75
 	if a.lane_change < 0
-		agent_y -= pp.y_interval
+		agent_y += pp.y_interval * a.lane_change * dt
 		w_car_ += pp.y_interval*diff
 	elseif a.lane_change > 0
-		w_car_ += pp.y_interval*(1.+(1-diff))
+		w_car_ += pp.y_interval*(1.+(1-diff)) * a.lane_change * dt
 		agent_y += pp.y_interval*(1-diff)
 	end
 	#X = Array{Float64,2}[agent_pos agent_pos+l_car agent_pos+l_car agent_pos agent_pos; agent_y agent_y agent_y+w_car agent_y+w_car agent_y]
@@ -141,7 +142,6 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 		end
 	end
 
-	dt = pp.dt
 	dx1 = s.env_cars[1].vel + a.acc*dt/2.
 
 	for (i,env_car) in enumerate(s.env_cars)
@@ -154,7 +154,7 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, a::MLAction, debug::
 		vel = env_car.vel
 		lane_change = env_car.lane_change
 		behavior = get(env_car.behavior)
-		lane_ = max(1,min(env_car.y+lane_change,pp.nb_lanes))
+		lane_ = max(1,min(env_car.y + lane_change * dt,pp.nb_lanes))
 
 		neighborhood = get_neighborhood(pp,s,i)
 
