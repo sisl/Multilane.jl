@@ -352,7 +352,7 @@ using Debug
     end
 
     sp.crashed = is_crash(mdp, s, a)
-    @assert sp.env_cars[1].x == s.env_cars[1].x
+    @assert sp.env_cars[1].x == s.env_cars[1].x # ego should not move
 
     return (sp, r)
 end
