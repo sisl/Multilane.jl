@@ -216,6 +216,7 @@ using Debug
 
     # agent
     dvs[1] = a.acc*dt
+    dxs[1] = s.env_cars[1].vel*dt + a.acc*dt^2/2.
     lcs[1] = a.lane_change
     dys[1] = a.lane_change*dt
 
