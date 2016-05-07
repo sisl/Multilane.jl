@@ -24,12 +24,12 @@ function test_carstate_equality()
 	#println("\t\tTesting CarState equality")
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[27.,31.,35.],[4.]))]
 	ps = CarState[]
-	push!(ps,CarState(1.,1,3.,0,bs[1]))
-	push!(ps,CarState(1.,1,3.,0,bs[2]))
-	push!(ps,CarState(1.,1,5.,0,bs[1]))
-	push!(ps,CarState(1.,1,3.,1,bs[1]))
-	push!(ps,CarState(1.,2,3.,0,bs[1]))
-	push!(ps,CarState(2.,1,3.,0,bs[1]))
+	push!(ps,CarState(1.,1,3.,0,bs[1],0))
+	push!(ps,CarState(1.,1,3.,0,bs[2],0))
+	push!(ps,CarState(1.,1,5.,0,bs[1],0))
+	push!(ps,CarState(1.,1,3.,1,bs[1],0))
+	push!(ps,CarState(1.,2,3.,0,bs[1],0))
+	push!(ps,CarState(2.,1,3.,0,bs[1],0))
 
 	test_equality("CarState",ps)
 
@@ -39,12 +39,12 @@ function test_carstate_hashing()
 	#println("\t\tTesting CarState hashing")
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[27.,31.,35.],[4.]))]
 	ps = CarState[]
-	push!(ps,CarState(1.,1,3.,0,bs[1]))
-	push!(ps,CarState(1.,1,3.,0,bs[2]))
-	push!(ps,CarState(1.,1,5.,0,bs[1]))
-	push!(ps,CarState(1.,1,3.,1,bs[1]))
-	push!(ps,CarState(1.,2,3.,0,bs[1]))
-	push!(ps,CarState(2.,1,3.,0,bs[1]))
+	push!(ps,CarState(1.,1,3.,0,bs[1],0))
+	push!(ps,CarState(1.,1,3.,0,bs[2],0))
+	push!(ps,CarState(1.,1,5.,0,bs[1],0))
+	push!(ps,CarState(1.,1,3.,1,bs[1],0))
+	push!(ps,CarState(1.,2,3.,0,bs[1],0))
+	push!(ps,CarState(2.,1,3.,0,bs[1],0))
 
 	test_hashing("CarState",ps)
 end
@@ -58,12 +58,12 @@ function test_MLState_equality()
 	#println("\t\tTesting MLState equality")
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[27.,31.,35.],[4.]))]
 	cs = CarState[]
-	push!(cs,CarState(1.,1,3.,0,bs[1]))
-	push!(cs,CarState(1.,1,3.,0,bs[2]))
-	push!(cs,CarState(1.,1,5.,0,bs[1]))
-	push!(cs,CarState(1.,1,3.,1,bs[1]))
-	push!(cs,CarState(1.,2,3.,0,bs[1]))
-	push!(cs,CarState(2.,1,3.,0,bs[1]))
+	push!(cs,CarState(1.,1,3.,0,bs[1],0))
+	push!(cs,CarState(1.,1,3.,0,bs[2],0))
+	push!(cs,CarState(1.,1,5.,0,bs[1],0))
+	push!(cs,CarState(1.,1,3.,1,bs[1],0))
+	push!(cs,CarState(1.,2,3.,0,bs[1],0))
+	push!(cs,CarState(2.,1,3.,0,bs[1],0))
 
 	ps = MLState[]
 	push!(ps,MLState(false,2,5.,cs[1:1]))
@@ -79,12 +79,12 @@ function test_MLState_hashing()
 	#println("\t\tTesting MLState hashing")
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[27.,31.,35.],[4.]))]
 	cs = CarState[]
-	push!(cs,CarState(1.,1,3.,0,bs[1]))
-	push!(cs,CarState(1.,1,3.,0,bs[2]))
-	push!(cs,CarState(1.,1,5.,0,bs[1]))
-	push!(cs,CarState(1.,1,3.,1,bs[1]))
-	push!(cs,CarState(1.,2,3.,0,bs[1]))
-	push!(cs,CarState(2.,1,3.,0,bs[1]))
+	push!(cs,CarState(1.,1,3.,0,bs[1],0))
+	push!(cs,CarState(1.,1,3.,0,bs[2],0))
+	push!(cs,CarState(1.,1,5.,0,bs[1],0))
+	push!(cs,CarState(1.,1,3.,1,bs[1],0))
+	push!(cs,CarState(1.,2,3.,0,bs[1],0))
+	push!(cs,CarState(2.,1,3.,0,bs[1],0))
 
 	ps = MLState[]
 	push!(ps,MLState(false,2,5.,cs[1:1]))

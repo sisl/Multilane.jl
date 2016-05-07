@@ -40,14 +40,16 @@ immutable CarState
 	vel::Float64 #v_x
 	lane_change::Float64 # ydot
 	behavior::Nullable{BehaviorModel}
+    id::Int # car id to track from state to state
+end
 
-	function CarState(x::Float64, y::Real ,vel::Float64, lane_change::Real, behavior::Union{Nullable{BehaviorModel},BehaviorModel})
-		# assert(abs(lane_change) <= 1.) #XXX might not be appropriate with new def of lane_change
-		return new(x, y, vel, lane_change, behavior)
-	end
-end #carstate
-==(a::CarState,b::CarState) = a.x==b.x && a.y==b.y && a.vel==b.vel && a.lane_change == b.lane_change && ((isnull(a.behavior) && isnull(b.behavior)) || (get(a.behavior)==get(b.behavior)))
-Base.hash(a::CarState, h::UInt64=zero(UInt64)) = hash(a.vel, hash(a.x, hash(a.y, hash(a.lane_change,hash(a.behavior,h)))))
+# for the nullz
+# function CarState(x::Float64, y::Real ,vel::Float64, lane_change::Real, behavior::Union{Nullable{BehaviorModel},BehaviorModel})
+# 	return CarState(x, y, vel, lane_change, behavior, 0)
+# end
+
+==(a::CarState,b::CarState) = a.x==b.x && a.y==b.y && a.vel==b.vel && a.lane_change == b.lane_change && ((isnull(a.behavior) && isnull(b.behavior)) || (get(a.behavior)==get(b.behavior))) && a.id == b.id
+Base.hash(a::CarState, h::UInt64=zero(UInt64)) = hash(a.vel, hash(a.x, hash(a.y, hash(a.lane_change, hash(a.behavior, hash(a.id, h))))))
 
 type MLState
     crashed::Bool # A crash occurs at the state transition. All crashed states are considered equal
@@ -56,11 +58,11 @@ end #MLState
 
 function MLState(pos::Real, vel::Real, cars::Array{CarState,1}, x::Real=50.)
   #x = mdp.phys_param.lane_length/2.
-  insert!(cars,1,CarState(x,pos,vel,0,Nullable{BehaviorModel}()))
+  insert!(cars,1,CarState(x, pos, vel, 0, Nullable{BehaviorModel}(), 0))
   return MLState(false,cars)
 end
 function MLState(crashed::Bool,pos::Real,vel::Real,cars::Array{CarState,1},x::Real=50.)
-  insert!(cars,1,CarState(x,pos,vel,0,Nullable{BehaviorModel}()))
+  insert!(cars,1,CarState(x, pos, vel, 0, Nullable{BehaviorModel}(), 0))
   return MLState(crashed,cars)
 end
 

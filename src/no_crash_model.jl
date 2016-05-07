@@ -193,7 +193,7 @@ function occupation_overlap(y1::Float64, y2::Float64)
 end
 
 #XXX temp
-create_state(p::NoCrashMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState(-1.,1,1.,0,p.dmodel.behaviors[1]) for _ = 1:p.dmodel.nb_cars])
+create_state(p::NoCrashMDP) = MLState(false, Array(CarState, p.dmodel.nb_cars))
 
 function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
@@ -294,21 +294,21 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         # note lane change is updated above
 
         # check if a lane was crossed and snap back to it
-        """
-        if floor(yp) == ceil(car.y)
+        if floor(yp) >= ceil(car.y)
             yp = ceil(car.y)
         end
-        if ceil(yp) == floor(car.y)
+        if ceil(yp) <= floor(car.y)
             yp = floor(car.y)
         end
-        """
+
         # enforce max/min y position constraints
-        yp = min(max(yp,1.), pp.nb_lanes)
+        # yp = min(max(yp,1.), pp.nb_lanes) # this should never be violated because of the check above
+        @assert yp >= 1.0 && yp <= pp.nb_lanes
 
         if xp < 0.0 || xp >= pp.lane_length
             push!(exits, i)
         else
-            sp.env_cars[i] = CarState(xp, yp, velp, lcs[i], car.behavior)
+            sp.env_cars[i] = CarState(xp, yp, velp, lcs[i], car.behavior, s.env_cars[i].id)
         end
     end
     deleteat!(sp.env_cars, exits)
@@ -341,15 +341,17 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         end
         # pick one
         spot = rand(rng, clear_spots)
+
+        next_id = max([c.id for c in s.env_cars]) + 1
         behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
         if spot[2] # at front
-            push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_cars[1].vel, 0.0, behavior))
+            push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_cars[1].vel, 0.0, behavior, next_id))
         else # at back
-            push!(sp.env_cars, CarState(0.0, spot[1], sp.env_cars[1].vel, 0.0, behavior))
+            push!(sp.env_cars, CarState(0.0, spot[1], sp.env_cars[1].vel, 0.0, behavior, next_id))
         end
     end
 
-    sp.crashed = is_crash(mdp, s, a)
+    sp.crashed = is_crash(mdp, s, sp)
 
     @assert sp.env_cars[1].x == s.env_cars[1].x # ego should not move
 
@@ -369,7 +371,7 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
   #ego velocity
   vel = max(min(randn(rng)*mdp.dmodel.vel_sigma + pp.v_med, pp.v_max), pp.v_min)
 
-  s.env_cars[1] = CarState(pos_x,pos_y,vel,0,Nullable{BehaviorModel}())
+  s.env_cars[1] = CarState(pos_x, pos_y, vel, 0, Nullable{BehaviorModel}(), 1)
   # XXX dirichlet and exponential are from distributions--does not accept rng!!!
   dir_distr = Dirichlet(mdp.dmodel.lane_weights)
   cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
@@ -435,7 +437,7 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
       vel = randn(rng)*mdp.dmodel.vel_sigma + behavior.p_idm.v0
       vel = max(min(vel,pp.v_max),pp.v_min)
 
-      car = CarState(x,lane,vel,0,behavior)
+      car = CarState(x, lane, vel, 0, behavior, idx)
       s.env_cars[idx] = car
       idx += 1
     end

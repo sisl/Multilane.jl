@@ -51,9 +51,9 @@ discount(mdp::MLMDP) = mdp.discount
 isterminal(mdp::MLMDP,s::MLState) = s.crashed
 
 function GenerativeModels.initial_state(mdp::OriginalMDP, rng::AbstractRNG=MersenneTwister(34985))
-   s0 = MLState(false,CarState[CarState(-1., 1, 1., 0, mdp.dmodel.BEHAVIORS[1]) for i = 1:mdp.dmodel.nb_cars])
+   s0 = MLState(false,CarState[CarState(-1., 1, 1., 0, mdp.dmodel.BEHAVIORS[1],0) for i = 1:mdp.dmodel.nb_cars])
    #insert ego car at index 1
-   insert!(s0.env_cars,1,CarState(mdp.dmodel.phys_param.lane_length/2., 1., mdp.dmodel.phys_param.v_med, 0, Nullable{BehaviorModel}()))
+   insert!(s0.env_cars,1,CarState(mdp.dmodel.phys_param.lane_length/2., 1., mdp.dmodel.phys_param.v_med, 0, Nullable{BehaviorModel}(), 0))
    return s0
 end
 
@@ -91,7 +91,7 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
     car_states = resize!(sp.env_cars,0)
     push!(car_states,CarState(s.env_cars[1].x, agent_lane_,
                                 agent_vel_,s.env_cars[1].lane_change,
-                                Nullable{BehaviorModel}()))
+                                Nullable{BehaviorModel}()), 0)
     valid_col_top = collect(1:2:nb_col)
     valid_col_bot = collect(1:2:nb_col)
 
@@ -113,7 +113,7 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             lane_ = round(max(1,min(y+lane_change,nb_col)))
             pos_ = x + dt*(vel-agent_vel)
             if (pos_ > pp.lane_length) || (pos_ < 0.)
-                push!(car_states,CarState(-1.,1,1.,0,BEHAVIORS[1]))
+                push!(car_states,CarState(-1.,1,1.,0,BEHAVIORS[1],0))
                 continue
             end
             #if in between lanes, continue lanechange with prob behavior.rationality, else go other direction
@@ -145,7 +145,7 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
                 end
             end
 
-            push!(car_states,CarState(pos_,lane_,vel_,lanechange_,car.behavior))
+            push!(car_states,CarState(pos_,lane_,vel_,lanechange_,car.behavior,0))
         else
             #TODO: push this to a second loop after this loop
             r = rand(rng)
@@ -185,7 +185,7 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
                                                     max(behavior.p_idm.v0-1,pp.v_min))*
                                                     rand(rng) + behavior.p_idm.v0
 
-        car_states[j] = CarState(pos[1], pos[2], vel, lanechange, behavior)
+        car_states[j] = CarState(pos[1], pos[2], vel, lanechange, behavior, 0)
     end
 
     sp.crashed = is_crash(mdp, s, a)
@@ -201,5 +201,5 @@ function rand(rng::AbstractRNG, action_space::ActionSpace, a=nothing)
     return action_space.actions[r]
 end
 
-create_state(p::OriginalMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState(-1.,1,1.,0,p.dmodel.BEHAVIORS[1]) for _ = 1:p.dmodel.nb_cars])
+create_state(p::OriginalMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState(-1.,1,1.,0,p.dmodel.BEHAVIORS[1],0) for _ = 1:p.dmodel.nb_cars])
 create_action(p::OriginalMDP) = MLAction()
