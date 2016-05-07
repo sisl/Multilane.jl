@@ -51,6 +51,8 @@ end
 
 typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
 
+create_action(::NoCrashMDP) = MLAction()
+
 # action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {brake}
 immutable NoCrashActionSpace
     NORMAL_ACTIONS::Vector{MLAction} # all the actions except brake

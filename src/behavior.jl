@@ -59,25 +59,30 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 		return lanechange
 	end
 	#sample normally
-	lanechange_ = get_mobil_lane_change(pp, s, neighborhood,idx)
+	lanechange_::Int = get_mobil_lane_change(pp, s, neighborhood, idx, rng)
 	#if frnot neighbor is lanechanging, don't lane change
 	nbr = neighborhood[2]
 	ahead_dy = nbr != 0 ? s.env_cars[nbr].lane_change : 0
 	if ahead_dy != 0
 			lanechange_ = 0.
 	end
-	lane_change_other = setdiff([-1;0;1],[lanechange_])
-	#safety criterion is hard
-	if is_lanechange_dangerous(pp,s,neighborhood,idx,1)
-			lane_change_other = setdiff(lane_change_other,[1])
-	end
-	if is_lanechange_dangerous(pp, s, neighborhood,idx,-1)
-			lane_change_other = setdiff(lane_change_other,[-1])
-	end
 
-	lanechange_other_probs = ((1-bmodel.rationality)/length(lane_change_other))*ones(length(lane_change_other))
-	lanechange_probs = WeightVec([bmodel.rationality;lanechange_other_probs])
-	lanechange = sample(rng,[lanechange_;lane_change_other],lanechange_probs)
+    if bmodel.rationality < 1.0
+        lane_change_other = setdiff([-1;0;1],[lanechange_]) # XXX Inefficient
+        #safety criterion is hard
+        if is_lanechange_dangerous(pp,s,neighborhood,idx,1)
+                lane_change_other = setdiff(lane_change_other,[1])
+        end
+        if is_lanechange_dangerous(pp, s, neighborhood,idx,-1)
+                lane_change_other = setdiff(lane_change_other,[-1])
+        end
+
+        lanechange_other_probs = ((1-bmodel.rationality)/length(lane_change_other))*ones(length(lane_change_other))
+        lanechange_probs = WeightVec([bmodel.rationality;lanechange_other_probs]) # XXX Inefficient
+        lanechange = sample(rng,[lanechange_;lane_change_other],lanechange_probs) # XXX Inefficient
+    else
+        lanechange = lanechange_
+    end
 	#NO LANECHANGING
 	#lanechange = 0
 

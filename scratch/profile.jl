@@ -18,18 +18,16 @@ nb_cars=3
 
 rng = MersenneTwister(9)
 
-rmodel = OriginalRewardModel(r_crash,
-                             accel_cost,
-                             decel_cost,
-                             invalid_cost,
-                             lineride_cost,
-                             lanechange_cost)
+nb_lanes = 4
+pp = PhysicalParam(nb_lanes,lane_length=100.) #2.=>col_length=8\n",
+_discount = 1.
+nb_cars=10
+rmodel = NoCrashRewardModel()
+dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
+mdp = NoCrashMDP(dmodel, rmodel, _discount);
+rng = MersenneTwister(5)
 
-dmodel = IDMMOBILModel(nb_cars, pp)
-
-mdp = OriginalMDP(dmodel, rmodel, _discount)
-
-policy = RandomPolicy(mdp)
+policy = RandomPolicy(mdp, rng=rng)
 
 sim = RolloutSimulator(max_steps=1000)
 

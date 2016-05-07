@@ -178,7 +178,7 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 	v = state.vel
 	#get predicted and potential accelerations
 
-	#TODO generalize to get_dv()?
+	#TODO generalize to get_dv()? # btw this takes a lot of processing time
 	a_self = get_idm_dv(p_idm_self,dt,v,get_dv_ds(pp,s,nbhd,idx,2)...)/dt
 	a_self_left = get_idm_dv(p_idm_self,dt,v,get_dv_ds(pp,s,nbhd,idx,3)...)/dt
 	a_self_right = get_idm_dv(p_idm_self,dt,v,get_dv_ds(pp,s,nbhd,idx,1)...)/dt
