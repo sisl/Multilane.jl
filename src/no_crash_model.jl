@@ -240,7 +240,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
         lcs[i] = generate_lane_change(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dys[i] = lcs[i] * dt
-        if sp.env_cars[i].lane_change != 0
+        if lcs[i] != 0
             push!(changers, i)
         end
     end
@@ -254,7 +254,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
       # iterate through pairs
       iter_state = start(sorted_changers)
       j, iter_state = next(sorted_changers, iter_state)
-      while !done(sorted_changers, state)
+      while !done(sorted_changers, iter_state)
           i = j
           j, iter_state = next(sorted_changers, iter_state)
           car_i = s.env_cars[i]
@@ -342,7 +342,7 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         # pick one
         spot = rand(rng, clear_spots)
 
-        next_id = max([c.id for c in s.env_cars]) + 1
+        next_id = maximum([c.id for c in s.env_cars]) + 1
         behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
         if spot[2] # at front
             push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_cars[1].vel, 0.0, behavior, next_id))

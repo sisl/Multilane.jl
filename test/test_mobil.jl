@@ -291,5 +291,5 @@ function test_mobil()
 	test_is_lanechange_dangerous()
 	test_get_rear_accel()
 	test_get_mobil_lane_change()
-    # failure_2()
+    failure_2()
 end
