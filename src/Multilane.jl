@@ -5,6 +5,7 @@ import StatsBase: WeightVec, sample
 using POMDPs
 import POMDPs: actions, discount, isterminal, iterator
 import POMDPs: create_action, create_state, rand, reward
+import POMDPs: solve, action
 using GenerativeModels
 import GenerativeModels: generate_s, generate_sr, initial_state
 
@@ -39,6 +40,10 @@ export
     Simple
 
 export
+    SingleBehaviorSolver,
+    SingleBehaviorPolicy
+
+export
     get_neighborhood, #testing VVV
     get_dv_ds,
     is_lanechange_dangerous,
@@ -59,5 +64,7 @@ include("MOBIL.jl")
 include("behavior.jl")
 include("no_crash_model.jl")
 include("visualization.jl")
+include("evaluation.jl")
+include("single_behavior.jl")
 
 end # module

@@ -54,7 +54,7 @@ typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewar
 create_action(::NoCrashMDP) = MLAction()
 
 # action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {brake}
-immutable NoCrashActionSpace
+immutable NoCrashActionSpace <: AbstractSpace{MLAction}
     NORMAL_ACTIONS::Vector{MLAction} # all the actions except brake
     acceptable::IntSet
     brake::MLAction # this action will be EITHER braking at half the dangerous brake threshold OR the braking necessary to prevent a collision at all time in the future
@@ -341,15 +341,18 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
                 push!(clear_spots, (i,j))
             end
         end
-        # pick one
-        spot = rand(rng, clear_spots)
 
-        next_id = maximum([c.id for c in s.env_cars]) + 1
-        behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
-        if spot[2] # at front
-            push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_cars[1].vel, 0.0, behavior, next_id))
-        else # at back
-            push!(sp.env_cars, CarState(0.0, spot[1], sp.env_cars[1].vel, 0.0, behavior, next_id))
+        if length(clear_spots) > 0
+            # pick one
+            spot = rand(rng, clear_spots)
+
+            next_id = maximum([c.id for c in s.env_cars]) + 1
+            behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
+            if spot[2] # at front
+                push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_cars[1].vel, 0.0, behavior, next_id))
+            else # at back
+                push!(sp.env_cars, CarState(0.0, spot[1], sp.env_cars[1].vel, 0.0, behavior, next_id))
+            end
         end
     end
 
