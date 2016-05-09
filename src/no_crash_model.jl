@@ -381,7 +381,6 @@ function initial_state(mdp::NoCrashMDP, rng::AbstractRNG, s::MLState=create_stat
   dir_distr = Dirichlet(mdp.dmodel.lane_weights)
   cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
 
-  # TODO remove nb_cars - sum(cars_per_lane)
   dist_distr1 = Exponential(1./mdp.dmodel.dist_var)
 
   last_front = 1 #last car to be sampled in front of ego car--starts as ego car
