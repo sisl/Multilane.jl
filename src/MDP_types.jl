@@ -100,3 +100,33 @@ typealias OriginalMDP MLMDP{MLState, MLAction, IDMMOBILModel, OriginalRewardMode
 type ActionSpace <: AbstractSpace
 	actions::Vector{MLAction}
 end
+
+immutable CarStateObs
+  x::Float64
+  y::Float64
+  vel::Float64
+  lane_change::Float64
+end
+==(a::CarStateObs, b::CarStateObs) = (a.x == b.x) && (a.y == b.y) && (a.vel == b.vel) && (a.lane_change == b.lane_change)
+Base.hash(a::CarStateObs,h::UInt64=zero(UInt64)) = hash(a.x, hash(a.y, hash(a.vel, (hash(a.lane_change, h)))))
+CarStateObs(cs::CarState) = CarStateObs(cs.x, cs.y, cs.vel, cs.lane_change)
+
+immutable MLObs
+  crashed::Bool
+  env_cars::Array{CarStateObs,1}
+end
+MLObs(s::MLState) = MLObs(s.crashed,CarStateObs[CarStateObs(cs) for cs in s.env_cars])
+function ==(a::MLObs, b::MLObs)
+    if a.crashed && b.crashed
+        return true
+    elseif a.crashed || b.crashed # only one has crashed
+        return false
+    end
+    return (a.env_cars == b.env_cars) #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
+end
+function Base.hash(a::MLObs, h::UInt64=zero(UInt64))
+    if a.crashed
+        return hash(a.crashed, h)
+    end
+    return hash(a.env_cars,h)#hash(a.agent_vel,hash(a.agent_pos,hash(a.env_cars,h)))
+end
