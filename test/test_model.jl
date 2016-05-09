@@ -46,8 +46,41 @@ function test_encounter()
     @test length(sp.env_cars) == 3
 end
 
+"""
+Return a CarState for the ego vehicle with the specified y.
+"""
+ego_state_spec_y(y) = CarState(0.0, y, 30.0, 0.0, Nullable{BehaviorModel}(),1)
+
+function test_snapback()
+    println("\t\tTesting snapping back after lane change too far")
+    mdp = MDP_fixture()
+    rng = MersenneTwister(2)
+    mdp.dmodel.phys_param.dt = 0.75
+    s = state_fixture()
+    s.env_cars[1] = ego_state_spec_y(2.0)
+    a1 = MLAction(0,1.0)
+    sp,r = generate_sr(mdp, s, a1, rng)
+    @test sp.env_cars[1].y == 2.0 + 1.0*0.75
+    a2 = MLAction(0,2.0)
+    sp,r = generate_sr(mdp, s, a2, rng)
+    @test sp.env_cars[1].y == 3.0
+    s.env_cars[1] = ego_state_spec_y(1.99)
+    a3 = MLAction(0,1.0)
+    sp,r = generate_sr(mdp, s, a3, rng)
+    @test sp.env_cars[1].y == 2.0
+    s.env_cars[1] = ego_state_spec_y(2.01)
+    a4 = MLAction(0,-1.0)
+    sp,r = generate_sr(mdp, s, a4, rng)
+    @test sp.env_cars[1].y == 2.0
+    s.env_cars[1] = ego_state_spec_y(1.01)
+    a5 = MLAction(0.,0.1)
+    sp,r = generate_sr(mdp, s, a5, rng)
+    @test sp.env_cars[1].y == 1.01 + 0.1*0.75
+end
+
 function test_model()
     println("\tTesting Model...")
     test_occupation()
     test_encounter()
+    test_snapback()
 end
