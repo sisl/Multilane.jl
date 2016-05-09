@@ -26,6 +26,8 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsMode
 	dv, ds = get_dv_ds(pp,s,neighborhood,idx,2)
 
 	dvel = get_idm_dv(bmodel.p_idm,dt,vel,dv,ds) #call idm model
+	#TODO: add gaussian noise
+	dvel += randn(rng) * dmodel.vel_sigma
 	dvel = min(max(dvel/dt,-bmodel.p_idm.b),bmodel.p_idm.a)
 	#accelerate normally or dont accelerate
 	if rand(rng) < 1 - bmodel.rationality
