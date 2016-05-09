@@ -25,29 +25,28 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     lane_weights::Array{Float64,1} # dirichlet alpha values for each lane: first is for rightmost lane
     dist_var::Float64 # variance of distance--can back out rate, shape param from this
 
-    #XXX temporary
-    function NoCrashIDMMOBILModel(nb_cars::Int,pp::PhysicalParam)
-      self = new()
-      self.nb_cars = nb_cars
-      self.phys_param = pp
-
-      # XXX VVV TEMP XXX
-      self.behaviors = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
-                                          enumerate(product(["cautious","normal","aggressive"],
-                                          [pp.v_slow+0.5;pp.v_med;pp.v_fast],
-                                          [pp.l_car]))]
-      self.behavior_probabilities = WeightVec(ones(length(self.behaviors)))
-      self.adjustment_acceleration = 1. #XXX
-      self.lane_change_vel = 2.0/0.75 #XXX
-      self.p_appear = 0.5
-      self.appear_clearance = 4.
-      self.vel_sigma = 2.
-      self.lane_weights = ones(pp.nb_lanes)
-      self.dist_var = 2 #idk
-
-      return self
-    end
 end
+
+#XXX temporary
+function NoCrashIDMMOBILModel(nb_cars::Int,pp::PhysicalParam)
+    return NoCrashIDMMOBILModel(
+            nb_cars,
+            pp,
+            IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
+                                      enumerate(product(["cautious","normal","aggressive"],
+                                      [pp.v_slow+0.5;pp.v_med;pp.v_fast],
+                                      [pp.l_car]))],
+            WeightVec(ones(length(self.behaviors))),
+            1.,
+            1.0/0.75,
+            0.5,
+            20.0,
+            2.,
+            ones(pp.nb_lanes),
+            2.
+        )
+end
+
 
 typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
 
@@ -64,7 +63,7 @@ const NB_NORMAL_ACTIONS = 9
 
 function NoCrashActionSpace(mdp::NoCrashMDP)
     accels = (-mdp.dmodel.adjustment_acceleration, 0.0, mdp.dmodel.adjustment_acceleration)
-    lane_changes = (-mdp.dmodel.lane_change_vel/ (mdp.dmodel.phys_param.y_interval), 0.0, mdp.dmodel.lane_change_vel/ (mdp.dmodel.phys_param.y_interval))
+    lane_changes = (-mdp.dmodel.lane_change_vel, 0.0, mdp.dmodel.lane_change_vel)
     NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in product(accels, lane_changes)]
     return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: brake will be calculated later based on the state
 end
@@ -197,7 +196,8 @@ end
 #XXX temp
 create_state(p::NoCrashMDP) = MLState(false, Array(CarState, p.dmodel.nb_cars))
 
-function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+using Debug
+@debug function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -312,7 +312,8 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
 
         # enforce max/min y position constraints
         # yp = min(max(yp,1.), pp.nb_lanes) # this should never be violated because of the check above
-        @assert yp >= 1.0 && yp <= pp.nb_lanes
+        @bp yp < 1.0 || yp > pp.nb_lanes
+        # @assert yp >= 1.0 && yp <= pp.nb_lanes
 
         if xp < 0.0 || xp >= pp.lane_length
             push!(exits, i)

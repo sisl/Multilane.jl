@@ -43,13 +43,17 @@ immutable CarState
     id::Int # car id to track from state to state
 end
 
-# for the nullz
-# function CarState(x::Float64, y::Real ,vel::Float64, lane_change::Real, behavior::Union{Nullable{BehaviorModel},BehaviorModel})
-# 	return CarState(x, y, vel, lane_change, behavior, 0)
-# end
-
 ==(a::CarState,b::CarState) = a.x==b.x && a.y==b.y && a.vel==b.vel && a.lane_change == b.lane_change && ((isnull(a.behavior) && isnull(b.behavior)) || (get(a.behavior)==get(b.behavior))) && a.id == b.id
 Base.hash(a::CarState, h::UInt64=zero(UInt64)) = hash(a.vel, hash(a.x, hash(a.y, hash(a.lane_change, hash(a.behavior, hash(a.id, h))))))
+"Return a representation that will produce a valid object if executed"
+function repr(c::CarState)
+    if isnull(c.behavior)
+        bstring = "Nullable{BehaviorModel}()"
+    else
+        bstring = "Nullable{BehaviorModel}($(get(c.behavior)))"
+    end
+    return "CarState($(c.x),$(c.y),$(c.vel),$(c.lane_change),$bstring,$(c.id))"
+end
 
 type MLState
     crashed::Bool # A crash occurs at the state transition. All crashed states are considered equal
@@ -79,6 +83,14 @@ function Base.hash(a::MLState, h::UInt64=zero(UInt64))
         return hash(a.crashed, h)
     end
     return hash(a.env_cars,h)#hash(a.agent_vel,hash(a.agent_pos,hash(a.env_cars,h)))
+end
+
+function repr(s::MLState)
+    rstring = "MLState($(s.crashed)"
+    for c in s.env_cars
+        rstring = string(rstring, ",$(repr(c))")
+    end
+    return string(rstring, ")")
 end
 
 immutable MLAction

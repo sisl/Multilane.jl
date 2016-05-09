@@ -26,7 +26,7 @@ r_random = Multilane.evaluate_performance(problems, initial_states, rs)
 
 dpws = DPWSolver()
 
-r_dpw = Multilane.evaluate_performance(problems, initial_states, dpws)
+r_dpw = Multilane.evaluate_performance(problems, initial_states, dpws, parallel=false)
 
 single_dpws = SingleBehaviorSolver(dpws, IDMMOBILBehavior("normal", 30.0, 10.0, 1))
 
