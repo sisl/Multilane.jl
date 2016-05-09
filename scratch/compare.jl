@@ -10,7 +10,7 @@ nb_lanes = 4
 pp = PhysicalParam(nb_lanes,lane_length=100.) #2.=>col_length=8\n",
 _discount = 1.
 nb_cars=10
-rmodel = NoCrashRewardModel()
+rmodel = NoCrashRewardModel(100,10,1.5,nb_lanes)
 dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
 mdp = NoCrashMDP(dmodel, rmodel, _discount);
 isrng = MersenneTwister(123)

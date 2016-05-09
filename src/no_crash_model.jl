@@ -1,12 +1,12 @@
 type NoCrashRewardModel <: AbstractMLRewardModel
-    cost_dangerous_brake::Float64
-    reward_in_desired_lane::Float64
+    cost_dangerous_brake::Float64 # POSITIVE NUMBER
+    reward_in_desired_lane::Float64 # POSITIVE NUMBER
 
     dangerous_brake_threshold::Float64 # (POSITIVE NUMBER) if the deceleration is greater than this cost_dangerous_brake will be accured
     desired_lane::Int
 end
 #XXX temporary
-NoCrashRewardModel() = NoCrashRewardModel(-10.,100.,3.,1)
+NoCrashRewardModel() = NoCrashRewardModel(100.,10.,1.5,1)
 
 type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     nb_cars::Int
