@@ -296,12 +296,14 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         # note lane change is updated above
 
         # check if a lane was crossed and snap back to it
+        #=
         if floor(yp) >= ceil(car.y)
             yp = ceil(car.y)
         end
         if ceil(yp) <= floor(car.y)
             yp = floor(car.y)
         end
+        =#
 
         # enforce max/min y position constraints
         # yp = min(max(yp,1.), pp.nb_lanes) # this should never be violated because of the check above
@@ -349,9 +351,11 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             next_id = maximum([c.id for c in s.env_cars]) + 1
             behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
             if spot[2] # at front
-                push!(sp.env_cars, CarState(pp.lane_length, spot[1], sp.env_cars[1].vel, 0.0, behavior, next_id))
+                velp = rand(rng) * (sp.env_cars[1].vel - pp.v_min) + pp.v_min
+                push!(sp.env_cars, CarState(pp.lane_length, spot[1], velp, 0.0, behavior, next_id))
             else # at back
-                push!(sp.env_cars, CarState(0.0, spot[1], sp.env_cars[1].vel, 0.0, behavior, next_id))
+                velp = rand(rng) * (pp.v_max - sp.env_cars[1].vel) + sp.env_cars[1].vel
+                push!(sp.env_cars, CarState(0.0, spot[1], velp, 0.0, behavior, next_id))
             end
         end
     end
