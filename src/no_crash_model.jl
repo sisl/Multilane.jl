@@ -29,24 +29,24 @@ end
 
 #XXX temporary
 function NoCrashIDMMOBILModel(nb_cars::Int,pp::PhysicalParam)
-    return NoCrashIDMMOBILModel(
-            nb_cars,
-            pp,
-            IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
+    behaviors = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
                                       enumerate(product(["cautious","normal","aggressive"],
                                       [pp.v_slow+0.5;pp.v_med;pp.v_fast],
-                                      [pp.l_car]))],
-            WeightVec(ones(length(self.behaviors))),
+                                      [pp.l_car]))]
+            return NoCrashIDMMOBILModel(
+            nb_cars,
+            pp,
+            behaviors,
+            WeightVec(ones(length(behaviors))),
             1.,
             1.0/0.75,
             0.5,
             20.0,
-            2.,
+            0.5,
             ones(pp.nb_lanes),
             2.
         )
 end
-
 
 typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
 
@@ -196,8 +196,7 @@ end
 #XXX temp
 create_state(p::NoCrashMDP) = MLState(false, Array(CarState, p.dmodel.nb_cars))
 
-using Debug
-@debug function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -312,8 +311,7 @@ using Debug
 
         # enforce max/min y position constraints
         # yp = min(max(yp,1.), pp.nb_lanes) # this should never be violated because of the check above
-        @bp yp < 1.0 || yp > pp.nb_lanes
-        # @assert yp >= 1.0 && yp <= pp.nb_lanes
+        @assert yp >= 1.0 && yp <= pp.nb_lanes
 
         if xp < 0.0 || xp >= pp.lane_length
             push!(exits, i)
@@ -357,10 +355,10 @@ using Debug
             next_id = maximum([c.id for c in s.env_cars]) + 1
             behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
             if spot[2] # at front
-                velp = rand(rng) * (sp.env_cars[1].vel - pp.v_min) + pp.v_min
+                velp = sp.env_cars[1].vel - rand(rng) * min(mdp.dmodel.vel_sigma, sp.env_cars[1].vel - pp.v_min)
                 push!(sp.env_cars, CarState(pp.lane_length, spot[1], velp, 0.0, behavior, next_id))
             else # at back
-                velp = rand(rng) * (pp.v_max - sp.env_cars[1].vel) + sp.env_cars[1].vel
+                velp = rand(rng) * min(mdp.dmodel.vel_sigma, pp.v_max - sp.env_cars[1].vel) + sp.env_cars[1].vel
                 push!(sp.env_cars, CarState(0.0, spot[1], velp, 0.0, behavior, next_id))
             end
         end

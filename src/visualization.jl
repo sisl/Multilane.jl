@@ -109,7 +109,7 @@ function draw_sedan(pp::PhysicalParam, s::CarState, v_nom::Float64, frame::Float
 	lane_length = pp.lane_length
 	x_ctr = s.x+frame
 	y_ctr = pp.y_interval*s.y - INTERVAL*floor(Integer,x_ctr/lane_length)*(frame == 0. ? 0.: 1.)
-	x_ctr = mod(x_ctr,lane_length)
+	x_ctr = mod(x_ctr,lane_length+0.0001)
   #Fix nullable TODO
   if isnull(s.behavior)
     p = -1.
