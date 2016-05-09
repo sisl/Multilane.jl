@@ -230,17 +230,30 @@ function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, sp::MLState, debug::
 		end
 	end
 
-	for (i,(env_car,env_car_)) in enumerate(zip(s.env_cars,sp.env_cars))
-		if i == 1
+	#another way to ignore ego car
+	id = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(s.env_cars[2:end])])
+	idp = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(sp.env_cars[2:end])])
+	ids = intersect(keys(id), keys(idp))
+	# NOTE: VVV
+	#if its not in both, then its entering or leaving and thus at extremum of track
+	#and most likely not eligible for crash detection
+
+	cars = Tuple{CarState,CarState}[(s.env_cars[id[car_id]],
+																		sp.env_cars[idp[car_id]],)
+																			for car_id in ids] #1 or 2
+
+	for (env_car,env_car_) in cars
+
+		if env_car.id == 1 #presumably ego car XXX probably not needed
 			continue
 		end
-		if env_car.x < 0.
+		if env_car.x < 0. # XXX probably unneeded
 			continue
 		end
 		p = env_car.x
 		y = env_car.y*pp.y_interval
 		p_ = env_car_.x
-		yp = env_car_.y
+		yp = env_car_.y * pp.y_interval
 
 		dp = p_ - p
 		dy = yp - y
