@@ -296,11 +296,18 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         # note lane change is updated above
 
         # check if a lane was crossed and snap back to it
-        if floor(yp) >= ceil(car.y)
-            yp = ceil(car.y)
-        end
-        if ceil(yp) <= floor(car.y)
-            yp = floor(car.y)
+        if isinteger(car.y)
+            # prevent a multi-lane change in a single timestep
+            if abs(yp-car.y) > 1.
+                yp = car.y + sign(dys[i])
+            end
+        else # car.y is not an integer
+            if floor(yp) >= ceil(car.y)
+                yp = ceil(car.y)
+            end
+            if ceil(yp) <= floor(car.y)
+                yp = floor(car.y)
+            end
         end
 
         # enforce max/min y position constraints
