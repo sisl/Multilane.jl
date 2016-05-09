@@ -203,3 +203,4 @@ end
 
 create_state(p::OriginalMDP) = MLState(false, 1, p.dmodel.phys_param.v_med, CarState[CarState(-1.,1,1.,0,p.dmodel.BEHAVIORS[1],0) for _ = 1:p.dmodel.nb_cars])
 create_action(p::OriginalMDP) = MLAction()
+create_observation(mdp::MLMDP) = MLObs(create_state(mdp))

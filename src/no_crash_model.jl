@@ -472,3 +472,11 @@ function sample_distance(dmodel::NoCrashIDMMOBILModel, behavior::IDMMOBILBehavio
 
   return dist
 end
+
+
+function generate_o(mdp::NoCrashMDP, s::MLState, a::MLAction, sp::MLState, o::MLObs=create_observation(mdp))
+  #TODO add noise? no?
+
+  return MLObs(s)
+
+end
