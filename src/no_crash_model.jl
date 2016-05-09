@@ -40,8 +40,8 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
       self.adjustment_acceleration = 1. #XXX
       self.lane_change_vel = 2.0/0.75 #XXX
       self.p_appear = 0.5
-      self.appear_clearance = 4.
-      self.vel_sigma = 2.
+      self.appear_clearance = 10.
+      self.vel_sigma = 0.5
       self.lane_weights = ones(pp.nb_lanes)
       self.dist_var = 2 #idk
 
@@ -356,10 +356,10 @@ function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG,
             next_id = maximum([c.id for c in s.env_cars]) + 1
             behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
             if spot[2] # at front
-                velp = rand(rng) * (sp.env_cars[1].vel - pp.v_min) + pp.v_min
+                velp = sp.env_cars[1].vel - rand(rng) * min(mdp.dmodel.vel_sigma, sp.env_cars[1].vel - pp.v_min)
                 push!(sp.env_cars, CarState(pp.lane_length, spot[1], velp, 0.0, behavior, next_id))
             else # at back
-                velp = rand(rng) * (pp.v_max - sp.env_cars[1].vel) + sp.env_cars[1].vel
+                velp = rand(rng) * min(mdp.dmodel.vel_sigma, pp.v_max - sp.env_cars[1].vel) + sp.env_cars[1].vel
                 push!(sp.env_cars, CarState(0.0, spot[1], velp, 0.0, behavior, next_id))
             end
         end
