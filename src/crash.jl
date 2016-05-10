@@ -101,6 +101,7 @@ function poly_intersect(X::Array{Array{Float64,2},1},Y::Array{Array{Float64,2},1
 	return false
 end
 
+# to see, run visualize(mdp, s, a, sp, two_frame_crash=true, debug=true)
 function is_crash(mdp::MLMDP{MLState,MLAction}, s::MLState, sp::MLState, debug::Bool=false)
 	pp = mdp.dmodel.phys_param
 	dt = pp.dt

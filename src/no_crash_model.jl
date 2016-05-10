@@ -196,8 +196,7 @@ end
 #XXX temp
 create_state(p::NoCrashMDP) = MLState(false, Array(CarState, p.dmodel.nb_cars))
 
-using Debug
-@debug function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+function generate_sr(mdp::NoCrashMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -312,7 +311,6 @@ using Debug
 
         # enforce max/min y position constraints
         # yp = min(max(yp,1.), pp.nb_lanes) # this should never be violated because of the check above
-        @bp yp < 1.0 || yp > pp.nb_lanes
         @assert yp >= 1.0 && yp <= pp.nb_lanes
 
         if xp < 0.0 || xp >= pp.lane_length
