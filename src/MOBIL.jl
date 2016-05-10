@@ -26,16 +26,16 @@ end
 function is_lanechange_dangerous(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,dir::Real)
 
 	#check if dir is oob
-	lane_ = s.env_cars[idx].y + dir
+	dt = pp.dt
+	lane_ = s.env_cars[idx].y + dir * dt # XXX this line is the issue!!!
 	if (lane_ > pp.nb_lanes) || (lane_ < 1.)
 		return true
 	end
 	#check if will hit car next to you?
-	dt = pp.dt
 	l_car = pp.l_car
 
-	dvlf, slf = get_dv_ds(pp,s,nbhd,idx,round(Int, 5+dir))
-	dvlb, slb = get_dv_ds(pp,s,nbhd,idx,round(Int, 2+dir))
+	dvlf, slf = get_dv_ds(pp,s,nbhd,idx,round(Int, 5+sign(dir)))
+	dvlb, slb = get_dv_ds(pp,s,nbhd,idx,round(Int, 2+sign(dir)))
 
 	#distance at next time step
 	#dv ref: ahead: me - him; behind: him - me

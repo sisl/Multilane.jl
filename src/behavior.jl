@@ -43,7 +43,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	pp = dmodel.phys_param
 	dt = pp.dt
 	car = s.env_cars[idx]
-	lane_change = car.lane_change
+	lane_change = car.lane_change #this is a velocity in the y direction
 	#if moving starts one timestep after deciding to lanechange
 	#lane_ = round(max(1,min(car.y+lane_change,2*pp.nb_lanes-1)))
 	#if increment y in the same timestep as deciding to lanechange
@@ -54,7 +54,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
         @assert lane_change != 0
 		lanechange = r < bmodel.rationality ? lane_change : -1*lane_change
 
-		if is_lanechange_dangerous(pp, s, neighborhood, idx,lanechange)
+		if is_lanechange_dangerous(pp, s, neighborhood, idx, lanechange)
 				lanechange *= -1
 		end
 
@@ -62,6 +62,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	end
 	#sample normally
 	lanechange_::Int = get_mobil_lane_change(pp, s, neighborhood, idx, rng)
+	#gives +1, -1 or 0
 	#if frnot neighbor is lanechanging, don't lane change
 	nbr = neighborhood[2]
 	ahead_dy = nbr != 0 ? s.env_cars[nbr].lane_change : 0
@@ -72,10 +73,10 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
     if bmodel.rationality < 1.0
         lane_change_other = setdiff([-1;0;1],[lanechange_]) # XXX Inefficient
         #safety criterion is hard
-        if is_lanechange_dangerous(pp,s,neighborhood,idx,1)
+        if is_lanechange_dangerous(pp,s,neighborhood,idx,1 * dmodel.lane_change_vel / dmodel.phys_param.y_interval)
                 lane_change_other = setdiff(lane_change_other,[1])
         end
-        if is_lanechange_dangerous(pp, s, neighborhood,idx,-1)
+        if is_lanechange_dangerous(pp, s, neighborhood,idx,-1 * dmodel.lane_change_vel / dmodel.phys_param.y_interval)
                 lane_change_other = setdiff(lane_change_other,[-1])
         end
 
