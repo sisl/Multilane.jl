@@ -202,16 +202,9 @@ function visualize(mdp::MLMDP,
 	#println("e")
 
 	#if is_crash, add crash graphic
-  if two_frame_crash
     if is_crash(mdp,s,sp,debug)
   		draw_bang(x_ctr,y_ctr)
     end
-  else
-  	if is_crash(mdp,s,a,debug)
-  		#subplot(211)
-  		draw_bang(x_ctr,y_ctr)
-  	end
-  end
 	axis("equal")
 	xlim(-pp.l_car,W)
 	return gcf()

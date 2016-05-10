@@ -50,7 +50,7 @@ function repr(c::CarState)
     if isnull(c.behavior)
         bstring = "Nullable{BehaviorModel}()"
     else
-        bstring = "Nullable{BehaviorModel}($(get(c.behavior)))"
+        bstring = "$(get(c.behavior))"
     end
     return "CarState($(c.x),$(c.y),$(c.vel),$(c.lane_change),$bstring,$(c.id))"
 end
@@ -86,11 +86,14 @@ function Base.hash(a::MLState, h::UInt64=zero(UInt64))
 end
 
 function repr(s::MLState)
-    rstring = "MLState($(s.crashed)"
-    for c in s.env_cars
-        rstring = string(rstring, ",$(repr(c))")
+    rstring = "MLState($(s.crashed), CarState["
+    for (i,c) in enumerate(s.env_cars)
+        rstring = string(rstring, "$(repr(c))")
+        if i < length(s.env_cars)
+            rstring = string(rstring, ",")
+        end
     end
-    return string(rstring, ")")
+    return string(rstring, "])")
 end
 
 immutable MLAction

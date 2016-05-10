@@ -134,6 +134,14 @@ function test_n_state()
 	#idk if its worht it to do more
 end
 
+function test_repr()
+    println("\t\tTesting the repr() function")
+    bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[27.,31.,35.],[4.]))]
+	c = CarState(1.,1,3.,0,bs[1],0)
+    c2 = eval(parse(repr(c)))
+    @test isa(c2, CarState)
+end
+
 #don't think you need tests for n_actions, the *Space types, and the associated domain() and length() functions...
 
 function test_mdp_types()
@@ -150,4 +158,5 @@ function test_mdp_types()
 	test_MLAction_creation()
 	test_MLAction_equality()
 	test_MLAction_hashing()
+    test_repr()
 end

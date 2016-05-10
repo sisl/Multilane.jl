@@ -30,16 +30,6 @@ function __reward(mdp::OriginalMDP,s::MLState,a::MLAction)
     return cost #
 end
 
-# function reward(mdp::OriginalMDP,s::MLState,a::MLAction)
-#     #assume environment cars don't crash with one another?
-#     if is_crash(mdp,s,a)
-#         return mdp.rmodel.r_crash
-#     end
-#     #penalty for accelerating/decelerating/lane change
-#
-#     return __reward(mdp,s,a) #
-# end
-
 function reward(mdp::OriginalMDP,s::MLState,a::MLAction,sp::MLState)
     if sp.crashed
         return mdp.rmodel.r_crash
@@ -188,7 +178,7 @@ function generate_s(mdp::OriginalMDP, s::MLState, a::MLAction, rng::AbstractRNG,
         car_states[j] = CarState(pos[1], pos[2], vel, lanechange, behavior, 0)
     end
 
-    sp.crashed = is_crash(mdp, s, a)
+    sp.crashed = is_crash(mdp, s, sp)
     @assert sp.env_cars === car_states
 
     return sp

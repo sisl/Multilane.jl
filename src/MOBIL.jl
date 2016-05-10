@@ -196,14 +196,19 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 		return 0 #neither safe
 	end
 	if is_lanechange_dangerous(pp,s,nbhd,idx,1) || (a_follower_left_ < -p_mobil.b_safe)
-		left_crit -= 10000000.
+		left_crit = -Inf
 	end
 
 	if is_lanechange_dangerous(pp,s,nbhd,idx,-1) || (a_follower_right_ < -p_mobil.b_safe)
-		right_crit -= 10000000.
+		right_crit = -Inf
 	end
 	#check if going left or right is preferable
-	dir_flag = left_crit >= right_crit ? 1.:-1.
+    if left_crit >= right_crit
+        dir_flag = 1
+    else
+        dir_flag = -1
+    end
+
 	#check incentive criterion
 	if max(left_crit,right_crit) > p_mobil.a_thr
 		return dir_flag

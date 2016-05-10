@@ -58,6 +58,7 @@ function test_poly_intersect()
 	##TODO
 end
 
+#=
 function test_is_crash()
 	println("\t\tTesting is_crash")
 	nb_lanes = 2
@@ -117,6 +118,7 @@ function test_is_crash()
 	assert(is_crash(p,MLState(1,30.,CarState[cs_rchange]),MLAction(0,1)))
 	assert(is_crash(p,MLState(3,30.,CarState[cs_lchange]),MLAction(0,-1)))
 end
+=#
 
 function test_crash()
 	println("\tTesting Crashing")
