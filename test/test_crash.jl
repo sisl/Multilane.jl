@@ -58,46 +58,54 @@ function test_poly_intersect()
 	##TODO
 end
 
-#=
+function is_crash(mdp::NoCrashMDP,s::MLState,a::MLAction)
+	sp, r = Multilane.generate_sr(mdp,s,a,MersenneTwister(1))
+	return is_crash(mdp,s,sp)
+end
+
 function test_is_crash()
 	println("\t\tTesting is_crash")
 	nb_lanes = 2
-	pp = PhysicalParam(nb_lanes,nb_vel_bins=4,lane_length=12.) #2.=>col_length=8
-	p = MLPOMDP(nb_cars=1,nb_lanes=nb_lanes,phys_param=pp)
+	pp = PhysicalParam(nb_lanes,lane_length=12.) #2.=>col_length=8
+	nb_cars=2
+	rmodel = NoCrashRewardModel()
+	dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
+	p = NoCrashMDP(dmodel, rmodel, 1.);
 
-	bs = BehaviorModel[BehaviorModel(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[pp.v_slow;pp.v_med;pp.v_fast],[pp.l_car]))]
+	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[pp.v_slow;pp.v_med;pp.v_fast],[pp.l_car]))]
 
 	#Env Car out of bounds
 	cs_oob = CarState(-1.,1,27.,0,bs[1],1)
 	#env car going slow in right lane: (41,1) corresponds to right in front of agent car area + 0.25m or 0.5m
-	cs_r_slow = CarState(10.,1,27.,0,BehaviorModel("aggressive",27.,4.,1),2)
+	cs_r_slow = CarState(10.,1,27.,0,IDMMOBILBehavior("aggressive",27.,4.,1),2)
 	#env car going fast in right lane: (7,1) corresponds to right behind the agent car area + 0.25m or 0.5m
-	cs_r_fast = CarState(1.75,1,35.,0,BehaviorModel("aggressive",35.,4.,1),3)
+	cs_r_fast = CarState(1.75,1,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),3)
 	#env car going at a medium speed in the right lane heading left
-	cs_lchange = CarState(6.,1,30.,1,BehaviorModel("normal",31.,4.,1),4)
+	cs_lchange = CarState(6.,1,30.,1,IDMMOBILBehavior("normal",30.,4.,1),4)
 	#env car going at a medium speed in the left lane heading right
-	cs_rchange = CarState(6.,2,30.,-1,BehaviorModel("normal",31.,4.,1),5)
+	cs_rchange = CarState(6.,2,30.,-1,IDMMOBILBehavior("normal",30.,4.,1),5)
 	#env car is just chilling in the right/btwn/lhigh lane
-	cs_rchill = CarState(6.,1,30.,1,BehaviorModel("normal",31.,4.,1),6)
-	cs_mchill = CarState(6.,2,30.,1,BehaviorModel("normal",31.,4.,1),7)
-	cs_hchill = CarState(7.,1,30.,1,BehaviorModel("normal",31.,4.,1),8)
+	cs_rchill = CarState(6.,1,30.,1,IDMMOBILBehavior("normal",30.,4.,1),6)
+	cs_mchill = CarState(6.,1.5,30.,1,IDMMOBILBehavior("normal",30.,4.,1),7)
+	cs_hchill = CarState(7.,1,30.,1,IDMMOBILBehavior("normal",30.,4.,1),8)
 
 	##TODO: change these tests borrowed from test_reward to something more meaningful
 	#env car going slow in right lane: (41,1) corresponds to right in front of agent car area + 0.25m or 0.5m
-	_cs_l_slow = CarState(0.75,1,27.,0,BehaviorModel("aggressive",27.,4.,1),9)
+	_cs_l_slow = CarState(0.75,1,27.,0,IDMMOBILBehavior("aggressive",27.,4.,1),9)
 	#env car going fast in right lane: (7,1) corresponds to right behind the agent car area + 0.25m or 0.5m
-	_cs_r_fast = CarState(12.,1,35.,0,BehaviorModel("aggressive",35.,4.,1),10)
-	s = MLState(1,27.,CarState[_cs_r_fast])
-	a = MLAction(0,-1)
+	_cs_r_fast = CarState(12.,1,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),10)
+	s = MLState(1,27.,CarState[_cs_r_fast],6.)
+	a = MLAction(0,0)
 	#going out of top boundary
 	assert(!is_crash(p,s,a))
 	#going out of bottom boundary
-	s = MLState(1,35.,CarState[_cs_l_slow])
+	s = MLState(1,35.,CarState[_cs_l_slow],6.)
 	a = MLAction(0,1)
 	assert(!is_crash(p,s,a))
 	#CASE: do nothing = no costs
-	assert(!is_crash(p,MLState(1,27.,CarState[cs_oob]),MLAction(0,0)))
+	assert(!is_crash(p,MLState(1,27.,CarState[cs_oob],6.),MLAction(0,0)))
 	#CASE: moving = cost
+	#=
 	assert(!is_crash(p,MLState(1,27.,CarState[cs_oob]),MLAction(1,0)))
 	assert(!is_crash(p,MLState(1,27.,CarState[cs_oob]),MLAction(-1,0)))
 	assert(!is_crash(p,MLState(1,27.,CarState[cs_oob]),MLAction(0,1)))
@@ -106,24 +114,28 @@ function test_is_crash()
 	assert(!is_crash(p,MLState(1,27.,CarState[cs_oob]),MLAction(1,-1)))
 	assert(!is_crash(p,MLState(1,27.,CarState[cs_oob]),MLAction(-1,-1)))
 	assert(!is_crash(p,MLState(1,27.,CarState[cs_oob]),MLAction(0,-1)))
-
+	=#
 	#Case: cars occupy same space
-	assert(is_crash(p,MLState(1,30.,CarState[cs_rchill]),MLAction(0,0)))
-	assert(is_crash(p,MLState(1,30.,CarState[cs_mchill]),MLAction(0,0)))
-	assert(is_crash(p,MLState(1,30.,CarState[cs_hchill]),MLAction(0,0)))
+	assert(is_crash(p,MLState(1,30.,CarState[cs_rchill],6.),MLAction(0,0)))
+	assert(is_crash(p,MLState(1,30.,CarState[cs_mchill],6.),MLAction(0,0)))
+	assert(is_crash(p,MLState(1,30.,CarState[cs_hchill],6.),MLAction(0,0)))
 	#CASE: cars intersect; vertically (gets railroaded from behind)
-	assert(is_crash(p,MLState(1,27.,CarState[cs_r_fast]),MLAction(-1,0)))
-	assert(is_crash(p,MLState(1,35.,CarState[cs_r_slow]),MLAction(1,0)))
+	assert(is_crash(p,MLState(1,27.,CarState[cs_r_fast],6.),MLAction(-1,0)))
+	assert(is_crash(p,MLState(1,35.,CarState[cs_r_slow],6.),MLAction(1,0)))
 	#CASE: cars intersect; horizontally (across lanes)
-	assert(is_crash(p,MLState(1,30.,CarState[cs_rchange]),MLAction(0,1)))
-	assert(is_crash(p,MLState(3,30.,CarState[cs_lchange]),MLAction(0,-1)))
+	assert(is_crash(p,MLState(1,30.,CarState[cs_rchange],6.),MLAction(0,1)))
+	assert(is_crash(p,MLState(2,30.,CarState[cs_lchange],6.),MLAction(0,-1)))
+	#NOTE edge cases:
+	"""
+	If a car is going so fast (or slow) that it just completely blows out of the frame
+	"""
 end
-=#
+
 
 function test_crash()
 	println("\tTesting Crashing")
 	test_cross2d()
 	test_line_segment_intersect()
 	test_poly_intersect()
-	# test_is_crash()
+	test_is_crash()
 end
