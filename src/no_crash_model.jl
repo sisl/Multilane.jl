@@ -6,7 +6,7 @@ type NoCrashRewardModel <: AbstractMLRewardModel
     desired_lane::Int
 end
 #XXX temporary
-NoCrashRewardModel() = NoCrashRewardModel(100.,10.,1.5,1)
+NoCrashRewardModel() = NoCrashRewardModel(100.,10.,8.0,1)
 
 type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     nb_cars::Int
@@ -146,7 +146,7 @@ function max_safe_acc(mdp::NoCrashMDP, s::MLState, lane_change::Float64=0.0)
             v = ego.vel
             g = smallest_gap
             # VVV see mathematica notebook
-            return - (bp*dt + 4.*v - sqrt(16.*g*bp + bp^2*dt^2 - 8.*bp*dt*v + 8.*vo^2)) / (4.*dt)
+            return - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
         end
     end
     return Inf

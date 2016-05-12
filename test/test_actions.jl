@@ -35,9 +35,19 @@ function test_all_safe()
     @test length(collect(actions(mdp, allsafe, as))) == 10
 end
 
+function failure_4()
+    println("\t\tTesting special failure case changing into new lane")
+    mdp = Multilane.MLMDP{Multilane.MLState,Multilane.MLAction,Multilane.NoCrashIDMMOBILModel,Multilane.NoCrashRewardModel}(Multilane.NoCrashIDMMOBILModel(10,Multilane.PhysicalParam(0.75,2.0,4.0,31.0,4.0,4.0,35.0,27.0,31.0,35.0,27.0,20.0,4,100.0),Multilane.BehaviorModel[Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,27.5,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),1.0,1),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,27.5,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),1.0,2),Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,27.5,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),1.0,3),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,31.0,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),1.0,4),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,31.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),1.0,5),Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,31.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),1.0,6),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,35.0,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),1.0,7),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),1.0,8),Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,35.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),1.0,9)],StatsBase.WeightVec{Float64,Array{Float64,1}}([1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],9.0),1.0,1.3333333333333333,0.5,20.0,0.5,[1.0,1.0,1.0,1.0],2.0),Multilane.NoCrashRewardModel(100.0,10.0,5.0,4),1.0)
+
+    s = MLState(false, CarState[CarState(50.0,3.0,31.22970781020354,0.0,Nullable{BehaviorModel}(),1),CarState(99.24797069990433,4.0,27.167643727404155,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,27.5,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),1.0,3),2)])
+
+    @test Multilane.is_safe(mdp, s, MLAction(0.0, 1.0))
+end
+
 function test_actions()
     println("\tTesting Action Space...")
     test_iteration()
     test_off_road()
     test_all_safe()
+    failure_4()
 end
