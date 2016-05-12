@@ -186,13 +186,6 @@ function is_safe(mdp::NoCrashMDP, s::MLState, a::MLAction)
     return true
 end
 
-"""
-Returns true if cars at y1 and y2 occupy the same lane
-"""
-function occupation_overlap(y1::Float64, y2::Float64)
-    return abs(y1-y2) < 1.0 || ceil(y1) == floor(y2) || floor(y1) == ceil(y2)
-end
-
 #XXX temp
 create_state(p::NoCrashMDP) = MLState(false, Array(CarState, p.dmodel.nb_cars))
 

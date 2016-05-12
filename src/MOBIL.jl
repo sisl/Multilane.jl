@@ -82,7 +82,7 @@ function get_neighborhood(pp::PhysicalParam,s::MLState,idx::Int)
 
 		dlane = lane - x.y #NOTE float: convert to int
 		#too distant to be a neighbor
-		if abs(dlane) > 1.
+		if abs(dlane) > 2.
 			continue
 		elseif abs(dlane) <= 0.5
 			dlane = 0

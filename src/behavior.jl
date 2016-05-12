@@ -44,7 +44,6 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	dt = pp.dt
 	car = s.env_cars[idx]
 	lane_change = car.lane_change #this is a velocity in the y direction
-	#if moving starts one timestep after deciding to lanechange
 	#lane_ = round(max(1,min(car.y+lane_change,2*pp.nb_lanes-1)))
 	#if increment y in the same timestep as deciding to lanechange
 	lane_ = car.y
