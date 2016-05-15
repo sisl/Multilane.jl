@@ -39,7 +39,7 @@ function NoCrashIDMMOBILModel(nb_cars::Int,pp::PhysicalParam)
             behaviors,
             WeightVec(ones(length(behaviors))),
             1.,
-            1.0/0.75,
+            pp.w_lane / (pp.dt * 2), #how many time steps it takes to get from one lane to another
             0.5,
             20.0,
             0.5,
@@ -469,6 +469,28 @@ end
 function generate_o(mdp::NoCrashMDP, s::MLState, a::MLAction, sp::MLState, o::MLObs=create_observation(mdp))
   #TODO add noise? no?
 
-  return MLObs(s)
+  return MLObs(sp)
+
+end
+
+function pdf(mdp::NoCrashMDP, sp::MLState, a::MLAction, o::MLObs)
+
+  """"
+  P(o|s', a) (unweighted)
+  The degree of similarity between states?
+  say similarity ~ 1/distance between states
+
+  Ignore ego car: presumably will have mostly deterministic dynamics?
+  """
+
+  dist = 0.
+
+  id = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(s.env_cars[2:end])])
+	idp = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(sp.env_cars[2:end])])
+
+  """
+  Alternatively: assume x,y,v,lc are correct, uncertainty about behavior model
+  """
+
 
 end

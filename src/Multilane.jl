@@ -54,6 +54,13 @@ export
     visualize,
     display_sim
 
+export #data structure stuff
+    NoCrashStat,
+    NoCrashStats,
+    mean,
+    std,
+    ste
+
 
 include("physical.jl")
 include("MDP_types.jl")
@@ -66,5 +73,6 @@ include("no_crash_model.jl")
 include("visualization.jl")
 include("evaluation.jl")
 include("single_behavior.jl")
+include("heuristics.jl")
 
 end # module
