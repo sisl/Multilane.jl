@@ -37,8 +37,8 @@ function reward(mdp::OriginalMDP,s::MLState,a::MLAction,sp::MLState)
     return __reward(mdp,s,a)
 end
 
-discount(mdp::MLMDP) = mdp.discount
-isterminal(mdp::MLMDP,s::MLState) = s.crashed
+discount(mdp::Union{MLMDP,MLPOMDP}) = mdp.discount
+isterminal(mdp::Union{MLMDP,MLPOMDP},s::MLState) = s.crashed
 
 function GenerativeModels.initial_state(mdp::OriginalMDP, rng::AbstractRNG=MersenneTwister(34985))
    s0 = MLState(false,CarState[CarState(-1., 1, 1., 0, mdp.dmodel.BEHAVIORS[1],0) for i = 1:mdp.dmodel.nb_cars])

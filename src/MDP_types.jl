@@ -5,7 +5,13 @@ abstract AbstractMLDynamicsModel
 type MLMDP{S, A, DModel<:AbstractMLDynamicsModel, RModel<:AbstractMLRewardModel}  <: MDP{S, A}
     dmodel::DModel
     rmodel::RModel
-	discount::Float64
+    discount::Float64
+end
+
+type MLPOMDP{S, A, O, DModel<:AbstractMLDynamicsModel, RModel<:AbstractMLRewardModel}  <: POMDP{S, A, O}
+  dmodel::DModel
+  rmodel::RModel
+  discount::Float64
 end
 
 type OriginalRewardModel <: AbstractMLRewardModel

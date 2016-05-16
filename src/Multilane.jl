@@ -6,6 +6,7 @@ using POMDPs
 import POMDPs: actions, discount, isterminal, iterator
 import POMDPs: create_action, create_state, rand, reward
 import POMDPs: solve, action
+import POMDPs: create_belief, update, initialize_belief
 using GenerativeModels
 import GenerativeModels: generate_s, generate_sr, initial_state
 
@@ -14,6 +15,8 @@ import Distributions: Dirichlet, Exponential, Gamma, rand
 import Iterators.product
 
 import Base: ==, hash, length, vec
+
+import POMDPToolbox: Particle, ParticleBelief
 
 # for visualization
 using Interact
@@ -24,6 +27,7 @@ export
     CarState,
     MLState,
     MLAction,
+    MLObs,
     BehaviorModel,
     MLMDP,
     OriginalMDP,
@@ -37,7 +41,9 @@ export
     NoCrashRewardModel,
     NoCrashIDMMOBILModel,
     NoCrashMDP,
-    Simple
+    NoCrashPOMDP,
+    Simple,
+    SimpleSolver
 
 export
     SingleBehaviorSolver,
@@ -59,7 +65,16 @@ export #data structure stuff
     NoCrashStats,
     mean,
     std,
-    ste
+    ste,
+    test_run
+
+export # POMDP belief stuff
+    ParticleUpdater,
+    create_belief,
+    update,
+    rand,
+    sample,
+    initialize_belief
 
 
 include("physical.jl")
@@ -74,5 +89,6 @@ include("visualization.jl")
 include("evaluation.jl")
 include("single_behavior.jl")
 include("heuristics.jl")
+include("beliefs.jl")
 
 end # module

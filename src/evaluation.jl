@@ -35,7 +35,7 @@ function ste(ncs::NoCrashStats)
   return t/sqrt(length(ncs)), b/sqrt(length(ncs)), r/sqrt(length(ncs))
 end
 
-function get_stats(problem::NoCrashMDP,sim::HistoryRecorder, r::Real)
+function get_stats(problem::Union{NoCrashMDP,NoCrashPOMDP},sim::HistoryRecorder, r::Real)
   S = sim.state_hist
   A = sim.action_hist
   t_in_goal = 0
@@ -52,6 +52,12 @@ end
 function test_run(problem::NoCrashMDP, initial_state::MLState, solver::Solver, rng::AbstractRNG=MersenneTwister())
     sim = POMDPToolbox.HistoryRecorder(rng=rng, max_steps=100)
     r = simulate(sim, problem, solve(solver,problem), initial_state)
+    return get_stats(problem, sim, r)
+end
+
+function test_run(problem::NoCrashPOMDP, bu, initial_state::MLState, solver::Solver, rng::AbstractRNG=MersenneTwister())
+    sim = POMDPToolbox.HistoryRecorder(rng=rng, max_steps=100,initial_state=initial_state)
+    r = simulate(sim, problem, solve(solver,problem), bu, create_belief(bu,initial_state))
     return get_stats(problem, sim, r)
 end
 
@@ -85,5 +91,5 @@ function evaluate_performance(problems::Vector, initial_states::Vector, solver; 
     end
 
     # NOTE assumes same problem
-    return NoCrashStats(sdata(rewards), problem[1].rmodel)
+    return NoCrashStats(sdata(rewards), problems[1].rmodel)
 end
