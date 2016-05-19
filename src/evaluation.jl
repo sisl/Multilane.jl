@@ -5,8 +5,8 @@ import Base: mean, std, repr, length
 
 
 type NoCrashStat
-  t_in_goal::Int
-  nb_induced_brakes::Int
+  t_in_goal::Real
+  nb_induced_brakes::Real
   reward::Real
 end
 
@@ -17,15 +17,15 @@ end
 length(ncs::NoCrashStats) = length(ncs.stats)
 
 function mean(ncs::NoCrashStats)
-  t = Int[stat.t_in_goal for stat in ncs.stats]
-  b = Int[stat.nb_induced_brakes for stat in ncs.stats]
+  t = Real[stat.t_in_goal for stat in ncs.stats]
+  b = Real[stat.nb_induced_brakes for stat in ncs.stats]
   r = Real[stat.reward for stat in ncs.stats]
   return mean(t), mean(b), mean(r)
 end
 
 function std(ncs::NoCrashStats)
-  t = Int[stat.t_in_goal for stat in ncs.stats]
-  b = Int[stat.nb_induced_brakes for stat in ncs.stats]
+  t = Real[stat.t_in_goal for stat in ncs.stats]
+  b = Real[stat.nb_induced_brakes for stat in ncs.stats]
   r = Real[stat.reward for stat in ncs.stats]
   return std(t), std(b), std(r)
 end

@@ -4,11 +4,11 @@ import StatsBase: WeightVec, sample
 
 using POMDPs
 import POMDPs: actions, discount, isterminal, iterator
-import POMDPs: create_action, create_state, rand, reward
+import POMDPs: create_action, create_state, rand, reward, create_observation
 import POMDPs: solve, action
 import POMDPs: create_belief, update, initialize_belief
 using GenerativeModels
-import GenerativeModels: generate_s, generate_sr, initial_state
+import GenerativeModels: generate_s, generate_sr, initial_state, generate_o, generate_sor
 
 import Distributions: Dirichlet, Exponential, Gamma, rand
 

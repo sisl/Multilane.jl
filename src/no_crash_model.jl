@@ -52,7 +52,8 @@ typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewar
 
 typealias NoCrashPOMDP MLPOMDP{MLState, MLAction, MLObs, NoCrashIDMMOBILModel, NoCrashRewardModel}
 
-create_action(::NoCrashMDP) = MLAction()
+# TODO issue here VVV need a different way to create observation
+create_action(::Union{NoCrashMDP,NoCrashPOMDP}) = MLAction()
 
 # action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {brake}
 immutable NoCrashActionSpace <: AbstractSpace{MLAction}
@@ -74,7 +75,7 @@ function actions(mdp::Union{NoCrashMDP,NoCrashPOMDP})
     return NoCrashActionSpace(mdp)
 end
 
-function actions(mdp::NoCrashMDP, s::MLState, as::NoCrashActionSpace) # no implementation without the third arg to enforce efficiency
+function actions(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, as::NoCrashActionSpace) # no implementation without the third arg to enforce efficiency
     acceptable = IntSet()
     for i in 1:NB_NORMAL_ACTIONS
         a = as.NORMAL_ACTIONS[i]
@@ -91,10 +92,6 @@ function actions(mdp::NoCrashMDP, s::MLState, as::NoCrashActionSpace) # no imple
     brake_acc = min(max_safe_acc(mdp,s), -mdp.rmodel.dangerous_brake_threshold/2.0)
     brake = MLAction(brake_acc, 0)
     return NoCrashActionSpace(as.NORMAL_ACTIONS, acceptable, brake)
-end
-
-function actions(pomdp::NoCrashPOMDP, b, as::NoCrashActionSpace)
-
 end
 
 iterator(as::NoCrashActionSpace) = as
@@ -194,6 +191,8 @@ end
 
 #XXX temp
 create_state(p::Union{NoCrashMDP,NoCrashPOMDP}) = MLState(false, Array(CarState, p.dmodel.nb_cars))
+create_observation(pomdp::NoCrashPOMDP) = MLObs(false, Array(CarStateObs, pomdp.dmodel.nb_cars))
+
 
 function generate_sr(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
@@ -477,6 +476,14 @@ function generate_o(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction
 
   return MLObs(sp)
 
+end
+
+# TODO generate_sor
+
+function generate_sor(pomdp::NoCrashPOMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState, o::MLObs)
+  sp, r = generate_sr(pomdp, s, a, rng, sp)
+  o = generate_o(pomdp, s, a, sp, o)
+  return sp, o, r
 end
 
 function pdf(mdp::Union{NoCrashMDP,NoCrashPOMDP}, sp::MLState, a::MLAction, o::MLObs)

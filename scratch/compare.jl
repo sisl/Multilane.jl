@@ -23,11 +23,28 @@ function write!(var_name::AbstractString, val::NoCrashStats, fname::AbstractStri
     var_name = string(var_name,"99999")
   end
   d[var_name] = val
+  # TODO addrequire
   save(fname, d)
 end
 
 function test_solver(problems::Array{NoCrashMDP,1}, solver, solver_name::AbstractString, initial_states::Array{MLState,1})
-  r = Multilane.evaluate_performance(problems, initial_states, solver)
+  if typeof(solver) <: DPWSolver
+    _ec = solver.exploration_constant
+    best_score = -Inf
+    for (i,ec) in enumerate(Float64[0.1,0.3,1.,3.,10.,30.,100.])
+      solver.exploration_constant = ec
+      _r = Multilane.evaluate_performance(problems, initial_states, solver)
+      score = mean(_r)[3]
+      if score > best_score
+        r = _r
+        best_score = score
+      end
+    end
+    solver.exploration_constant = _ec
+  else
+    r = Multilane.evaluate_performance(problems, initial_states, solver)
+  end
+  # TODO hyperparameter optimization here, save best
   write!(solver_name, r)
   return r
 end
@@ -63,45 +80,36 @@ isrng = MersenneTwister(123)
 initial_states = MLState[initial_state(mdp, isrng) for i in 1:N]
 problems = NoCrashMDP[mdp for i in 1:N]
 
-r_random = test_solver(problems, RandomSolver(), "random", initial_states)
+#r_random = test_solver(problems, RandomSolver(), "random", initial_states)
 
-println("Random Average Reward: $(mean(r_random))")
+#println("Random Average Reward: $(mean(r_random))")
 
-r_heur = test_solver(problems, SimpleSolver(), "simple_heuristic", initial_states)
+#r_heur = test_solver(problems, SimpleSolver(), "simple_heuristic", initial_states)
 
-println("Heuristic Average Reward: $(mean(r_heur))")
-
-pomdp = NoCrashPOMDP(dmodel, rmodel, _discount)
-
-problems = NoCrashPOMDP[pomdp for i in 1:N]
-
-bu = ParticleUpdater(100, pomdp, MersenneTwister(555))
-
-r_pomcp = test_pomdp(pomdp, POMCPSolver(updater=bu), string("pomcp", 0), initial_states, bu)
-
-println("POMCP Avg Reward: $(mean(r_pomcp))")
+#println("Heuristic Average Reward: $(mean(r_heur))")
 
 
-for (k,rmodel) in enumerate(rmodels[1:2])
+
+for (k,rmodel) in enumerate(rmodels)
   mdp = NoCrashMDP(dmodel, rmodel, _discount);
 
   problems = NoCrashMDP[mdp for i in 1:N]
 
-  dpws = DPWSolver()
+  dpws = DPWSolver(depth=10,n_iterations=100) #k_action, alpha_action, k_state, alpha_state
 
-  r_dpw = test_solver(problems, dpws, string("dpw", k), initial_states)
+  #r_dpw = test_solver(problems, dpws, string("dpw", k), initial_states)
 
-  println("DPW Average Reward: $(mean(r_dpw))")
+  #println("DPW Average Reward: $(mean(r_dpw))")
+
   single_dpws = SingleBehaviorSolver(dpws, IDMMOBILBehavior("normal", 30.0, 10.0, 1))
 
-  r_single_dpw = test_solver(problems, single_dpws, string("single_dpw", k), initial_states)
+  #r_single_dpw = test_solver(problems, single_dpws, string("single_dpw", k), initial_states)
 
-  println("Single Behavior DPW Average Reward: $(mean(r_single_dpw))")
+  #println("Single Behavior DPW Average Reward: $(mean(r_single_dpw))")
 
 
   # POMDP stuff
 
-  #=
   pomdp = NoCrashPOMDP(dmodel, rmodel, _discount)
 
   problems = NoCrashPOMDP[pomdp for i in 1:N]
@@ -111,7 +119,6 @@ for (k,rmodel) in enumerate(rmodels[1:2])
   r_pomcp = test_pomdp(pomdp, POMCPSolver(updater=bu), string("pomcp", k), initial_states, bu)
 
   println("POMCP Avg Reward: $(mean(r_pomcp))")
-  =#
 
   #r_despot = test_solver(problems, DespotSolver(pomdp,belief), string("dpw", k), initial_states)
 

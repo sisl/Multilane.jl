@@ -127,10 +127,11 @@ immutable CarStateObs
   y::Float64
   vel::Float64
   lane_change::Float64
+  id::Int
 end
-==(a::CarStateObs, b::CarStateObs) = (a.x == b.x) && (a.y == b.y) && (a.vel == b.vel) && (a.lane_change == b.lane_change)
-Base.hash(a::CarStateObs,h::UInt64=zero(UInt64)) = hash(a.x, hash(a.y, hash(a.vel, (hash(a.lane_change, h)))))
-CarStateObs(cs::CarState) = CarStateObs(cs.x, cs.y, cs.vel, cs.lane_change)
+==(a::CarStateObs, b::CarStateObs) = (a.x == b.x) && (a.y == b.y) && (a.vel == b.vel) && (a.lane_change == b.lane_change) && (a.id == b.id)
+Base.hash(a::CarStateObs,h::UInt64=zero(UInt64)) = hash(a.x, hash(a.y, hash(a.vel, (hash(a.lane_change, hash(a.id,h))))))
+CarStateObs(cs::CarState) = CarStateObs(cs.x, cs.y, cs.vel, cs.lane_change, cs.id)
 
 immutable MLObs
   crashed::Bool
