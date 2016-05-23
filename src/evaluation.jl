@@ -61,21 +61,37 @@ function test_run(problem::NoCrashPOMDP, bu, initial_state::MLState, solver::Sol
     return get_stats(problem, sim, r)
 end
 
-function evaluate_performance(problems::Vector, initial_states::Vector, solver; rng_offset::Int=100, parallel=true)
+function evaluate_performance(problems::Vector, initial_states::Vector, solver, bu=nothing; rng_offset::Int=100, parallel=true)
     # rewards = SharedArray(Float64, length(problems))
     N = length(problems)
     if parallel
         prog = ProgressMeter.Progress( N, dt=0.1, barlen=50, output=STDERR)
-        rewards = pmap(test_run,
-                       prog,
-                       problems,
-                       initial_states,
-                       [solver for i in 1:N],
-                       [MersenneTwister(j+rng_offset) for j in 1:N])
+        if isa(bu,Void)
+          rewards = pmap(test_run,
+                         prog,
+                         problems,
+                         initial_states,
+                         [solver for i in 1:N],
+                         [MersenneTwister(j+rng_offset) for j in 1:N])
+         else
+           rewards = pmap(test_run,
+                          prog,
+                          problems,
+                          bu,
+                          initial_states,
+                          [solver for i in 1:N],
+                          [MersenneTwister(j+rng_offset) for j in 1:N])
+         end
     else
         rewards = Array(NoCrashStat, length(problems))
-        @showprogress for j in 1:length(problems)
-            rewards[j] = test_run(problems[j], initial_states[j], solver, MersenneTwister(j+rng_offset))
+        if isa(bu,Void)
+          @showprogress for j in 1:length(problems)
+              rewards[j] = test_run(problems[j], initial_states[j], solver, MersenneTwister(j+rng_offset))
+          end
+        else
+          @showprogress for j in 1:length(problems)
+              rewards[j] = test_run(problems[j], bu[j], initial_states[j], solver, MersenneTwister(j+rng_offset))
+          end
         end
     end
     for (i,r) in enumerate(rewards)

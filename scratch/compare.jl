@@ -2,6 +2,7 @@ procs = addprocs(2)
 
 
 push!(LOAD_PATH,joinpath("..","src"))
+push!(LOAD_PATH,joinpath("..","..","..","POMCP.jl","src"))
 using Multilane
 using POMCP
 using POMDPToolbox
