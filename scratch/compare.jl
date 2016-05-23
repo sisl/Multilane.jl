@@ -1,8 +1,8 @@
-procs = addprocs(2)
+procs = addprocs(7)
 
 
-push!(LOAD_PATH,joinpath("..","src"))
-push!(LOAD_PATH,joinpath("..","..","..","POMCP.jl","src"))
+#push!(LOAD_PATH,joinpath("..","src"))
+#push!(LOAD_PATH,joinpath("..","..","..","POMCP.jl","src"))
 using Multilane
 using POMCP
 using POMDPToolbox
