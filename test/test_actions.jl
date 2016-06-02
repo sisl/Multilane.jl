@@ -44,10 +44,19 @@ function failure_4()
     @test Multilane.is_safe(mdp, s, MLAction(0.0, 1.0))
 end
 
+function failure_5()
+    println("\t\tTesting special failure case allowing dangerous lane change when abs(lane_change) > 1")
+    mdp = Multilane.MLMDP{Multilane.MLState,Multilane.MLAction,Multilane.NoCrashIDMMOBILModel,Multilane.NoCrashRewardModel}(Multilane.NoCrashIDMMOBILModel(10,Multilane.PhysicalParam(0.75,2.0,4.0,31.0,4.0,4.0,35.0,27.0,31.0,35.0,27.0,20.0,4,100.0),Multilane.BehaviorModel[Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,27.5,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),1.0,1),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,27.5,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),1.0,2),Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,27.5,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),1.0,3),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,31.0,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),1.0,4),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,31.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),1.0,5),Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,31.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),1.0,6),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,35.0,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),1.0,7),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),1.0,8),Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,35.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),1.0,9)],StatsBase.WeightVec{Float64,Array{Float64,1}}([1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],9.0),1.0,2.6666666666666665,0.5,20.0,0.5,[1.0,1.0,1.0,1.0],2.0),Multilane.NoCrashRewardModel(100.0,10.0,8.0,1),1.0)
+    state = MLState(false, CarState[CarState(50.0,2.0,27.0,0.0,Nullable{BehaviorModel}(),1),CarState(52.934068808019056,1.0,32.940581978786135,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),1.0,8),3),CarState(7.329881331042117,1.5,27.127595226858716,-0.6666666666666666,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,35.0,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),1.0,7),8),CarState(1.3070886107784006,3.0,27.306814286745862,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,31.0,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),1.0,4),10)])
+    as = actions(mdp, state, actions(mdp))
+    @test all([a.lane_change >= 0.0 for a in as])
+end
+
 function test_actions()
     println("\tTesting Action Space...")
     test_iteration()
     test_off_road()
     test_all_safe()
     failure_4()
+    failure_5()
 end

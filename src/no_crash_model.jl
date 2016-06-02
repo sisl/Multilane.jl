@@ -106,6 +106,7 @@ function Base.next(as::NoCrashActionSpace, state::Integer)
     return (as.NORMAL_ACTIONS[state], state+1)
 end
 Base.done(as::NoCrashActionSpace, state::Integer) = state > NB_NORMAL_ACTIONS+1
+Base.length(as::NoCrashActionSpace) = length(as.acceptable) + 1
 
 function rand(rng::AbstractRNG, as::NoCrashActionSpace, a::MLAction=MLAction())
     nb_acts = length(as.acceptable)+1
@@ -129,7 +130,7 @@ function max_safe_acc(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, lane_chan
 
     car_in_front = 0
     smallest_gap = Inf
-    ego_y = isinteger(ego.y) ? ego.y + lane_change : ego.y
+    ego_y = isinteger(ego.y) ? ego.y + sign(lane_change) : ego.y
     # find car immediately in front
     if length(s.env_cars) > 1 # TODO check
         for i in 2:length(s.env_cars)#nb_cars

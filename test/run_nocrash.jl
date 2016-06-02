@@ -36,3 +36,19 @@ simulate(sim, mdp, policy, s)
 for i in 1:length(sim.state_hist)-1
     @test !is_crash(mdp, sim.state_hist[i], sim.state_hist[i+1])
 end
+
+# for i in 1:length(sim.state_hist)-1
+#     if is_crash(mdp, sim.state_hist[i], sim.state_hist[i+1])
+#         visualize(mdp, sim.state_hist[i], sim.action_hist[i], sim.state_hist[i+1], two_frame_crash=true)
+#         # println(repr(mdp))
+#         # println(repr(sim.state_hist[i]))
+#         println("Crash after step $i")
+#         println("Chosen Action: $(sim.action_hist[i])")
+#         println("Available actions:")
+#         for a in actions(mdp, sim.state_hist[i], actions(mdp))
+#             println(a)
+#         end
+#         println("Press Enter to continue.")
+#         readline(STDIN)
+#     end
+# end

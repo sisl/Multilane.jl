@@ -30,6 +30,7 @@ export
     MLObs,
     BehaviorModel,
     MLMDP,
+    MLPOMDP,
     OriginalMDP,
     OriginalRewardModel,
     IDMMOBILModel,
