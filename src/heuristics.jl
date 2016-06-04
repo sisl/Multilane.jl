@@ -11,6 +11,7 @@ type SimpleSolver <: Solver end
 Simple(mdp::NoCrashMDP) = Simple(mdp,actions(mdp),true)
 solve(solver::SimpleSolver,problem::NoCrashMDP) = Simple(problem)
 
+# lane changes if there is an opportunity
 function action{MLState}(p::Simple,s::MLState,a::MLAction=create_action(p.mdp))
   goal_lane = p.mdp.rmodel.desired_lane
   y_desired = goal_lane
