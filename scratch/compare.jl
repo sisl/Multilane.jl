@@ -1,14 +1,25 @@
-procs = addprocs(7)
+procs = addprocs(1)
 
 
-#push!(LOAD_PATH,joinpath("..","src"))
-#push!(LOAD_PATH,joinpath("..","..","..","POMCP.jl","src"))
+push!(LOAD_PATH,joinpath("..","src"))
+push!(LOAD_PATH,joinpath("..","..","..","POMCP.jl","src"))
 using Multilane
 using POMCP
 using POMDPToolbox
 using GenerativeModels
 using MCTS
 using JLD
+
+
+function POMCP.extract_belief(::POMDPToolbox.FastPreviousObservationUpdater{MLObs}, node::RootNode)
+  rand(MersenneTwister(1),node.B)
+end
+
+POMCP.initialize_belief(u::FastPreviousObservationUpdater{MLObs}, o::Union{MLState,MLObs}) = o
+
+POMCP.create_belief(u::FastPreviousObservationUpdater{MLObs}) = nothing
+
+POMCP.extract_belief(::POMDPToolbox.FastPreviousObservationUpdater{MLObs}, node::BeliefNode) = node.label[2]
 
 
 function write!(var_name::AbstractString, val::NoCrashStats, fname::AbstractString="results.jld")
@@ -117,7 +128,16 @@ for (k,rmodel) in enumerate(rmodels)
 
   bu = ParticleUpdater(100, pomdp, MersenneTwister(555))
 
-  r_pomcp = test_pomdp(pomdp, POMCPSolver(updater=bu), string("pomcp", k), initial_states, bu)
+  pomcp = POMCPDPWSolver( k_observation=0.1,
+                          alpha_observation=2.,
+                          tree_queries=100,
+                          c=10.,
+                          eps=0.01,
+                          rollout_solver=SimpleSolver())
+
+                          # Can't use simple solver! Issue is that somehow POMCPDPW is somehow generating an invalid action...
+
+  r_pomcp = test_pomdp(pomdp, pomcp, string("pomcp", k), initial_states, bu)
 
   println("POMCP Avg Reward: $(mean(r_pomcp))")
 
