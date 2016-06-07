@@ -13,6 +13,7 @@ solve(solver::SimpleSolver,problem::Union{NoCrashMDP,NoCrashPOMDP}) = Simple(pro
 POMDPs.updater(::Simple) = POMDPToolbox.FastPreviousObservationUpdater{MLObs}()
 
 function action{MLState}(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.mdp))
+# lane changes if there is an opportunity
   goal_lane = p.mdp.rmodel.desired_lane
   y_desired = goal_lane
   dmodel = p.mdp.dmodel

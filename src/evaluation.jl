@@ -6,6 +6,7 @@ import Base: mean, std, repr, length
 
 type NoCrashStat
   t_in_goal::Real
+  t_to_goal::Real
   nb_induced_brakes::Real
   reward::Real
 end
@@ -18,16 +19,18 @@ length(ncs::NoCrashStats) = length(ncs.stats)
 
 function mean(ncs::NoCrashStats)
   t = Real[stat.t_in_goal for stat in ncs.stats]
+  tt = Real[stat.t_to_goal for stat in ncs.stats]
   b = Real[stat.nb_induced_brakes for stat in ncs.stats]
   r = Real[stat.reward for stat in ncs.stats]
-  return mean(t), mean(b), mean(r)
+  return mean(t), mean(tt), mean(b), mean(r)
 end
 
 function std(ncs::NoCrashStats)
   t = Real[stat.t_in_goal for stat in ncs.stats]
+  tt = filter(x->x<Inf, Real[stat.t_to_goal for stat in ncs.stats])
   b = Real[stat.nb_induced_brakes for stat in ncs.stats]
   r = Real[stat.reward for stat in ncs.stats]
-  return std(t), std(b), std(r)
+  return std(t), std(tt), std(b), std(r)
 end
 
 function ste(ncs::NoCrashStats)
@@ -39,14 +42,19 @@ function get_stats(problem::Union{NoCrashMDP,NoCrashPOMDP},sim::HistoryRecorder,
   S = sim.state_hist
   A = sim.action_hist
   t_in_goal = 0
-  for s in S
+  t_to_goal = Inf
+  for (i,s) in enumerate(S)
     if s.env_cars[1].y == problem.rmodel.desired_lane
+      t = problem.dmodel.phys_param.dt*(i-1)
+      if t < t_to_goal
+          t_to_goal = t
+      end
       t_in_goal += 1
     end
   end
   # r = t_in_goal * reward_in_desired_lane - cost_dangerous_brake * nb_induced_brakes
   nb_induced_brakes = -(r - t_in_goal * problem.rmodel.reward_in_desired_lane) / problem.rmodel.cost_dangerous_brake
-  return NoCrashStat(t_in_goal, nb_induced_brakes, r)
+  return NoCrashStat(t_in_goal, t_to_goal, nb_induced_brakes, r)
 end
 
 function test_run(problem::NoCrashMDP, initial_state::MLState, solver::Solver, rng::AbstractRNG=MersenneTwister())
