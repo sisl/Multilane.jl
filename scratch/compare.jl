@@ -100,9 +100,11 @@ problems = NoCrashMDP[mdp for i in 1:N]
 
 #println("Heuristic Average Reward: $(mean(r_heur))")
 
+# exploration constants for POMCP
+ecs = [3., 5., 20., 50., 150., 300., 600., 1500., 3000., 5000.]
 
 
-for (k,rmodel) in enumerate(rmodels)
+for (k,(rmodel,ec)) in enumerate(zip(rmodels,ecs))
   mdp = NoCrashMDP(dmodel, rmodel, _discount);
 
   problems = NoCrashMDP[mdp for i in 1:N]
@@ -128,15 +130,18 @@ for (k,rmodel) in enumerate(rmodels)
 
   bu = ParticleUpdater(100, pomdp, MersenneTwister(555))
 
-  pomcp = POMCPDPWSolver( k_observation=0.1,
-                          alpha_observation=2.,
+  pomcp = POMCPDPWSolver( k_observation=0.3,
+                          alpha_observation=0.75,
+                          k_action=0.5,
+                          alpha_action=5.,
                           tree_queries=100,
-                          c=10.,
-                          eps=0.01,
-                          rollout_solver=SimpleSolver())
+                          c=ec,
+                          eps=0.01)
+                          #rollout_solver=SimpleSolver())
 
                           # Can't use simple solver! Issue is that somehow POMCPDPW is somehow generating an invalid action...
 
+  #pomcp = POMCPSolver()
   r_pomcp = test_pomdp(pomdp, pomcp, string("pomcp", k), initial_states, bu)
 
   println("POMCP Avg Reward: $(mean(r_pomcp))")
