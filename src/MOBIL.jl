@@ -49,7 +49,7 @@ function is_lanechange_dangerous(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1}
 
 end
 
-function get_neighborhood(pp::PhysicalParam,s::MLState,idx::Int)
+function get_neighborhood(pp::PhysicalParam,s::Union{MLState,MLObs},idx::Int)
 	nbhd = zeros(Int,6)
 	dists = Inf*ones(6)
 	"""

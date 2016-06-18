@@ -6,7 +6,7 @@ type NoCrashRewardModel <: AbstractMLRewardModel
     desired_lane::Int
 end
 #XXX temporary
-NoCrashRewardModel() = NoCrashRewardModel(100.,10.,8.0,1)
+NoCrashRewardModel() = NoCrashRewardModel(100.,10.,8.0,4)
 
 type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     nb_cars::Int
@@ -65,7 +65,7 @@ const NB_NORMAL_ACTIONS = 9
 
 function NoCrashActionSpace(mdp::Union{NoCrashMDP,NoCrashPOMDP})
     accels = (-mdp.dmodel.adjustment_acceleration, 0.0, mdp.dmodel.adjustment_acceleration)
-    lane_changes = (-mdp.dmodel.lane_change_vel, 0.0, mdp.dmodel.lane_change_vel)
+    lane_changes = (-mdp.dmodel.lane_change_vel / mdp.dmodel.phys_param.y_interval, 0.0, mdp.dmodel.lane_change_vel / mdp.dmodel.phys_param.y_interval)
     NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in product(accels, lane_changes)]
     return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: brake will be calculated later based on the state
 end
@@ -120,7 +120,7 @@ end
 """
 Calculate the maximum safe acceleration that will allow the car to avoid a collision if the car in front slams on its brakes
 """
-function max_safe_acc(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, lane_change::Float64=0.0)
+function max_safe_acc(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLObs}, lane_change::Float64=0.0)
     dt = mdp.dmodel.phys_param.dt
     v_min = mdp.dmodel.phys_param.v_min
     l_car = mdp.dmodel.phys_param.l_car
@@ -164,10 +164,12 @@ function max_dx(b::IDMMOBILBehavior, cs::CarState, dt)
     return cs.x + (cs.vel + b.p_idm.a/2.0)*dt
 end
 
+max_dx(cs::CarStateObs, dt::Float64) = cs.x + (cs.vel + 2.1/2.)*dt # Max accel is 2.0 in aggressive
+
 """
 Tests whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
 """
-function is_safe(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction)
+function is_safe(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLObs}, a::MLAction)
     if a.acc >= max_safe_acc(mdp, s, a.lane_change)
         return false
     end
@@ -180,7 +182,10 @@ function is_safe(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction)
             car = s.env_cars[i]
             ego = s.env_cars[1]
             if occupation_overlap(new_lane, car.y) && car.x < ego.x
-                if ego.x + (ego.vel + dt*a.acc/2.0)*dt - (car.x + max_dx(get(car.behavior), car, dt)) < mdp.dmodel.phys_param.l_car
+                # TODO: need a proxy HERE for max_dx if operating on observations
+                #   Note: can overestimate max_dx (operate conservatively)
+                dx = typeof(s)<:MLState ? max_dx(get(car.behavior), car, dt) : max_dx(car, dt)
+                if ego.x + (ego.vel + dt*a.acc/2.0)*dt - (car.x + dx) < mdp.dmodel.phys_param.l_car
                     return false
                 end
             end

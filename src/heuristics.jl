@@ -2,23 +2,27 @@
 # heuristic policies
 
 type Simple <: Policy
-  mdp::NoCrashMDP
+  mdp::Union{NoCrashMDP,NoCrashPOMDP}
   A::NoCrashActionSpace
   sweeping_up::Bool
 end
 type SimpleSolver <: Solver end
 
-Simple(mdp::NoCrashMDP) = Simple(mdp,actions(mdp),true)
-solve(solver::SimpleSolver,problem::NoCrashMDP) = Simple(problem)
+Simple(mdp::Union{NoCrashMDP,NoCrashPOMDP}) = Simple(mdp,actions(mdp),true)
+solve(solver::SimpleSolver,problem::Union{NoCrashMDP,NoCrashPOMDP}) = Simple(problem)
+POMDPs.updater(::Simple) = POMDPToolbox.FastPreviousObservationUpdater{MLObs}()
 
+function action{MLState}(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.mdp))
 # lane changes if there is an opportunity
-function action{MLState}(p::Simple,s::MLState,a::MLAction=create_action(p.mdp))
   goal_lane = p.mdp.rmodel.desired_lane
   y_desired = goal_lane
   dmodel = p.mdp.dmodel
   lc = sign(y_desired-s.env_cars[1].y) * dmodel.lane_change_vel / dmodel.phys_param.y_interval
   acc = dmodel.adjustment_acceleration
+
   #if can't move towards desired lane sweep through accelerating and decelerating
+
+  # TODO need an equivalent of is_safe that can operate on observations
   if is_safe(p.mdp,s,MLAction(0.,lc))
     return MLAction(0.,lc)
   end
@@ -50,7 +54,6 @@ function action{MLState}(p::Simple,s::MLState,a::MLAction=create_action(p.mdp))
 	sgn = abs(dist_ahead) <= abs(dist_behind) ? -1 : 1
 
   accel = sgn * acc
-
 
   return MLAction(accel,0.)
 end

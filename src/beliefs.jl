@@ -4,9 +4,9 @@ type ParticleUpdater <: POMDPs.Updater{ParticleBelief{MLState}}
   rng::AbstractRNG
 end
 
-create_belief(u::ParticleUpdater) = ParticleBelief{MLState}(Particle{MLState}[Particle{MLState}(create_state(u.problem),1.) for _ = 1:u.nb_particles])
+create_belief(u::ParticleUpdater) = ParticleBelief{MLState}(Particle{MLState}[Particle{MLState}(create_state(u.problem),1.) for _ = 1:u.nb_particles], Dict{MLState,Float64}(), Float64[], false)
 
-create_belief(u::ParticleUpdater, s::MLState) = ParticleBelief{MLState}(Particle{MLState}[Particle{MLState}(s,1.) for _ = 1:u.nb_particles])
+create_belief(u::ParticleUpdater, s::MLState) = ParticleBelief{MLState}(Particle{MLState}[Particle{MLState}(deepcopy(s),1.) for _ = 1:u.nb_particles], Dict{MLState,Float64}(), Float64[], false)
 
 function obs_to_state(mdp::NoCrashPOMDP,o::MLObs, s::MLState)
   env_cars = CarState[CarState(c.x,c.y,c.vel,c.lane_change,b.behavior,c.id) for (c,b) in zip(o.env_cars, s.env_cars)]
