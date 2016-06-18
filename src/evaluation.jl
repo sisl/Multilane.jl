@@ -5,37 +5,37 @@ import Base: mean, std, repr, length
 
 
 type NoCrashStat
-  t_in_goal::Real
-  t_to_goal::Real
-  nb_induced_brakes::Real
-  reward::Real
+    t_in_goal::Real
+    t_to_goal::Real
+    nb_induced_brakes::Real
+    reward::Real
 end
 
 type NoCrashStats
-  stats::Array{NoCrashStat,1}
-  rmodel::NoCrashRewardModel
+    stats::Array{NoCrashStat,1}
+    rmodel::NoCrashRewardModel
 end
 length(ncs::NoCrashStats) = length(ncs.stats)
 
 function mean(ncs::NoCrashStats)
-  t = Real[stat.t_in_goal for stat in ncs.stats]
-  tt = Real[stat.t_to_goal for stat in ncs.stats]
-  b = Real[stat.nb_induced_brakes for stat in ncs.stats]
-  r = Real[stat.reward for stat in ncs.stats]
-  return mean(t), mean(tt), mean(b), mean(r)
+    t = Real[stat.t_in_goal for stat in ncs.stats]
+    tt = Real[stat.t_to_goal<Inf?stat.t_to_goal:1000.0 for stat in ncs.stats]
+    b = Real[stat.nb_induced_brakes for stat in ncs.stats]
+    r = Real[stat.reward for stat in ncs.stats]
+    return mean(t), mean(tt), mean(b), mean(r)
 end
 
 function std(ncs::NoCrashStats)
-  t = Real[stat.t_in_goal for stat in ncs.stats]
-  tt = filter(x->x<Inf, Real[stat.t_to_goal for stat in ncs.stats])
-  b = Real[stat.nb_induced_brakes for stat in ncs.stats]
-  r = Real[stat.reward for stat in ncs.stats]
-  return std(t), std(tt), std(b), std(r)
+    t = Real[stat.t_in_goal for stat in ncs.stats]
+    tt = filter(x->x<Inf, Real[stat.t_to_goal for stat in ncs.stats])
+    b = Real[stat.nb_induced_brakes for stat in ncs.stats]
+    r = Real[stat.reward for stat in ncs.stats]
+    return std(t), std(tt), std(b), std(r)
 end
 
 function ste(ncs::NoCrashStats)
-  t,b,r = std(ncs)
-  return t/sqrt(length(ncs)), b/sqrt(length(ncs)), r/sqrt(length(ncs))
+    t,b,r = std(ncs)
+    return t/sqrt(length(ncs)), b/sqrt(length(ncs)), r/sqrt(length(ncs))
 end
 
 function get_stats(problem::Union{NoCrashMDP,NoCrashPOMDP},sim::HistoryRecorder, r::Real)

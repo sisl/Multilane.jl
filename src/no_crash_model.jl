@@ -24,7 +24,6 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     vel_sigma::Float64 # std of new car speed about v0
     lane_weights::Array{Float64,1} # dirichlet alpha values for each lane: first is for rightmost lane
     dist_var::Float64 # variance of distance--can back out rate, shape param from this
-
 end
 
 #XXX temporary
