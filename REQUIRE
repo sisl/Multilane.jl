@@ -5,3 +5,4 @@ POMDPs
 Interact
 PyPlot
 DataFrames
+ProgressMeter

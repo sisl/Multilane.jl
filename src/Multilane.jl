@@ -22,6 +22,9 @@ import POMDPToolbox: Particle, ParticleBelief
 using Interact
 
 using DataFrames
+using ProgressMeter
+using PmapProgressMeter
+using POMDPToolbox
 
 # package code goes here
 export

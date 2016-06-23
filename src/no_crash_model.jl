@@ -404,7 +404,7 @@ function detect_braking(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, sp::MLS
             end
         end
     end
-    @assert nb_leaving <= 5 # sanity check - can remove this if it is violated as long as it doesn't happen all the time
+    # @assert nb_leaving <= 5 # sanity check - can remove this if it is violated as long as it doesn't happen all the time
     return nb_brakes
 end
 

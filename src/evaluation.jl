@@ -1,6 +1,3 @@
-using ProgressMeter
-using PmapProgressMeter
-using POMDPToolbox
 import Base: mean, std, repr, length
 
 function test_run(problem::NoCrashMDP, initial_state::MLState, solver::Solver, rng::AbstractRNG=MersenneTwister())

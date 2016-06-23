@@ -59,10 +59,13 @@ end
 
 curve_results = evaluate(curve_problems, initial_states, curve_solvers, parallel=true)
 
-results = merge!(curve_results, point_results)
+results = merge_results!(curve_results, point_results)
 
 println(results["stats"])
 
+tic()
 filename = string("results_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")
+results["histories"] = nothing
 save(filename, results)
 println("results saved to $filename")
+toc()
