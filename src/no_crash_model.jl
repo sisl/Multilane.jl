@@ -221,9 +221,6 @@ function generate_sr(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLActio
     lcs[1] = a.lane_change
     dys[1] = a.lane_change*dt
 
-    if a.acc < -mdp.rmodel.dangerous_brake_threshold
-        r -= mdp.rmodel.cost_dangerous_brake
-    end
     if s.env_cars[1].y == mdp.rmodel.desired_lane
         r += mdp.rmodel.reward_in_desired_lane
     end
@@ -238,9 +235,6 @@ function generate_sr(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLActio
         acc = generate_accel(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dvs[i] = dt*acc
         dxs[i] = (s.env_cars[i].vel + dvs[i]/2.)*dt
-        if acc < -mdp.rmodel.dangerous_brake_threshold
-            r -= mdp.rmodel.cost_dangerous_brake
-        end
 
         lcs[i] = generate_lane_change(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dys[i] = lcs[i] * dt
@@ -369,9 +363,49 @@ function generate_sr(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLActio
 
     sp.crashed = is_crash(mdp, s, sp)
 
+    nb_brakes = detect_braking(mdp, s, sp)
+    r -= mdp.rmodel.cost_dangerous_brake*nb_brakes
+
     @assert sp.env_cars[1].x == s.env_cars[1].x # ego should not move
 
     return (sp, r)
+end
+
+function reward(mdp::Union{NoCrashMDP, NoCrashPOMDP}, s::MLState, ::MLAction, sp::MLState)
+    r = 0.0
+    if s.env_cars[1].y == mdp.rmodel.desired_lane
+        r += mdp.rmodel.reward_in_desired_lane
+    end
+    nb_brakes = detect_braking(mdp, s, sp)
+    r -= mdp.rmodel.cost_dangerous_brake*nb_brakes
+    return r
+end
+
+"""
+Return the number of braking actions that occured during this state transition
+"""
+function detect_braking(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, sp::MLState, threshold=mdp.rmodel.dangerous_brake_threshold)
+    nb_brakes = 0
+    nb_leaving = 0 
+    dt = mdp.dmodel.phys_param.dt
+    for (i,c) in enumerate(s.env_cars)
+        if length(sp.env_cars) >= i-nb_leaving
+            cp = sp.env_cars[i-nb_leaving]
+        else
+            break
+        end
+        if cp.id != c.id
+            nb_leaving += 1
+            continue
+        else
+            acc = (cp.vel-c.vel)/dt
+            if acc < -threshold
+                nb_brakes += 1
+            end
+        end
+    end
+    @assert nb_leaving <= 5 # sanity check - can remove this if it is violated as long as it doesn't happen all the time
+    return nb_brakes
 end
 
 function initial_state(mdp::Union{NoCrashMDP,NoCrashPOMDP}, rng::AbstractRNG, s::MLState=create_state(mdp))

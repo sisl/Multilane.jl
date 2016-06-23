@@ -21,6 +21,8 @@ import POMDPToolbox: Particle, ParticleBelief
 # for visualization
 using Interact
 
+using DataFrames
+
 # package code goes here
 export
     PhysicalParam,
@@ -62,12 +64,11 @@ export
     display_sim
 
 export #data structure stuff
-    NoCrashStat,
-    NoCrashStats,
-    mean,
-    std,
     ste,
-    test_run
+    test_run,
+    evaluate,
+    merge_results!
+
 
 export # POMDP belief stuff
     ParticleUpdater,
