@@ -1,5 +1,3 @@
-procs = addprocs(7)
-
 using Multilane
 using MCTS
 using GenerativeModels
@@ -26,7 +24,7 @@ _discount = 1.
 nb_cars=10
 dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
 
-N = 5
+N = 100
 
 mdp = NoCrashMDP(dmodel, rmodels[1], _discount);
 isrng = MersenneTwister(123)
@@ -68,5 +66,3 @@ println(results["stats"])
 filename = string("results_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")
 save(filename, results)
 println("results saved to $filename")
-
-rmprocs(procs)
