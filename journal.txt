@@ -1,0 +1,129 @@
+Thu 23 Jun 2016 02:25:27 PM PDT
+
+[ ] Plot
+[ ] Profile
+[ ] Run Robust
+[ ] Investigate bugs
+    [ ] Crashes
+    [ ] Run until lane reached
+
+[ ] Travel Reimbursement
+
+Tue 21 Jun 2016 01:55:31 PM PDT
+
+[X] Fix framework
+[X] Run on Theresa
+[X] Run on tula
+[ ] Clean up
+[ ] Graph
+
+Mon 20 Jun 2016 09:57:17 PM PDT
+
+[ ] XXX Can't cars just speed over to the desired lane before any others get there?
+
+Sat 04 Jun 2016 12:56:27 PM PDT
+
+[-] Upgrade to dataframes
+[X] Use heuristic policy
+[X] Increase max lambda
+[X] Fewer Lambdas
+[X] Extract number of hard brakes
+[X] Extract time to lane
+
+
+Potential Caveats:
+1. These numbers are not realistic (Chris and I don't know what parameter values to use)
+2. We need a sophisticated driver model
+
+THU 12 MAY 2016 09:00:14 AM PDT
+
+[ ] ROBUST MONTE CARLO TREE SEARCH
+[ ] DATA STRUCTURE FOR A SIMULATION ROUND
+
+SAT 07 MAY 2016 03:24:01 PM PDT
+
+[X] PROFILE
+[X] DO RANDOM
+[X] NORWAY
+[X] TRY DPW
+[X] SET UP TULA
+[O] FIGURE OUT AGGREGATION
+
+FRI 06 MAY 2016 05:12:57 PM PDT
+
+[X] ADD CAR ID
+[ ] DO MCTS EVEN THOUGH IT DOESN'T WORK
+
+FRI 06 MAY 2016 10:13:49 AM PDT
+
+[X] BRAKING THRESHOLD POSITIVE NUMBER!
+[X] GET RID OF DEBUGGING
+[ ] SPEED ADJUSTMENTS SHOULD BE SLOW
+
+THU 05 MAY 2016 11:01:47 AM PDT
+
+[X] WHY IS THE VISUALIZATION PRODUCING TWO PLOTS?
+[X] WHY ARE CARS STARTING IN ALL THE WRONG PLACES?
+[X] WHY AREN'T CARS REGENERATING
+[X] WHY IS IT TAKING ACTIONS TO GO OFF THE ROAD
+
+WED 04 MAY 2016 06:07:53 PM PDT
+
+[X] NEED TO DEFINE WHAT LANE_CHANGE IS
+
+TUE 03 MAY 2016 06:35:47 PM PDT
+
+WHY COMPLICATED TESTINg?
+what is idx in behavior model
+change strings to symbols in cautious/normal/aggressive
+lane_change meaning in action vs other cars
+[X] Goals for tomorrow
+    [X] Make decision about dynamics
+    [X] ZOH acceleration - start braking assumption at 1g
+    [X] Run simulation with random policy
+    [X] Julia sorting reverse
+
+Tue 03 May 2016 03:05:13 PM PDT
+
+[X] lane change snap
+
+Mon 02 May 2016 05:10:10 PM PDT
+
+[X] Read on the line of literature from the foundations paper
+[X] define spawn model
+[X] code spawn model
+
+Sat 23 Apr 2016 09:28:51 PM PDT
+
+Need to define
+- encounter
+- continuous time/ acceleration
+- dvel_*ms*
+- rationality
+
+Fri 22 Apr 2016 11:54:49 AM PDT
+
+Before quick crash test pruning: 4.7 seconds
+After: 2 seconds (2 x speedup)
+
+Fri 22 Apr 2016 11:26:08 AM PDT
+
+Things to adjust:
+[O] Cost function
+[ ] Move crash testing from dynamics to action space
+[ ] generate_sr tests for close calls
+
+First thing to test:
+[ ] Random policy vs MCTS with perfect state knowledge
+
+Thu 21 Apr 2016 01:47:20 PM PDT
+
+[X] test if crashed in state transition
+    This give about a 2x speedup in rollout simulation, see scratch/simlog_faster_crash.md
+[X] update reward
+[X] update isterminal
+
+Mon 18 Apr 2016 08:18:04 PM PDT
+
+visualization
+history simulator
