@@ -6,3 +6,4 @@ Interact
 PyPlot
 DataFrames
 ProgressMeter
+ArgParse

@@ -159,12 +159,12 @@ function evaluate(problems::Vector, initial_states::Vector, solvers::Dict{UTF8St
 end
 
 function merge_results!(r1::Dict{UTF8String, Any}, r2::Dict{UTF8String, Any})
-    r1["nb_sims"] += r2["nb_sims"]
     merge!(r1["solvers"], r2["solvers"])
     merge!(r1["problems"], r2["problems"])
     merge!(r1["initial_states"], r2["initial_states"])
     append!(r1["stats"], r2["stats"])
     r1["stats"][:id][end-r2["nb_sims"]+1:end] += r1["nb_sims"]
+    r1["nb_sims"] += r2["nb_sims"]
     append!(r1["histories"], r2["histories"])
     return r1
 end
