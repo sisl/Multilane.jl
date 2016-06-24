@@ -7,3 +7,5 @@ PyPlot
 DataFrames
 ProgressMeter
 ArgParse
+Plots
+UnicodePlots
