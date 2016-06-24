@@ -1,17 +1,25 @@
 #!/usr/bin/julia
 
 using ArgParse
+
 using JLD
 using Multilane
 using POMDPs
 using MCTS
 using DataFrames
+using Plots
 
 s = ArgParseSettings()
 
 @add_arg_table s begin
     "--show", "-s"
         help = "show results; print stats and solvers"
+        action = :store_true
+    "--unicode", "-u"
+        help = "show unicode plot"
+        action = :store_true
+    "--performance"
+        help = "[NOT IMPLEMENTED] show average performance"
         action = :store_true
     "--plot", "-p"
         help = "[NOT IMPLEMENTED] plot paretto curves"
@@ -28,9 +36,20 @@ args = parse_args(ARGS, s)
 
 results = load(args["filename"][1])
 
+stats = results["stats"]
 
+mean_performance = by(stats, :solver_key) do df
+    by(df, :lambda) do df
+        DataFrame(steps_in_lane=mean(df[:steps_in_lane]),
+                  nb_brakes=mean(df[:nb_brakes])
+                  )
+    end
+end
 
-
+# if args["plot"]
+#     unicodeplots()
+#     plot(
+# end
 
 if args["show"]
     println("""
@@ -53,6 +72,18 @@ if args["show"]
         ================
 
         """)
-    showall(results["stats"])
+    println(mean_performance)
     println()
+end
+
+if args["unicode"]
+    unicodeplots()
+    for g in groupby(mean_performance, :solver_key)
+        if size(g,1) > 1
+            plot!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
+        else
+            scatter!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
+        end
+    end
+    gui()
 end
