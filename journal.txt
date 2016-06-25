@@ -1,7 +1,18 @@
+Thu 23 Jun 2016 09:38:46 PM PDT
+
+Tonight:
+    [X] Travel
+Friday:
+    [ ] End at lane reached
+    [ ] Robust Running
+Saturday: 
+    [ ] Profile
+
+
 Thu 23 Jun 2016 02:25:27 PM PDT
 
-[ ] Plot
-[ ] Profile
+[X] Plot
+[ ] Profile (tonight)
 [ ] Run Robust
 [ ] Investigate bugs
     [ ] Crashes
