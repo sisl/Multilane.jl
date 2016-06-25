@@ -1,4 +1,4 @@
-#!/usr/bin/julia
+#!/usr/bin/julia --color=yes
 
 using ArgParse
 
@@ -52,26 +52,26 @@ end
 # end
 
 if args["show"]
-    println("""
-
-        =============
-        ## Solvers ##
-        =============
-
-        """)
-    for (k,v) in results["solvers"]
-        println("$k:")
-        println(v)
-        println()
-    end
-
-    println("""
-
-        ================
-        ## Statistics ##
-        ================
-
-        """)
+#     println("""
+# 
+#         =============
+#         ## Solvers ##
+#         =============
+# 
+#         """)
+#     for (k,v) in results["solvers"]
+#         println("$k:")
+#         println(v)
+#         println()
+#     end
+# 
+#     println("""
+# 
+#         ================
+#         ## Statistics ##
+#         ================
+# 
+#         """)
     println(mean_performance)
     println()
 end

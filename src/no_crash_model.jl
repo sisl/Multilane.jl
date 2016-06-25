@@ -24,27 +24,30 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     vel_sigma::Float64 # std of new car speed about v0
     lane_weights::Array{Float64,1} # dirichlet alpha values for each lane: first is for rightmost lane
     dist_var::Float64 # variance of distance--can back out rate, shape param from this
+
+    lane_terminate::Bool # if true, terminate the simulation when the car has reached the desired lane
 end
 
 #XXX temporary
-function NoCrashIDMMOBILModel(nb_cars::Int,pp::PhysicalParam)
-    behaviors = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
-                                      enumerate(product(["cautious","normal","aggressive"],
-                                      [pp.v_slow+0.5;pp.v_med;pp.v_fast],
-                                      [pp.l_car]))]
-            return NoCrashIDMMOBILModel(
-            nb_cars,
-            pp,
-            behaviors,
-            WeightVec(ones(length(behaviors))),
-            1.,
-            pp.w_lane / (pp.dt * 2), #how many time steps it takes to get from one lane to another
-            0.5,
-            20.0,
-            0.5,
-            ones(pp.nb_lanes),
-            2.
-        )
+function NoCrashIDMMOBILModel(nb_cars::Int, pp::PhysicalParam, lane_terminate=true)
+    behaviors=IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
+                       enumerate(product(["cautious","normal","aggressive"],
+                              [pp.v_slow+0.5;pp.v_med;pp.v_fast],
+                              [pp.l_car]))]
+    return NoCrashIDMMOBILModel(
+        nb_cars,
+        pp,
+        behaviors,
+        WeightVec(ones(length(behaviors))),
+        1.,
+        pp.w_lane / (pp.dt * 2), #how many time steps it takes to get from one lane to another
+        0.5,
+        20.0,
+        0.5,
+        ones(pp.nb_lanes),
+        2.,
+        lane_terminate
+    )
 end
 
 typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
@@ -361,7 +364,7 @@ function generate_sr(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLActio
         end
     end
 
-    sp.crashed = is_crash(mdp, s, sp)
+    sp.crashed = is_crash(mdp, s, sp, warning=false)
 
     nb_brakes = detect_braking(mdp, s, sp)
     r -= mdp.rmodel.cost_dangerous_brake*nb_brakes
@@ -545,4 +548,15 @@ function pdf(mdp::Union{NoCrashMDP,NoCrashPOMDP}, sp::MLState, a::MLAction, o::M
   """
 
 
+end
+
+function isterminal(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState)
+    if s.crashed
+        return true
+    elseif mdp.dmodel.lane_terminate && s.env_cars[1].y == mdp.rmodel.desired_lane
+        return true
+        println("lane termination")
+    else
+        return false
+    end
 end
