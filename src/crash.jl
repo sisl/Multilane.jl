@@ -102,7 +102,7 @@ function poly_intersect(X::Array{Array{Float64,2},1},Y::Array{Array{Float64,2},1
 end
 
 # to see, run visualize(mdp, s, a, sp, two_frame_crash=true, debug=true)
-function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}}, s::MLState, sp::MLState, debug::Bool=false)
+function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}}, s::MLState, sp::MLState, debug::Bool=false; warning::Bool=false)
 	pp = mdp.dmodel.phys_param
 	dt = pp.dt
   nb_col = 2*pp.nb_lanes-1
@@ -147,8 +147,8 @@ function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}},
 	#and most likely not eligible for crash detection
 
 	cars = Tuple{CarState,CarState}[(s.env_cars[id[car_id]],
-																		sp.env_cars[idp[car_id]],)
-																			for car_id in ids] #1 or 2
+                                            sp.env_cars[idp[car_id]],)
+										    for car_id in ids] #1 or 2
 
 	for (env_car,env_car_) in cars
 
@@ -183,9 +183,24 @@ function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}},
 			end
 		end
 		if poly_intersect(X,Y)
+            if warning
+                crash_warning(mdp, s, sp)
+            end
 			return true
 		end
 	end
 
 	return false
+end
+
+function crash_warning(mdp, s, sp)
+    warn("""
+    Crash!
+
+    mdp = $mdp
+
+    s = $s
+
+    sp = $sp
+    """)
 end
