@@ -1,9 +1,23 @@
+Fri 24 Jun 2016 07:51:20 PM PDT
+
+I want to be able to investigate a simulation
+I HATE IPYTHON NOTEBOOKS
+First, get initial conditions, then do test_run
+But, if I want to examine the tree, I have to have the policy
+so test_run should return the policy
+should be able to visualize with that
+PUT AS LITTLE CODE AS POSSIBLE IN THE DAMN NOTEBOOK
+
+Fri 24 Jun 2016 06:45:36 PM PDT
+
+[ ] Simulation visualization
+
 Thu 23 Jun 2016 09:38:46 PM PDT
 
 Tonight:
     [X] Travel
 Friday:
-    [ ] End at lane reached
+    [X] End at lane reached
     [ ] Robust Running
 Saturday: 
     [ ] Profile

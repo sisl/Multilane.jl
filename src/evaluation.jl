@@ -6,6 +6,13 @@ function test_run(problem::NoCrashMDP, initial_state::MLState, solver::Solver, r
     return sim
 end
 
+function test_run_return_policy(problem::NoCrashMDP, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
+    sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
+    policy = solve(solver, problem)
+    r = simulate(sim, problem, policy, initial_state)
+    return sim, policy
+end
+
 function test_run(problem::NoCrashPOMDP, bu, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps,initial_state=initial_state)
     r = simulate(sim, problem, solve(solver,problem), bu, create_belief(bu,initial_state))
@@ -13,7 +20,6 @@ function test_run(problem::NoCrashPOMDP, bu, initial_state::MLState, solver::Sol
 end
 
 function run_simulations(problems::AbstractVector, initial_states::AbstractVector, solvers::AbstractVector, bu=nothing; rng_seeds::AbstractVector=collect(1:length(problems)), parallel=true, max_steps=100)
-    # rewards = SharedArray(Float64, length(problems))
     N = length(problems)
     if parallel
         prog = ProgressMeter.Progress( N, dt=0.1, barlen=50, output=STDERR)
@@ -130,7 +136,7 @@ function evaluate(problems::Vector, initial_states::Vector, solvers::Dict{UTF8St
         solver_key=DataArray(UTF8String,nb_sims),
         problem_key=DataArray(UTF8String,nb_sims),
         initial_key=DataArray(UTF8String,nb_sims),
-        rng_seeds=DataArray(Int,nb_sims),
+        rng_seed=DataArray(Int,nb_sims),
         time=ones(nb_sims).*time(),
         )
 
@@ -145,12 +151,12 @@ function evaluate(problems::Vector, initial_states::Vector, solvers::Dict{UTF8St
                 all_problems[id] = problems[p_i]
                 stats[:initial_key][id] = is_keys[is_i]
                 all_initial[id] = initial_states[is_i]
-                stats[:rng_seeds][id] = is_i+rng_offset
+                stats[:rng_seed][id] = is_i+rng_offset
             end
         end
     end
 
-    sims = run_simulations(all_problems, all_initial, all_solvers, nothing, rng_seeds=stats[:rng_seeds], parallel=parallel)
+    sims = run_simulations(all_problems, all_initial, all_solvers, nothing, rng_seeds=stats[:rng_seed], parallel=parallel)
     fill_stats!(stats, all_problems, sims)
     return Dict{UTF8String, Any}(
         "nb_sims"=>nb_sims,
@@ -172,6 +178,21 @@ function merge_results!(r1::Dict{UTF8String, Any}, r2::Dict{UTF8String, Any})
     append!(r1["histories"], r2["histories"])
     return r1
 end
+
+function rerun{S<:AbstractString}(results::Dict{S, Any}, id)
+    stats = results["stats"]
+    @assert stats[:id][id] == id
+    problem = results["problems"][stats[:problem_key][id]]
+    is = results["initial_states"][stats[:initial_key][id]]
+    solver = results["solvers"][stats[:solver_key][id]]
+    rng_seed = stats[:rng_seed][id]
+    steps = stats[:steps][id]
+    sim, policy = test_run_return_policy(problem, is, solver, rng_seed, steps)
+    r = sum([reward(problem, sim.state_hist[i], sim.action_hist[i], sim.state_hist[i+1]) for i in 1:length(sim.action_hist)])
+    @assert r == stats[:reward][id]
+    return problem, sim, policy
+end
+
 
 #=
 function save_results(results, filename=string("results_", Dates.format(Dates.now(),"_u_d_HH_MM"), ".jld"))

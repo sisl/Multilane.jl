@@ -8,11 +8,15 @@ draw_box(x::Union{Float64,Int},y::Union{Float64,Int},w::Union{Float64,Int},h::Un
 
 function display_sim(mdp, S::Array{MLState,1}, A::Array{MLAction,1}; debug::Bool=false)
   warn("This should be run in a Jupyter Notebook")
-  assert(length(S) >= length(A))
+  assert(length(S) == length(A)+1)
   f = figure()
   @manipulate for i = 1:length(A); withfig(f) do
-    visualize(mdp,S[i],A[i],debug=debug) end
+    visualize(mdp,S[i],A[i],S[i+1],debug=debug) end
   end
+end
+
+function display_sim(mdp, sim::HistoryRecorder)
+    display_sim(mdp, sim.state_hist, sim.action_hist)
 end
 
 function draw_bang(x::Union{Float64,Int},
