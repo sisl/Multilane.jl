@@ -41,7 +41,9 @@ stats = results["stats"]
 mean_performance = by(stats, :solver_key) do df
     by(df, :lambda) do df
         DataFrame(steps_in_lane=mean(df[:steps_in_lane]),
-                  nb_brakes=mean(df[:nb_brakes])
+                  nb_brakes=mean(df[:nb_brakes]),
+                  time_to_lane=mean(df[:time_to_lane]),
+                  steps=mean(df[:steps]),
                   )
     end
 end
@@ -77,13 +79,20 @@ if args["show"]
 end
 
 if args["unicode"]
-    unicodeplots()
-    for g in groupby(mean_performance, :solver_key)
-        if size(g,1) > 1
-            plot!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
-        else
-            scatter!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
+    try
+        unicodeplots()
+        for g in groupby(mean_performance, :solver_key)
+            if size(g,1) > 1
+                # plot!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
+                plot!(g, :time_to_lane, :nb_brakes, group=:solver_key)
+            else
+                # scatter!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
+                scatter!(g, :time_to_lane, :nb_brakes, group=:solver_key)
+            end
         end
+        gui()
+    catch ex
+        warn("Plot could not be displayed:")
+        show(ex)
     end
-    gui()
 end
