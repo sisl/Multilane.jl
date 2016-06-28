@@ -19,7 +19,7 @@ function test_run(problem::NoCrashPOMDP, bu, initial_state::MLState, solver::Sol
     return sim
 end
 
-function run_simulations(problems::AbstractVector, initial_states::AbstractVector, solvers::AbstractVector, bu=nothing; rng_seeds::AbstractVector=collect(1:length(problems)), parallel=true, max_steps=100)
+function run_simulations(problems::AbstractVector, initial_states::AbstractVector, solvers::AbstractVector, bu=nothing; rng_seeds::AbstractVector=collect(1:length(problems)), parallel=true, max_steps=10000)
     N = length(problems)
     if parallel
         prog = ProgressMeter.Progress( N, dt=0.1, barlen=50, output=STDERR)
@@ -98,10 +98,10 @@ function fill_stats!(stats::DataFrame, problems::Vector, sims::Vector)
 
             nb_brakes += detect_braking(problems[i], s, sp)
 
+            if sp.env_cars[1].y == problems[i].rmodel.desired_lane
+                steps_in_lane += 1
+            end
             if s.env_cars[1].y == problems[i].rmodel.desired_lane
-                if sp.env_cars[1].y == problems[i].rmodel.desired_lane
-                    steps_in_lane += 1
-                end
                 if isnull(steps_to_lane)
                     steps_to_lane = Nullable{Int}(k-1)
                 end

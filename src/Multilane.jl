@@ -25,6 +25,7 @@ using DataFrames
 using ProgressMeter
 using PmapProgressMeter
 using POMDPToolbox
+import MCTS # so that we can define node_tag, etc.
 
 # package code goes here
 export
@@ -53,7 +54,8 @@ export
 
 export
     SingleBehaviorSolver,
-    SingleBehaviorPolicy
+    SingleBehaviorPolicy,
+    single_behavior_state
 
 export
     get_neighborhood, #testing VVV
@@ -83,10 +85,11 @@ export # POMDP belief stuff
     initialize_belief
 
 
+include("util.jl")
 include("physical.jl")
 include("MDP_types.jl")
 include("crash.jl")
-include("MDP.jl")
+# include("MDP.jl")
 include("IDM.jl")
 include("MOBIL.jl")
 include("behavior.jl")
@@ -96,5 +99,6 @@ include("evaluation.jl")
 include("single_behavior.jl")
 include("heuristics.jl")
 include("beliefs.jl")
+include("tree_vis.jl")
 
 end # module

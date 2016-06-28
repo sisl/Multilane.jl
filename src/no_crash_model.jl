@@ -45,7 +45,7 @@ function NoCrashIDMMOBILModel(nb_cars::Int, pp::PhysicalParam, lane_terminate=tr
         20.0,
         0.5,
         ones(pp.nb_lanes),
-        2.,
+        10.^2,
         lane_terminate
     )
 end
@@ -208,7 +208,6 @@ function generate_sr(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLActio
     dt = pp.dt
     nb_cars = length(s.env_cars)
     resize!(sp.env_cars, nb_cars)
-    r = 0.0 # reward
 
     ## Calculate deltas ##
     #====================#
@@ -223,10 +222,6 @@ function generate_sr(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLActio
     dxs[1] = s.env_cars[1].vel*dt + a.acc*dt^2/2.
     lcs[1] = a.lane_change
     dys[1] = a.lane_change*dt
-
-    if s.env_cars[1].y == mdp.rmodel.desired_lane
-        r += mdp.rmodel.reward_in_desired_lane
-    end
 
     changers = IntSet()
     for i in 2:nb_cars
@@ -364,19 +359,17 @@ function generate_sr(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLActio
         end
     end
 
-    sp.crashed = is_crash(mdp, s, sp, warning=false)
-
-    nb_brakes = detect_braking(mdp, s, sp)
-    r -= mdp.rmodel.cost_dangerous_brake*nb_brakes
+    # sp.crashed = is_crash(mdp, s, sp, warning=false)
+    sp.crashed = false
 
     @assert sp.env_cars[1].x == s.env_cars[1].x # ego should not move
 
-    return (sp, r)
+    return (sp, reward(mdp, s, a, sp))
 end
 
 function reward(mdp::Union{NoCrashMDP, NoCrashPOMDP}, s::MLState, ::MLAction, sp::MLState)
     r = 0.0
-    if s.env_cars[1].y == mdp.rmodel.desired_lane
+    if sp.env_cars[1].y == mdp.rmodel.desired_lane
         r += mdp.rmodel.reward_in_desired_lane
     end
     nb_brakes = detect_braking(mdp, s, sp)
@@ -416,7 +409,8 @@ function initial_state(mdp::Union{NoCrashMDP,NoCrashPOMDP}, rng::AbstractRNG, s:
   srand(rand(rng, UInt32))
   pp = mdp.dmodel.phys_param
   #Unif # cars in initial scene
-  _nb_cars = rand(rng,1:mdp.dmodel.nb_cars)
+  #_nb_cars = rand(rng,floor(Int, mdp.dmodel.nb_cars/2):mdp.dmodel.nb_cars)
+  _nb_cars = mdp.dmodel.nb_cars
   #place ego car
 
   pos_x = pp.lane_length/2. #this is fixed
@@ -429,15 +423,17 @@ function initial_state(mdp::Union{NoCrashMDP,NoCrashPOMDP}, rng::AbstractRNG, s:
   dir_distr = Dirichlet(mdp.dmodel.lane_weights)
   cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
 
-  dist_distr1 = Exponential(1./mdp.dmodel.dist_var)
+  dist_distr1 = Exponential(sqrt(mdp.dmodel.dist_var))
+  # dist_distr1 = Exponential(1.0/mdp.dmodel.dist_var)
 
   last_front = 1 #last car to be sampled in front of ego car--starts as ego car
   last_back = 1 #last car to be sampled behind ego car -- starts with ego car
 
+
   idx = 2
   for (lane,nb_cars) in enumerate(cars_per_lane)
 
-    if nb_cars <= 0
+    if nb_cars == 0
       continue
     end
 
@@ -446,6 +442,7 @@ function initial_state(mdp::Union{NoCrashMDP,NoCrashPOMDP}, rng::AbstractRNG, s:
 
     #lane = 2*_lane - 1
     #from front to back
+
     for i = 1:nb_cars
       if break_flag
         continue
@@ -476,7 +473,7 @@ function initial_state(mdp::Union{NoCrashMDP,NoCrashPOMDP}, rng::AbstractRNG, s:
           dist = rand(dist_distr1)
           x = pp.lane_length - dist
         else
-          #mean of v0*T - min_dist
+          # mean of v0*T - min_dist
           dist = sample_distance(mdp.dmodel,behavior,rng)
           x = s.env_cars[idx-1].x-dist
         end
@@ -506,7 +503,7 @@ function sample_distance(dmodel::NoCrashIDMMOBILModel, behavior::IDMMOBILBehavio
   mu = behavior.p_idm.T*behavior.p_idm.v0 - dmodel.appear_clearance
   var = dmodel.dist_var
   assert(mu > 0.)
-  dist_distr = Gamma((mu^2)/(var^2),(var^2)/mu)
+  dist_distr = Gamma((mu^2)/var,var/mu)
   dist = rand(dist_distr) + dmodel.appear_clearance + dmodel.phys_param.l_car
 
   return dist
@@ -523,9 +520,9 @@ end
 # TODO generate_sor
 
 function generate_sor(pomdp::NoCrashPOMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState, o::MLObs)
-  sp, r = generate_sr(pomdp, s, a, rng, sp)
-  o = generate_o(pomdp, s, a, sp, o)
-  return sp, o, r
+    sp, r = generate_sr(pomdp, s, a, rng, sp)
+    o = generate_o(pomdp, s, a, sp, o)
+    return sp, o, r
 end
 
 function pdf(mdp::Union{NoCrashMDP,NoCrashPOMDP}, sp::MLState, a::MLAction, o::MLObs)
@@ -549,6 +546,9 @@ function pdf(mdp::Union{NoCrashMDP,NoCrashPOMDP}, sp::MLState, a::MLAction, o::M
 
 
 end
+
+discount(mdp::Union{MLMDP,MLPOMDP}) = mdp.discount
+isterminal(mdp::Union{MLMDP,MLPOMDP},s::MLState) = s.crashed
 
 function isterminal(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState)
     if s.crashed

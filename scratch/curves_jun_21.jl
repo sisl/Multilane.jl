@@ -26,7 +26,7 @@ _discount = 1.
 nb_cars=10
 dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
 
-N = 10
+N = 1
 
 mdp = NoCrashMDP(dmodel, rmodels[1], _discount);
 isrng = MersenneTwister(123)
@@ -41,7 +41,7 @@ point_solvers = Dict{UTF8String, Solver}(
 point_results = evaluate([mdp], initial_states, point_solvers, parallel=true)
 
 dpws = DPWSolver(depth=10,
-                 n_iterations=100,
+                 n_iterations=1000,
                  exploration_constant=100.0,
                  rollout_solver=SimpleSolver()) 
 

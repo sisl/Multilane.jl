@@ -20,9 +20,17 @@ function solve(solver::SingleBehaviorSolver, mdp::NoCrashMDP)
 end
 
 function action(p::SingleBehaviorPolicy, s::MLState, a::MLAction=MLAction())
+    return action(p.inner_policy, single_behavior_state(s, p.behavior))
+end
+
+function single_behavior_state(s::MLState, behavior)
     new_cars = Array(CarState, length(s.env_cars))
     for (i,c) in enumerate(s.env_cars)
-        new_cars[i] = CarState(c.x, c.y, c.vel, c.lane_change, p.behavior, c.id)
+        if i == 1 # ego
+            new_cars[i] = CarState(c.x, c.y, c.vel, c.lane_change, Nullable{BehaviorModel}(), c.id)
+        else
+            new_cars[i] = CarState(c.x, c.y, c.vel, c.lane_change, behavior, c.id)
+        end
     end
-    return action(p.inner_policy, MLState(s.crashed, new_cars))
+    return MLState(s.crashed, new_cars)
 end

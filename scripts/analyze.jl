@@ -84,7 +84,7 @@ if args["unicode"]
         for g in groupby(mean_performance, :solver_key)
             if size(g,1) > 1
                 # plot!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
-                plot!(g, :time_to_lane, :nb_brakes, group=:solver_key)
+                # plot!(g, :time_to_lane, :nb_brakes, group=:solver_key)
             else
                 # scatter!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
                 scatter!(g, :time_to_lane, :nb_brakes, group=:solver_key)
@@ -93,6 +93,6 @@ if args["unicode"]
         gui()
     catch ex
         warn("Plot could not be displayed:")
-        show(ex)
+        println(ex)
     end
 end

@@ -49,7 +49,9 @@ immutable CarState
     id::Int # car id to track from state to state
 end
 
-==(a::CarState,b::CarState) = a.x==b.x && a.y==b.y && a.vel==b.vel && a.lane_change == b.lane_change && ((isnull(a.behavior) && isnull(b.behavior)) || (get(a.behavior)==get(b.behavior))) && a.id == b.id
+function ==(a::CarState,b::CarState)
+    return a.x==b.x && a.y==b.y && a.vel==b.vel && a.lane_change == b.lane_change && a.id == b.id && ((isnull(a.behavior) && isnull(b.behavior)) || (get(a.behavior)==get(b.behavior)))
+end
 Base.hash(a::CarState, h::UInt64=zero(UInt64)) = hash(a.vel, hash(a.x, hash(a.y, hash(a.lane_change, hash(a.behavior, hash(a.id, h))))))
 "Return a representation that will produce a valid object if executed"
 function Base.repr(c::CarState)

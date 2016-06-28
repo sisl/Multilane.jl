@@ -1,3 +1,7 @@
+Mon 27 Jun 2016 02:15:09 PM PDT
+
+The policy is just doing really dumb stuff
+
 Fri 24 Jun 2016 07:51:20 PM PDT
 
 I want to be able to investigate a simulation
