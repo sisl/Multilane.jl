@@ -16,17 +16,17 @@ nb_lanes = 4 # XXX assumption
 
 rmodels = Multilane.NoCrashRewardModel[
                 Multilane.NoCrashRewardModel(desired_lane_reward*lambda,
-                                             desired_lane_reward,2.0,nb_lanes)
+                                             desired_lane_reward,1.5,nb_lanes)
                 for lambda in lambdas]
 
 
 nb_lanes = 4
 pp = PhysicalParam(nb_lanes,lane_length=100.) #2.=>col_length=8\n",
-_discount = 0.9
+_discount = 0.95
 nb_cars=10
 dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
 
-N = 10
+N = 100
 
 mdp = NoCrashMDP(dmodel, rmodels[1], _discount);
 isrng = MersenneTwister(123)
