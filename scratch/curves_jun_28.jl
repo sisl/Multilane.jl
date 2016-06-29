@@ -41,7 +41,7 @@ point_solvers = Dict{UTF8String, Solver}(
 point_results = evaluate([mdp], initial_states, point_solvers, parallel=true)
 
 dpws = DPWSolver(depth=20,
-                 n_iterations=1000,
+                 n_iterations=100,
                  exploration_constant=100.0,
                  k_state=4.0,
                  alpha_state=1/8,
