@@ -179,9 +179,12 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 	#get predicted and potential accelerations
 
 	#TODO generalize to get_dv()? # btw this takes a lot of processing time
-	a_self = get_idm_dv(p_idm_self,dt,v,get_dv_ds(pp,s,nbhd,idx,2)...)/dt
-	a_self_left = get_idm_dv(p_idm_self,dt,v,get_dv_ds(pp,s,nbhd,idx,3)...)/dt
-	a_self_right = get_idm_dv(p_idm_self,dt,v,get_dv_ds(pp,s,nbhd,idx,1)...)/dt
+    dv2, ds2 = get_dv_ds(pp,s,nbhd,idx,2)
+    dv3, ds3 = get_dv_ds(pp,s,nbhd,idx,3)
+    dv1, ds1 = get_dv_ds(pp,s,nbhd,idx,1)
+	a_self = get_idm_dv(p_idm_self,dt,v,dv2,ds2)/dt
+	a_self_left = get_idm_dv(p_idm_self,dt,v,dv3,ds3)/dt
+	a_self_right = get_idm_dv(p_idm_self,dt,v,dv1,ds1)/dt
 
 	a_follower, a_follower_ = get_rear_accel(pp,s,nbhd,idx,0)
 	a_follower_left_, a_follower_left = get_rear_accel(pp,s,nbhd,idx,1)

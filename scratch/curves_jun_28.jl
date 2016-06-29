@@ -16,7 +16,7 @@ nb_lanes = 4 # XXX assumption
 
 rmodels = Multilane.NoCrashRewardModel[
                 Multilane.NoCrashRewardModel(desired_lane_reward*lambda,
-                                             desired_lane_reward,2.0,nb_lanes)
+                                             desired_lane_reward,1.5,nb_lanes)
                 for lambda in lambdas]
 
 
@@ -26,7 +26,7 @@ _discount = 0.9
 nb_cars=10
 dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
 
-N = 10
+N = 100
 
 mdp = NoCrashMDP(dmodel, rmodels[1], _discount);
 isrng = MersenneTwister(123)
@@ -41,7 +41,7 @@ point_solvers = Dict{UTF8String, Solver}(
 point_results = evaluate([mdp], initial_states, point_solvers, parallel=true)
 
 dpws = DPWSolver(depth=20,
-                 n_iterations=1000,
+                 n_iterations=100,
                  exploration_constant=100.0,
                  k_state=4.0,
                  alpha_state=1/8,
