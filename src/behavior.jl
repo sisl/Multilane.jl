@@ -43,14 +43,15 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 
 	if mod(lane_-0.5,1) == 0. #in between lanes
         @assert lane_change != 0
-		lanechange = lane_change
+		return lane_change
 
+        #= # cannot abort lane changes
 		if is_lanechange_dangerous(pp, s, neighborhood, idx, lanechange)
 				lanechange *= -1
 		end
-
-		return lanechange
+        =#
 	end
+
 	#sample normally
 	lanechange_::Int = get_mobil_lane_change(pp, s, neighborhood, idx, rng)
 	#gives +1, -1 or 0
@@ -65,7 +66,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	#NO LANECHANGING
 	#lanechange = 0
 
-	return lanechange * dmodel.lane_change_vel / dmodel.phys_param.w_lane
+	return lanechange * dmodel.lane_change_rate
 end
 
 #############################################################################

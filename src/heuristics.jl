@@ -17,7 +17,7 @@ function action{MLState}(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_ac
   goal_lane = p.mdp.rmodel.desired_lane
   y_desired = goal_lane
   dmodel = p.mdp.dmodel
-  lc = sign(y_desired-s.env_cars[1].y) * dmodel.lane_change_vel / dmodel.phys_param.w_lane
+  lc = sign(y_desired-s.env_cars[1].y) * dmodel.lane_change_rate
   acc = dmodel.adjustment_acceleration
 
   #if can't move towards desired lane sweep through accelerating and decelerating

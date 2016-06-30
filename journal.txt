@@ -1,12 +1,12 @@
 Wed 29 Jun 2016 05:36:27 PM PDT
 
-[ ] check that lane_change is in lanes per second
+[X] check that lane_change is in lanes per second
     [X] what is y_interval?
          -  plotting is dependent on it - in plotting carstate.y*y_interval is the y location
         [X] why is there also w_lane? They are both 4. by default
         [X] Replace y_interval by w_lane? YES
     [ ] what should the lane change rate be?
-    [ ] get rid of rationality? I don't understand it, so YES
+    [X] get rid of rationality? I don't understand it, so YES
 [X] plot histogram of time to lane
 [ ] implement robust
 [ ] split into generating problems/initial conditions and running solvers
