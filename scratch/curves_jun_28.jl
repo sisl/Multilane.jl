@@ -10,23 +10,23 @@ using Plots
 # NOTE: assumes 4 lanes, desired lane is lane 4
 desired_lane_reward = 10.
 
-lambdas = Float64[0.01, 0.1, 1., 10., 100.]
+lambdas = Float64[0.1, 1., 10., 100., 1000., 10000., 100000.]
 
 nb_lanes = 4 # XXX assumption
 
 rmodels = Multilane.NoCrashRewardModel[
                 Multilane.NoCrashRewardModel(desired_lane_reward*lambda,
-                                             desired_lane_reward,1.5,nb_lanes)
+                                             desired_lane_reward,3.0,nb_lanes)
                 for lambda in lambdas]
 
 
 nb_lanes = 4
 pp = PhysicalParam(nb_lanes,lane_length=100.) #2.=>col_length=8\n",
-_discount = 0.95
+_discount = 0.99
 nb_cars=10
 dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
 
-N = 100
+N = 500
 
 mdp = NoCrashMDP(dmodel, rmodels[1], _discount);
 isrng = MersenneTwister(123)
@@ -41,7 +41,7 @@ point_solvers = Dict{UTF8String, Solver}(
 point_results = evaluate([mdp], initial_states, point_solvers, parallel=true)
 
 dpws = DPWSolver(depth=20,
-                 n_iterations=100,
+                 n_iterations=500,
                  exploration_constant=100.0,
                  k_state=4.0,
                  alpha_state=1/8,

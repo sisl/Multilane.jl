@@ -2,18 +2,23 @@ import Base: mean, std, repr, length
 
 function test_run(problem::NoCrashMDP, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
-    r = simulate(sim, problem, solve(solver,problem), initial_state)
+    terminal_problem = deepcopy(problem)
+    terminal_problem.dmodel.lane_terminate=true
+    r = simulate(sim, terminal_problem, solve(solver,problem), initial_state)
     return sim
 end
 
 function test_run_return_policy(problem::NoCrashMDP, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
     policy = solve(solver, problem)
-    r = simulate(sim, problem, policy, initial_state)
+    terminal_problem = deepcopy(problem)
+    terminal_problem.dmodel.lane_terminate=true
+    r = simulate(sim, terminal_problem, policy, initial_state)
     return sim, policy
 end
 
 function test_run(problem::NoCrashPOMDP, bu, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
+    error("Not maintained: look over the code before using this")
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps,initial_state=initial_state)
     r = simulate(sim, problem, solve(solver,problem), bu, create_belief(bu,initial_state))
     return sim
@@ -167,6 +172,53 @@ function evaluate(problems::Vector, initial_states::Vector, solvers::Dict{UTF8St
         "histories"=>sims
         )
 end
+
+function evaluate(problems::Dict{UTF8String,Any}, initial_states::Dict{UTF8String,Any}, solvers::Dict{UTF8String, Solver}; rng_offset=0, parallel=true)
+    nb_sims = length(problems)*length(initial_states)*length(solvers)
+    all_problems = Array(Any, nb_sims)
+    p_keys = keys(problems)
+    all_initial = Array(Any, nb_sims)
+    is_keys = keys(problems)
+    all_solvers = Array(Any, nb_sims)
+    stats = DataFrame(
+        id=1:nb_sims,
+        uuid=UInt128[Base.Random.uuid4() for i in 1:nb_sims],
+        solver_key=DataArray(UTF8String,nb_sims),
+        problem_key=DataArray(UTF8String,nb_sims),
+        initial_key=DataArray(UTF8String,nb_sims),
+        rng_seed=DataArray(Int,nb_sims),
+        time=ones(nb_sims).*time(),
+        )
+
+    id = 0
+    for p_i in 1:length(problems)
+        for is_i in 1:length(initial_states)
+            for solver_key in keys(solvers)
+                id += 1
+                stats[:solver_key][id] = solver_key
+                all_solvers[id] = deepcopy(solvers[solver_key])
+                stats[:problem_key][id] = p_keys[p_i]
+                all_problems[id] = problems[p_i]
+                stats[:initial_key][id] = is_keys[is_i]
+                all_initial[id] = initial_states[is_i]
+                stats[:rng_seed][id] = is_i+rng_offset
+            end
+        end
+    end
+
+    sims = run_simulations(all_problems, all_initial, all_solvers, nothing, rng_seeds=stats[:rng_seed], parallel=parallel)
+    fill_stats!(stats, all_problems, sims)
+    return Dict{UTF8String, Any}(
+        "nb_sims"=>nb_sims,
+        "solvers"=>solvers,
+        "problems"=>problems,
+        "initial_states"=>initial_states,
+        "stats"=>stats,
+        "histories"=>sims
+        )
+end
+
+
 
 function merge_results!(r1::Dict{UTF8String, Any}, r2::Dict{UTF8String, Any})
     merge!(r1["solvers"], r2["solvers"])

@@ -7,6 +7,7 @@ using Multilane
 using POMDPs
 using MCTS
 using DataFrames
+using DataFramesMeta
 using Plots
 
 s = ArgParseSettings()
@@ -18,18 +19,21 @@ s = ArgParseSettings()
     "--unicode", "-u"
         help = "show unicode plot"
         action = :store_true
-    "--performance"
-        help = "[NOT IMPLEMENTED] show average performance"
-        action = :store_true
     "--plot", "-p"
-        help = "[NOT IMPLEMENTED] plot paretto curves"
+        help = "plot paretto curves"
         action = :store_true
     "--spreadsheet"
         help = "[NOT IMPLEMENTED] save stats as a csv in /tmp/ and open with xdg-open"
         action = :store_true
     "filename"
         help = "file name"
-        nargs = 1 # will be + at some point
+        nargs = '+' # will be + at some point
+    "--solvers"
+        help = "solvers to be included"
+        nargs = '+'
+    "--save-combined"
+        help = "save results to a new file"
+        action = :store_true
 end
 
 args = parse_args(ARGS, s)
@@ -48,46 +52,33 @@ mean_performance = by(stats, :solver_key) do df
     end
 end
 
-# if args["plot"]
-#     unicodeplots()
-#     plot(
-# end
+solvers = args["solvers"]
+if isempty(solvers)
+    solvers = unique(mean_performance[:solver_key])
+end
+
+mean_performance = @where(mean_performance,
+                          collect(Bool[s in solvers for s in :solver_key]))
 
 if args["show"]
-#     println("""
-# 
-#         =============
-#         ## Solvers ##
-#         =============
-# 
-#         """)
-#     for (k,v) in results["solvers"]
-#         println("$k:")
-#         println(v)
-#         println()
-#     end
-# 
-#     println("""
-# 
-#         ================
-#         ## Statistics ##
-#         ================
-# 
-#         """)
     println(mean_performance)
     println()
 end
 
-if args["unicode"]
+if args["unicode"] || args["plot"]
     try
-        unicodeplots()
+        if args["unicode"]
+            unicodeplots()
+        else
+            pyplot()
+        end
         for g in groupby(mean_performance, :solver_key)
             if size(g,1) > 1
                 # plot!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
-                # plot!(g, :time_to_lane, :nb_brakes, group=:solver_key)
+                plt = plot!(g, :time_to_lane, :nb_brakes, group=:solver_key)
             else
                 # scatter!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
-                scatter!(g, :time_to_lane, :nb_brakes, group=:solver_key)
+                plt = scatter!(g, :time_to_lane, :nb_brakes, group=:solver_key)
             end
         end
         gui()

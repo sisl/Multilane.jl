@@ -5,6 +5,7 @@ POMDPs
 Interact
 PyPlot
 DataFrames
+DataFramesMeta
 ProgressMeter
 ArgParse
 Plots

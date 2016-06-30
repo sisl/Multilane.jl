@@ -1,3 +1,17 @@
+Wed 29 Jun 2016 05:36:27 PM PDT
+
+[ ] split into generating problems/initial conditions and running solvers
+
+Wed 29 Jun 2016 02:58:46 PM PDT
+
+[X] plot just the important ones
+[X] get logsim over to tula
+[ ] Figure out how to rerun with new solvers
+[ ] rerun with new solvers
+[ ] Make an update for Mykel
+    [X] Generate a set of curves
+    [ ] Describe challenges
+
 Mon 27 Jun 2016 02:15:09 PM PDT
 
 The policy is just doing really dumb stuff
