@@ -1,15 +1,13 @@
 type IDMMOBILBehavior <: BehaviorModel
 	p_idm::IDMParam
 	p_mobil::MOBILParam
-	rationality::Float64
 	idx::Int
 end
-==(a::IDMMOBILBehavior,b::IDMMOBILBehavior) = (a.p_idm==b.p_idm) && (a.p_mobil==b.p_mobil) &&(a.rationality == b.rationality)
-Base.hash(a::IDMMOBILBehavior,h::UInt64=zero(UInt64)) = hash(a.p_idm,hash(a.p_mobil,hash(a.rationality,h)))
+==(a::IDMMOBILBehavior,b::IDMMOBILBehavior) = (a.p_idm==b.p_idm) && (a.p_mobil==b.p_mobil)
+Base.hash(a::IDMMOBILBehavior,h::UInt64=zero(UInt64)) = hash(a.p_idm,hash(a.p_mobil,h))
 
 function IDMMOBILBehavior(s::AbstractString,v0::Float64,s0::Float64,idx::Int)
-	typedict = Dict{AbstractString,Float64}("cautious"=>1.,"normal"=>1.,"aggressive"=>1.) #rationality
-	return IDMMOBILBehavior(IDMParam(s,v0,s0),MOBILParam(s),typedict[s],idx)
+	return IDMMOBILBehavior(IDMParam(s,v0,s0),MOBILParam(s),idx)
 end
 
 generate_accel(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
@@ -29,11 +27,6 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsMode
 	#TODO: add gaussian noise
 	dvel += randn(rng) * dmodel.vel_sigma
 	dvel = min(max(dvel/dt,-bmodel.p_idm.b),bmodel.p_idm.a)
-	#accelerate normally or dont accelerate
-	if rand(rng) < 1 - bmodel.rationality
-			dvel = 0
-	end
-	#make sure it wont result in an inconsistent thing?
 
 	return dvel
 end
@@ -49,9 +42,8 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	lane_ = car.y
 
 	if mod(lane_-0.5,1) == 0. #in between lanes
-		r = rand(rng)
         @assert lane_change != 0
-		lanechange = r < bmodel.rationality ? lane_change : -1*lane_change
+		lanechange = lane_change
 
 		if is_lanechange_dangerous(pp, s, neighborhood, idx, lanechange)
 				lanechange *= -1
@@ -69,22 +61,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 			lanechange_ = 0.
 	end
 
-    if bmodel.rationality < 1.0
-        lane_change_other = setdiff([-1;0;1],[lanechange_]) # XXX Inefficient
-        #safety criterion is hard
-        if is_lanechange_dangerous(pp,s,neighborhood,idx,1 * dmodel.lane_change_vel / dmodel.phys_param.w_lane)
-                lane_change_other = setdiff(lane_change_other,[1])
-        end
-        if is_lanechange_dangerous(pp, s, neighborhood,idx,-1 * dmodel.lane_change_vel / dmodel.phys_param.w_lane)
-                lane_change_other = setdiff(lane_change_other,[-1])
-        end
-
-        lanechange_other_probs = ((1-bmodel.rationality)/length(lane_change_other))*ones(length(lane_change_other))
-        lanechange_probs = WeightVec([bmodel.rationality;lanechange_other_probs]) # XXX Inefficient
-        lanechange = sample(rng,[lanechange_;lane_change_other],lanechange_probs) # XXX Inefficient
-    else
-        lanechange = lanechange_
-    end
+    lanechange = lanechange_
 	#NO LANECHANGING
 	#lanechange = 0
 
