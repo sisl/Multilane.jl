@@ -93,7 +93,7 @@ function draw_direction(phys_param::PhysicalParam, x::Float64, y::Float64, v_nom
 	#the next time step, approximately
 
 	dx = phys_param.dt*(s.vel-v_nom)
-    dy = s.lane_change*phys_param.y_interval
+    dy = s.lane_change*phys_param.w_lane
 	hw = 0.5*phys_param.w_car
 	hl = 1.5*hw
 	w = 0.75*hw
@@ -112,7 +112,7 @@ function draw_sedan(pp::PhysicalParam, s::CarState, v_nom::Float64, frame::Float
 	end
 	lane_length = pp.lane_length
 	x_ctr = s.x+frame
-	y_ctr = pp.y_interval*s.y - INTERVAL*floor(Integer,x_ctr/lane_length)*(frame == 0. ? 0.: 1.)
+	y_ctr = pp.w_lane*s.y - INTERVAL*floor(Integer,x_ctr/lane_length)*(frame == 0. ? 0.: 1.)
 	x_ctr = mod(x_ctr,lane_length+0.0001)
   #Fix nullable TODO
   if isnull(s.behavior)
@@ -183,7 +183,7 @@ function visualize(mdp::Union{MLMDP,MLPOMDP},
 	#TODO
 	#x_ctr = W/2. + frame
   x_ctr = s.env_cars[1].x + frame
-	y_ctr = pp.y_interval*s.env_cars[1].y - ROW_INTERVAL*floor(Integer,x_ctr/lane_length)
+	y_ctr = pp.w_lane*s.env_cars[1].y - ROW_INTERVAL*floor(Integer,x_ctr/lane_length)
 	x_ctr = mod(x_ctr,lane_length)
 	color = "#31B404" #PLACEHOLDER, an awful lime green
 	draw_sedan(pp,x_ctr,y_ctr,color)
@@ -192,7 +192,7 @@ function visualize(mdp::Union{MLMDP,MLPOMDP},
 	hl = 1.*hw
 	w = 0.75*hw
 	dx = a.acc*2.5*hl
-	dy = a.lane_change*pp.y_interval
+	dy = a.lane_change*pp.w_lane
 	dy = dy != 0. ? dy - sign(dy)*hl: dy
 	arrow(x_ctr,y_ctr,dx,dy,width=w,head_width=hw,head_length=hl,fc="#DF7401", ec="#0404B4",alpha=0.75)
 	####END TODO

@@ -8,7 +8,6 @@ type PhysicalParam
 	l_car::Float64
 	v_nominal::Float64
 	w_lane::Float64
-	y_interval::Float64
 	v_fast::Float64
 	v_slow::Float64
 	v_med::Float64
@@ -24,7 +23,6 @@ function PhysicalParam(nb_lanes::Int;dt::Float64=0.75,
 						l_car::Float64=4.,
 						v_nominal::Float64=31.,
 						w_lane::Float64=4.,
-						y_interval::Float64=4.,
 						v_fast::Float64=35.,
 						v_slow::Float64=27.,
 						v_med::Float64=31.,
@@ -36,7 +34,7 @@ function PhysicalParam(nb_lanes::Int;dt::Float64=0.75,
 	assert(v_fast >= v_med)
 	assert(v_med >= v_slow)
 	assert(v_fast > v_slow)
-    return PhysicalParam(dt, w_car, l_car, v_nominal, w_lane, y_interval, v_fast, v_slow, v_med, v_max, v_min, brake_limit, nb_lanes, lane_length)
+    return PhysicalParam(dt, w_car, l_car, v_nominal, w_lane, v_fast, v_slow, v_med, v_max, v_min, brake_limit, nb_lanes, lane_length)
 end
 
 """

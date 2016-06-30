@@ -43,7 +43,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	pp = dmodel.phys_param
 	dt = pp.dt
 	car = s.env_cars[idx]
-	lane_change = car.lane_change #this is a velocity in the y direction
+	lane_change = car.lane_change #this is a velocity in the y direction in LANES PER SECOND
 	#lane_ = round(max(1,min(car.y+lane_change,2*pp.nb_lanes-1)))
 	#if increment y in the same timestep as deciding to lanechange
 	lane_ = car.y
@@ -72,10 +72,10 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
     if bmodel.rationality < 1.0
         lane_change_other = setdiff([-1;0;1],[lanechange_]) # XXX Inefficient
         #safety criterion is hard
-        if is_lanechange_dangerous(pp,s,neighborhood,idx,1 * dmodel.lane_change_vel / dmodel.phys_param.y_interval)
+        if is_lanechange_dangerous(pp,s,neighborhood,idx,1 * dmodel.lane_change_vel / dmodel.phys_param.w_lane)
                 lane_change_other = setdiff(lane_change_other,[1])
         end
-        if is_lanechange_dangerous(pp, s, neighborhood,idx,-1 * dmodel.lane_change_vel / dmodel.phys_param.y_interval)
+        if is_lanechange_dangerous(pp, s, neighborhood,idx,-1 * dmodel.lane_change_vel / dmodel.phys_param.w_lane)
                 lane_change_other = setdiff(lane_change_other,[-1])
         end
 
@@ -88,7 +88,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	#NO LANECHANGING
 	#lanechange = 0
 
-	return lanechange * dmodel.lane_change_vel / dmodel.phys_param.y_interval
+	return lanechange * dmodel.lane_change_vel / dmodel.phys_param.w_lane
 end
 
 #############################################################################
@@ -106,7 +106,7 @@ Base.hash(a::AvoidModel, h::UInt64=zero(UInt64)) = hash(a.jerk,h)
 function closest_car(dmodel::IDMMOBILModel, s::MLState, nbhd::Array{Int,1}, idx::Int, lookahead_only::Bool)
 	x = s.env_cars[idx].x
     y = s.env_cars[idx].y
-	dy = dmodel.phys_param.y_interval
+	dy = dmodel.phys_param.w_lane
 
 	closest = 0
 	min_dist = Inf

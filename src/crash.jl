@@ -107,7 +107,7 @@ function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}},
 	dt = pp.dt
   nb_col = 2*pp.nb_lanes-1
 	agent_pos = s.env_cars[1].x#pp.lane_length/2.
-	agent_y = s.env_cars[1].y*pp.y_interval
+	agent_y = s.env_cars[1].y*pp.w_lane
 	agent_vel = s.env_cars[1].vel
 
 	#treat agent_pos, agent_y as (0,0)
@@ -116,7 +116,7 @@ function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}},
 	#TODO: make it so that X takes in to account the fact that the agent car can change lanes
 	w_car_ = w_car
 
-	agent_y_ = sp.env_cars[1].y*pp.y_interval
+	agent_y_ = sp.env_cars[1].y*pp.w_lane
 	if agent_y_ <= agent_y
 		w_car_ += agent_y - agent_y_
 		agent_y = agent_y_
@@ -159,9 +159,9 @@ function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}},
 			continue
 		end
 		p = env_car.x
-		y = env_car.y*pp.y_interval
+		y = env_car.y*pp.w_lane
 		p_ = env_car_.x
-		yp = env_car_.y * pp.y_interval
+		yp = env_car_.y * pp.w_lane
 
 		dp = p_ - p
 		dy = yp - y

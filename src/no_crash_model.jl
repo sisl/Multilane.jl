@@ -16,7 +16,7 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     behavior_probabilities::WeightVec
 
     adjustment_acceleration::Float64
-    lane_change_vel::Float64
+    lane_change_vel::Float64 # in LANES PER SECOND
 
     p_appear::Float64 # probability of a new car appearing if the maximum number are not on the road
     appear_clearance::Float64 # minimum clearance for a car to appear
@@ -68,7 +68,7 @@ const NB_NORMAL_ACTIONS = 9
 
 function NoCrashActionSpace(mdp::Union{NoCrashMDP,NoCrashPOMDP})
     accels = (-mdp.dmodel.adjustment_acceleration, 0.0, mdp.dmodel.adjustment_acceleration)
-    lane_changes = (-mdp.dmodel.lane_change_vel / mdp.dmodel.phys_param.y_interval, 0.0, mdp.dmodel.lane_change_vel / mdp.dmodel.phys_param.y_interval)
+    lane_changes = (-mdp.dmodel.lane_change_vel / mdp.dmodel.phys_param.w_lane, 0.0, mdp.dmodel.lane_change_vel / mdp.dmodel.phys_param.w_lane)
     NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in product(accels, lane_changes)]
     return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: brake will be calculated later based on the state
 end

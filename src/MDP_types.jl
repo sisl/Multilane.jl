@@ -44,7 +44,7 @@ immutable CarState
     x::Float64
     y::Float64
 	vel::Float64 #v_x
-	lane_change::Float64 # ydot
+	lane_change::Float64 # ydot # in units of LANES PER SECOND
 	behavior::Nullable{BehaviorModel}
     id::Int # car id to track from state to state
 end
