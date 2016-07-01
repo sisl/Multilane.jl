@@ -73,7 +73,8 @@ export #data structure stuff
     test_run,
     evaluate,
     merge_results!,
-    rerun
+    rerun,
+    assign_keys
 
 
 export # POMDP belief stuff

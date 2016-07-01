@@ -1,4 +1,5 @@
 import Base: mean, std, repr, length
+import Iterators: take
 
 function test_run(problem::NoCrashMDP, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
@@ -128,6 +129,15 @@ function fill_stats!(stats::DataFrame, problems::Vector, sims::Vector)
     return stats
 end
 
+function assign_keys(problems::Vector, initial_states::Vector; rng=MersenneTwister(123))
+    p_keys = UTF8String[randstring(rng) for p in problems]
+    is_keys = UTF8String[randstring(rng) for is in initial_states]
+    return Dict{UTF8String, Any}(
+        "problems"=>Dict{UTF8String,Any}([(p_keys[i], problems[i]) for i in 1:length(problems)]),
+        "initial_states"=>Dict{UTF8String,Any}([(is_keys[i], initial_states[i]) for i in 1:length(initial_states)]),
+    )
+end
+
 function evaluate(problems::Vector, initial_states::Vector, solvers::Dict{UTF8String, Solver}; rng_offset=0, parallel=true)
     nb_sims = length(problems)*length(initial_states)*length(solvers)
     all_problems = Array(Any, nb_sims)
@@ -173,12 +183,12 @@ function evaluate(problems::Vector, initial_states::Vector, solvers::Dict{UTF8St
         )
 end
 
-function evaluate(problems::Dict{UTF8String,Any}, initial_states::Dict{UTF8String,Any}, solvers::Dict{UTF8String, Solver}; rng_offset=0, parallel=true)
-    nb_sims = length(problems)*length(initial_states)*length(solvers)
+function evaluate(problems::Dict{UTF8String,Any}, initial_states::Dict{UTF8String,Any}, solvers::Dict{UTF8String, Solver}; N=length(initial_states), rng_offset=0, parallel=true)
+    nb_sims = length(problems)*min(N,length(initial_states))*length(solvers)
     all_problems = Array(Any, nb_sims)
     p_keys = keys(problems)
     all_initial = Array(Any, nb_sims)
-    is_keys = keys(problems)
+    is_keys = keys(initial_states)
     all_solvers = Array(Any, nb_sims)
     stats = DataFrame(
         id=1:nb_sims,
@@ -191,16 +201,16 @@ function evaluate(problems::Dict{UTF8String,Any}, initial_states::Dict{UTF8Strin
         )
 
     id = 0
-    for p_i in 1:length(problems)
-        for is_i in 1:length(initial_states)
+    for p_key in p_keys
+        for (is_i, is_key) in enumerate(take(is_keys, N))
             for solver_key in keys(solvers)
                 id += 1
                 stats[:solver_key][id] = solver_key
                 all_solvers[id] = deepcopy(solvers[solver_key])
-                stats[:problem_key][id] = p_keys[p_i]
-                all_problems[id] = problems[p_i]
-                stats[:initial_key][id] = is_keys[is_i]
-                all_initial[id] = initial_states[is_i]
+                stats[:problem_key][id] = p_key
+                all_problems[id] = problems[p_key]
+                stats[:initial_key][id] = is_key
+                all_initial[id] = initial_states[is_key]
                 stats[:rng_seed][id] = is_i+rng_offset
             end
         end
