@@ -1,3 +1,9 @@
+Fri 01 Jul 2016 10:41:40 AM PDT
+
+[X] Start a simulation with 2.0 m/s
+[ ] Get robust working
+[ ] Start a simulation with high discount
+
 Wed 29 Jun 2016 05:36:27 PM PDT
 
 [X] check that lane_change is in lanes per second

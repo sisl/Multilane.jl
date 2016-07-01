@@ -40,7 +40,7 @@ function NoCrashIDMMOBILModel(nb_cars::Int, pp::PhysicalParam, lane_terminate=fa
         behaviors,
         WeightVec(ones(length(behaviors))),
         1.,
-        0.5, # lane change rate
+        1.0/(2.0*pp.dt), # lane change rate
         0.5,
         20.0,
         0.5,

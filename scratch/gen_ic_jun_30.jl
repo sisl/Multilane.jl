@@ -2,18 +2,18 @@ using Multilane
 using GenerativeModels
 using JLD
 
-N = 1000
+N = 5000
 
 # NOTE: assumes 4 lanes, desired lane is lane 4
 desired_lane_reward = 10.
 
-lambdas = Float64[0.1, 1., 10., 100., 1000., 10000., 100000.]
+lambdas = Float64[0.1, 1., 10., 100., 1000., 10000.]
 
 nb_lanes = 4 # XXX assumption
 
 rmodels = Multilane.NoCrashRewardModel[
                 Multilane.NoCrashRewardModel(desired_lane_reward*lambda,
-                                             desired_lane_reward,3.0,nb_lanes)
+                                             desired_lane_reward,2.0,nb_lanes)
                 for lambda in lambdas]
 
 nb_lanes = 4
