@@ -202,7 +202,7 @@ create_state(p::Union{NoCrashMDP,NoCrashPOMDP}) = MLState(false, Array(CarState,
 create_observation(pomdp::NoCrashPOMDP) = MLObs(false, Array(CarStateObs, pomdp.dmodel.nb_cars))
 
 
-function generate_sr(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+function generate_s(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -364,7 +364,7 @@ function generate_sr(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLActio
 
     @assert sp.env_cars[1].x == s.env_cars[1].x # ego should not move
 
-    return (sp, reward(mdp, s, a, sp))
+    return sp
 end
 
 function reward(mdp::Union{NoCrashMDP, NoCrashPOMDP}, s::MLState, ::MLAction, sp::MLState)
