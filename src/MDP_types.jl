@@ -46,7 +46,7 @@ immutable CarState
 	vel::Float64 #v_x
 	lane_change::Float64 # ydot # in units of LANES PER SECOND
 	behavior::Nullable{BehaviorModel}
-    id::Int # car id to track from state to state
+    id::Int # car id to track from state to state - ego is ALWAYS 1
 end
 
 function ==(a::CarState,b::CarState)
@@ -124,23 +124,30 @@ type ActionSpace <: AbstractSpace
 	actions::Vector{MLAction}
 end
 
-immutable CarStateObs
+immutable CarPhysicalState
   x::Float64
   y::Float64
   vel::Float64
   lane_change::Float64
   id::Int
 end
-==(a::CarStateObs, b::CarStateObs) = (a.x == b.x) && (a.y == b.y) && (a.vel == b.vel) && (a.lane_change == b.lane_change) && (a.id == b.id)
-Base.hash(a::CarStateObs,h::UInt64=zero(UInt64)) = hash(a.x, hash(a.y, hash(a.vel, (hash(a.lane_change, hash(a.id,h))))))
-CarStateObs(cs::CarState) = CarStateObs(cs.x, cs.y, cs.vel, cs.lane_change, cs.id)
+typealias CarStateObs CarPhysicalState
 
-immutable MLObs
-  crashed::Bool
-  env_cars::Array{CarStateObs,1}
+==(a::CarPhysicalState, b::CarPhysicalState) = (a.x == b.x) && (a.y == b.y) && (a.vel == b.vel) && (a.lane_change == b.lane_change) && (a.id == b.id)
+Base.hash(a::CarPhysicalState,h::UInt64=zero(UInt64)) = hash(a.x, hash(a.y, hash(a.vel, (hash(a.lane_change, hash(a.id,h))))))
+CarPhysicalState(cs::CarState) = CarPhysicalState(cs.x, cs.y, cs.vel, cs.lane_change, cs.id)
+function CarState(cps::CarPhysicalState, behavior::Union{BehaviorModel, Nullable{BehaviorModel}, Void})
+    return CarState(cps.x, cps.y, cps.vel, cps.lane_change, behavior, cps.id)
 end
-MLObs(s::MLState) = MLObs(s.crashed,CarStateObs[CarStateObs(cs) for cs in s.env_cars])
-function ==(a::MLObs, b::MLObs)
+
+immutable MLPhysicalState
+  crashed::Bool
+  env_cars::Array{CarPhysicalState,1}
+end
+typealias MLObs MLPhysicalState
+
+MLPhysicalState(s::MLState) = MLPhysicalState(s.crashed,CarPhysicalState[CarPhysicalState(cs) for cs in s.env_cars])
+function ==(a::MLPhysicalState, b::MLPhysicalState)
     if a.crashed && b.crashed
         return true
     elseif a.crashed || b.crashed # only one has crashed
@@ -148,7 +155,7 @@ function ==(a::MLObs, b::MLObs)
     end
     return (a.env_cars == b.env_cars) #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
 end
-function Base.hash(a::MLObs, h::UInt64=zero(UInt64))
+function Base.hash(a::MLPhysicalState, h::UInt64=zero(UInt64))
     if a.crashed
         return hash(a.crashed, h)
     end

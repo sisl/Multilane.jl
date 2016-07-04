@@ -4,7 +4,7 @@ import StatsBase: WeightVec, sample
 
 using POMDPs
 import POMDPs: actions, discount, isterminal, iterator
-import POMDPs: create_action, create_state, rand, reward, create_observation
+import POMDPs: create_action, create_state, rand, reward, create_observation, create_policy
 import POMDPs: solve, action
 import POMDPs: create_belief, update, initialize_belief
 using GenerativeModels
@@ -26,6 +26,7 @@ using ProgressMeter
 using PmapProgressMeter
 using POMDPToolbox
 import MCTS # so that we can define node_tag, etc.
+using RobustMCTS # for RobustMDP
 
 # package code goes here
 export
@@ -42,7 +43,14 @@ export
     IDMMOBILModel,
     IDMParam,
     MOBILParam,
-    IDMMOBILBehavior
+    IDMMOBILBehavior,
+    MLPhysicalState,
+    CarPhysicalState,
+    RobustNoCrashMDP,
+    FixedBehaviorNoCrashMDP,
+    StochasticBehaviorNoCrashMDP,
+    RobustMLSolver,
+    RobustMLPolicy
 
 export
     NoCrashRewardModel,
@@ -97,6 +105,7 @@ include("behavior.jl")
 include("no_crash_model.jl")
 include("visualization.jl")
 include("evaluation.jl")
+include("robust_mdp.jl")
 include("single_behavior.jl")
 include("heuristics.jl")
 include("beliefs.jl")

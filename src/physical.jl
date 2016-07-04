@@ -29,7 +29,8 @@ function PhysicalParam(nb_lanes::Int;dt::Float64=0.75,
 						lane_length::Float64=12.,
 						v_max::Float64=v_fast+0.,
 						v_min::Float64=v_slow-0.,
-                        brake_limit::Float64=10.)
+                        brake_limit::Float64=8. # coefficient of friction of about 0.8
+                        )
 
 	assert(v_fast >= v_med)
 	assert(v_med >= v_slow)

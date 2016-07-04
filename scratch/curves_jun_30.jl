@@ -7,11 +7,12 @@ using POMDPs
 using DataFrames
 using Plots
 
-N=500
+N=10
 
 # filename = "initials_Jun_30_17_27.jld"
 # filename = "initials_Jun_30_23_05.jld"
-filename = "initials_Jul_1_11_11.jld"
+# filename = "initials_Jul_1_11_11.jld"
+filename = "initials_Jul_1_11_33.jld"
 initials = load(filename)
 problems = initials["problems"]
 initial_states = initials["initial_states"]
