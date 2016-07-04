@@ -18,9 +18,9 @@ rmodels = Multilane.NoCrashRewardModel[
 
 nb_lanes = 4
 pp = PhysicalParam(nb_lanes,lane_length=100.) #2.=>col_length=8\n",
-_discount = 0.99
+_discount = 0.9
 nb_cars=10
-dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
+dmodel = NoCrashIDMMOBILModel(nb_cars, pp, lane_terminate=true)
 
 curve_problems = []
 for i in 1:length(lambdas)
