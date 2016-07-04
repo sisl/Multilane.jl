@@ -29,7 +29,7 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
 end
 
 #XXX temporary
-function NoCrashIDMMOBILModel(nb_cars::Int, pp::PhysicalParam, lane_terminate=false)
+function NoCrashIDMMOBILModel(nb_cars::Int, pp::PhysicalParam; lane_terminate=false)
     behaviors=IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
                        enumerate(product(["cautious","normal","aggressive"],
                               [pp.v_slow+0.5;pp.v_med;pp.v_fast],
