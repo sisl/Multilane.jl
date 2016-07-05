@@ -7,7 +7,7 @@ N = 5000
 # NOTE: assumes 4 lanes, desired lane is lane 4
 desired_lane_reward = 10.
 
-lambdas = Float64[0.1, 1., 10., 100., 1000., 10000.]
+lambdas = Float64[0.1, 1., 10., 100., 1000.]
 
 nb_lanes = 4 # XXX assumption
 
@@ -18,9 +18,9 @@ rmodels = Multilane.NoCrashRewardModel[
 
 nb_lanes = 4
 pp = PhysicalParam(nb_lanes,lane_length=100.) #2.=>col_length=8\n",
-_discount = 0.9
+_discount = 0.95
 nb_cars=10
-dmodel = NoCrashIDMMOBILModel(nb_cars, pp, lane_terminate=true)
+dmodel = NoCrashIDMMOBILModel(nb_cars, pp, lane_terminate=false)
 
 curve_problems = []
 for i in 1:length(lambdas)

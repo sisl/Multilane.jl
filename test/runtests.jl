@@ -78,4 +78,5 @@ test_actions()
 
 println("Running a NoCrashMDP example...")
 include("run_nocrash.jl")
+println("Running a NoCrashMDP example with the robust solver...")
 include("run_with_robust_solver.jl")

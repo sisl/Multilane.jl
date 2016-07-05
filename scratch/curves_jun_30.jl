@@ -1,5 +1,6 @@
 using Multilane
 using MCTS
+using RobustMCTS
 using GenerativeModels
 using POMDPToolbox
 using JLD
@@ -7,12 +8,13 @@ using POMDPs
 using DataFrames
 using Plots
 
-N=500
+N=100
 
 # filename = "initials_Jun_30_17_27.jld"
 # filename = "initials_Jun_30_23_05.jld"
 # filename = "initials_Jul_1_11_11.jld"
-filename = "initials_Jul_1_12_31.jld"
+# filename = "initials_Jul_1_12_31.jld"
+filename = "initials_Jul_4_17_11.jld"
 initials = load(filename)
 problems = initials["problems"]
 initial_states = initials["initial_states"]
@@ -32,10 +34,22 @@ dpws = DPWSolver(depth=20,
                  alpha_state=1/8,
                  rollout_solver=SimpleSolver()) 
 
+rsolver = RobustMCTSSolver(
+    depth=20,
+    c = 100.0,
+    n_iterations=500,
+    k_state=4.0,
+    alpha_state=1/8,
+    k_nature=4.0,
+    alpha_nature=1/8,
+    rollout_solver=SimpleSolver(),
+    rollout_nature=StochasticBehaviorNoCrashMDP(collect(values(problems))[1]))
+
+
+
 curve_solvers = Dict{UTF8String, Solver}(
     "dpw" => dpws,
-    # "robust" => 
-    #     Robust
+    "robust" => RobustMLSolver(rsolver),
     "single_behavior" => 
         SingleBehaviorSolver(dpws,
                  IDMMOBILBehavior("normal", 30.0, 10.0, 1))
