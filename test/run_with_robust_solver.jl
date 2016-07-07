@@ -43,5 +43,14 @@ simulate(sim, mdp, policy, s)
 
 # check for crashes
 for i in 1:length(sim.state_hist)-1
+    if is_crash(mdp, sim.state_hist[i], sim.state_hist[i+1])
+        println("""
+        Crash!
+        mdp = $mdp
+        s = $(sim.state_hist[i])
+        a = $(sim.action_hist[i])
+        sp = $(sim.state_hist[i+1])
+        """)
+    end
     @test !is_crash(mdp, sim.state_hist[i], sim.state_hist[i+1])
 end

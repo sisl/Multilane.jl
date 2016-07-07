@@ -1,6 +1,6 @@
 Mon 04 Jul 2016 03:19:40 PM PDT
 
-[ ] Start simulation with robust
+[X] Start simulation with robust
 [ ] investigate crash
 
 Fri 01 Jul 2016 10:41:40 AM PDT

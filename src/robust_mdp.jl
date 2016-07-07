@@ -65,7 +65,7 @@ type RobustMLPolicy <: Policy{MLState}
     rpolicy
 end
 
-function action(p::RobustMLPolicy, s::MLState)
+function action(p::RobustMLPolicy, s::MLState, a::MLAction=MLAction(0,0))
     action(p.rpolicy, MLPhysicalState(s))
 end
 

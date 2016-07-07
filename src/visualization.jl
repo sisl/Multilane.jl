@@ -210,6 +210,7 @@ function visualize(mdp::Union{MLMDP,MLPOMDP},
   		draw_bang(x_ctr,y_ctr)
     end
 	axis("equal")
-	xlim(-pp.l_car,W)
+	# xlim(-pp.l_car,W)
+	xlim(0,W)
 	return gcf()
 end
