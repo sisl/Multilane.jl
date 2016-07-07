@@ -10,11 +10,8 @@ using Plots
 
 N=100
 
-# filename = "initials_Jun_30_17_27.jld"
-# filename = "initials_Jun_30_23_05.jld"
-# filename = "initials_Jul_1_11_11.jld"
-# filename = "initials_Jul_1_12_31.jld"
-filename = "initials_Jul_4_17_11.jld"
+# filename = "initials_Jul_4_17_11.jld"
+filename = "initials_Jul_7_13_02.jld"
 initials = load(filename)
 problems = initials["problems"]
 initial_states = initials["initial_states"]

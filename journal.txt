@@ -1,3 +1,13 @@
+Thu 07 Jul 2016 12:27:33 PM PDT
+
+[O] Get a robust curve
+    [X] Figure out which simulations are taking so long (on local)
+        - All robust are taking a long time
+    [X] Write a script that just runs the first one
+        - It appears that the planner is just too scared
+    [X] Verify that it is too scared
+        - Actually, it just doesn't do anything - so there is a bug somewhere
+
 Mon 04 Jul 2016 03:19:40 PM PDT
 
 [X] Start simulation with robust

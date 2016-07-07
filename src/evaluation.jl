@@ -5,7 +5,9 @@ function test_run(problem::NoCrashMDP, initial_state::MLState, solver::Solver, r
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
     terminal_problem = deepcopy(problem)
     terminal_problem.dmodel.lane_terminate=true
+    # @printf("[%5d] started. (%s)\n", id, typeof(solver))
     r = simulate(sim, terminal_problem, solve(solver,problem), initial_state)
+    # @printf("[%5d] finished.\n", id)
     return sim
 end
 
@@ -36,7 +38,8 @@ function run_simulations(problems::AbstractVector, initial_states::AbstractVecto
                         initial_states,
                         solvers,
                         rng_seeds,
-                        max_steps*ones(Int,N))
+                        max_steps*ones(Int,N)
+                        )
          else
              sims = pmap(test_run,
                          prog,
