@@ -77,7 +77,7 @@ function actions(mdp::Union{NoCrashMDP,NoCrashPOMDP})
     return NoCrashActionSpace(mdp)
 end
 
-function actions(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, as::NoCrashActionSpace) # no implementation without the third arg to enforce efficiency
+function actions(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState, MLPhysicalState}, as::NoCrashActionSpace) # no implementation without the third arg to enforce efficiency
     acceptable = IntSet()
     for i in 1:NB_NORMAL_ACTIONS
         a = as.NORMAL_ACTIONS[i]
