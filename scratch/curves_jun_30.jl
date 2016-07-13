@@ -44,16 +44,14 @@ rsolver = RobustMCTSSolver(
 
 
 curve_solvers = Dict{UTF8String, Solver}(
-    "dpw" => dpws,
-    "robust" => RobustMLSolver(rsolver),
-    "single_behavior" => 
-        SingleBehaviorSolver(dpws,
-                 IDMMOBILBehavior("normal", 30.0, 10.0, 1))
+#     "dpw" => dpws,
+#     "robust" => RobustMLSolver(rsolver),
+#     "single_behavior" => 
+#         SingleBehaviorSolver(dpws,
+#                  IDMMOBILBehavior("normal", 30.0, 10.0, 1))
 )
 
-tic()
 curve_results = evaluate(problems, initial_states, curve_solvers, parallel=true, N=N)
-toc()
 
 results = merge_results!(curve_results, point_results)
 

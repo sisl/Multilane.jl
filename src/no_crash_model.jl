@@ -205,6 +205,9 @@ function is_safe(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLObs}, a
                 # New definition of safe - the car behind can brake at max braking to avoid the ego if the ego
                 # slams on his brakes
                 gap = ego.x - car.x - l_car
+                if gap <= 0.0
+                    return false
+                end
                 braking_acc = max_safe_acc(gap, car.vel, ego.vel, mdp.dmodel.phys_param.brake_limit, dt)
                 if braking_acc < -mdp.dmodel.phys_param.brake_limit
                     return false
