@@ -44,3 +44,25 @@ Returns true if cars at y1 and y2 occupy the same lane
 function occupation_overlap(y1::Float64, y2::Float64)
     return abs(y1-y2) < 1.0 || ceil(y1) == floor(y2) || floor(y1) == ceil(y2)
 end
+
+"""
+Return a Pair{Int} of lanes that the car will occupy at some point in the time step (both lanes could be the same)
+
+Recall that a car can occupy at most two lanes on a single time step
+"""
+function occupation_lanes(y::Float64, lc::Float64)
+    if !isinteger(y)
+        return Pair{Int,Int}(floor(Int, y), ceil(Int, y))
+    else # y is an integer
+        return Pair{Int,Int}(y, y + sign(lc))
+    end
+end
+
+"""
+Return true if cars will occupy the same lane at some time in the time step
+"""
+function occupation_overlap(y1::Float64, lc1::Float64, y2::Float64, lc2::Float64)
+    lanes1 = occupation_lanes(y1, lc1)
+    lanes2 = occupation_lanes(y2, lc2)
+    return lanes1[1] in lanes2 || lanes1[2] in lanes2
+end

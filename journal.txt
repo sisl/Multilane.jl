@@ -1,3 +1,23 @@
+Wed 13 Jul 2016 02:38:32 PM PDT
+
+[ ] Run tests on tula with changes
+[ ] Think about whether I need different solvers
+[ ] Read up on literature for doing this exact task
+[ ] Program a really aggressive heuristic
+[ ] Work on POMCP dpw
+
+Tue 12 Jul 2016 11:32:45 AM PDT
+
+[X] Debugging a crash - results_Jul_12_11_17.jld, 154
+     -  Another blue car changes lanes right into the ego
+    [X] Print the car id in the visualization
+    [X] Write a debugging script
+     - TWO PROBLEMS
+        [X] blue car ignores the ego car (MOBIL.jl:128)
+        [X] Why does the ego not slam on its brakes?
+            i.e. why is sim.action_hist[5] not in actions(problem, sim.action_hist[5])?
+            Answer: because the Simple heuristic does not emergency brake
+
 Thu 07 Jul 2016 12:27:33 PM PDT
 
 [O] Get a robust curve

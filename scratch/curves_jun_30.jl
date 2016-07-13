@@ -8,7 +8,7 @@ using POMDPs
 using DataFrames
 using Plots
 
-N=100
+N=10
 
 # filename = "initials_Jul_4_17_11.jld"
 filename = "initials_Jul_7_13_02.jld"
@@ -25,7 +25,7 @@ point_solvers = Dict{UTF8String, Solver}(
 point_results = evaluate(Dict(take(problems,1)), initial_states, point_solvers, parallel=true, N=N)
 
 dpws = DPWSolver(depth=20,
-                 n_iterations=500,
+                 n_iterations=1000,
                  exploration_constant=100.0,
                  k_state=4.0,
                  alpha_state=1/8,
@@ -34,7 +34,7 @@ dpws = DPWSolver(depth=20,
 rsolver = RobustMCTSSolver(
     depth=20,
     c = 100.0,
-    n_iterations=500,
+    n_iterations=5000,
     k_state=4.0,
     alpha_state=1/8,
     k_nature=4.0,

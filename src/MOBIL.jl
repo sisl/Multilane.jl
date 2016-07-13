@@ -23,11 +23,12 @@ function MOBILParam(s::AbstractString)
 	return MOBILParam(p=p)
 end
 
-function is_lanechange_dangerous(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,dir::Real)
+function is_lanechange_dangerous(pp::PhysicalParam, s::MLState, nbhd::Array{Int,1}, idx::Int, dir::Real)
 
 	#check if dir is oob
 	dt = pp.dt
 	lane_ = s.env_cars[idx].y + dir * dt # XXX this line is the issue!!!
+
 	if (lane_ > pp.nb_lanes) || (lane_ < 1.)
 		return true
 	end
@@ -117,6 +118,11 @@ function get_dv_ds(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,idy:
 	return dv, ds
 end
 
+"""
+Return two numbers first if the lane change is made, second if the lane change is not made 
+
+(I think) - Zach (7/13/16)
+"""
 function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,dir::Int)
 
 	#there is no car behind in that spot
@@ -124,11 +130,14 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 		return 0., 0.
 	end
 
-	if isnull(s.env_cars[nbhd[5+dir]].behavior)
-		return 0., 0.
-	end
-
 	v = s.env_cars[idx].vel
+
+	if isnull(s.env_cars[nbhd[5+dir]].behavior)
+        # calculate the braking they will have to do for safety
+        gap = s.env_cars[idx].x - s.env_cars[nbhd[5+dir]].x - pp.l_car
+        braking_acc = max_safe_acc(gap, s.env_cars[nbhd[5+dir]].vel, v, pp.brake_limit, pp.dt)
+		return min(braking_acc, 0.0), 0.0
+	end
 
 	#behind - me
 	dv_behind, s_behind = get_dv_ds(pp,s,nbhd,idx,5+dir)
@@ -171,7 +180,7 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 	end
 
 	##if between lanes, return +1 if moving left, -1 if moving right
-	if state.y-0.5 % 1 == 0 #even is between lanes
+	if !isinteger(state.y)
 		return state.lane_change #continue going in the direction you're going
 	end
 
@@ -205,6 +214,7 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 	if is_lanechange_dangerous(pp,s,nbhd,idx,-1) || (a_follower_right_ < -p_mobil.b_safe)
 		right_crit = -Inf
 	end
+
 	#check if going left or right is preferable
     if left_crit >= right_crit
         dir_flag = 1

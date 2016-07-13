@@ -56,11 +56,14 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	lanechange_::Int = get_mobil_lane_change(pp, s, neighborhood, idx, rng)
 	#gives +1, -1 or 0
 	#if frnot neighbor is lanechanging, don't lane change
+    # I DONT think this works because lane_change may not be updated
+    #=
 	nbr = neighborhood[2]
 	ahead_dy = nbr != 0 ? s.env_cars[nbr].lane_change : 0
 	if ahead_dy != 0
 			lanechange_ = 0.
 	end
+    =#
 
     lanechange = lanechange_
 	#NO LANECHANGING
@@ -140,6 +143,7 @@ function generate_accel(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, n
 end
 
 function generate_lane_change(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+
 	closest_car = closest_car(dmodel,s,neighborhood,idx,bmodel.jerk)
 	if closest_car == 0
 		return 0.

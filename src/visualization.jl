@@ -124,6 +124,7 @@ function draw_sedan(pp::PhysicalParam, s::CarState, v_nom::Float64, frame::Float
 	draw_direction(pp,x_ctr,y_ctr,v_nom,s)
 	draw_sedan(pp,x_ctr,y_ctr,color)
 	annotate("$(round(s.vel,2))",xy=(x_ctr,y_ctr))
+    annotate(string(s.id), xy=(x_ctr, y_ctr-2))
 end
 
 function visualize(mdp::Union{MLMDP,MLPOMDP},

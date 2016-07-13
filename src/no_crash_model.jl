@@ -132,11 +132,10 @@ function max_safe_acc(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLOb
 
     car_in_front = 0
     smallest_gap = Inf
-    ego_y = isinteger(ego.y) ? ego.y + sign(lane_change) : ego.y
     # find car immediately in front
-    if length(s.env_cars) > 1 # TODO check
+    if length(s.env_cars) > 1
         for i in 2:length(s.env_cars)#nb_cars
-            if occupation_overlap(s.env_cars[i].y, ego_y) # occupying same lane
+            if occupation_overlap(s.env_cars[i].y, 0.0, ego.y, lane_change) # occupying same lane
                 gap = s.env_cars[i].x - ego.x - l_car
                 if gap >= -l_car && gap < smallest_gap
                     car_in_front = i
@@ -148,16 +147,27 @@ function max_safe_acc(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLOb
         if car_in_front == 0
             return Inf
         else
-            vo = s.env_cars[car_in_front].vel
-            v = ego.vel
-            g = smallest_gap
-            # VVV see mathematica notebook
-            return - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
+            return max_safe_acc(smallest_gap, ego.vel, s.env_cars[car_in_front].vel, bp, dt)
         end
     end
     return Inf
 end
 
+"""
+Return the maximum acceleration that the car behind can have on this step so that it won't hit the car in front if it slams on its brakes
+"""
+function max_safe_acc(gap, v_behind, v_ahead, braking_limit, dt)
+    bp = braking_limit
+    v = v_behind
+    vo = v_ahead
+    g = gap
+    bp = braking_limit
+    # VVV see mathematica notebook
+    return - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
+end
+
+#=
+# I think this is wrong (7/13)
 """
 Calculate the maximum distance that the car could achieve if it uses the maximum acceleration
 
@@ -168,6 +178,7 @@ function max_dx(b::IDMMOBILBehavior, cs::CarState, dt)
 end
 
 max_dx(cs::CarStateObs, dt::Float64) = cs.x + (cs.vel + 2.1/2.)*dt # Max accel is 2.0 in aggressive
+=#
 
 """
 Tests whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
@@ -178,17 +189,24 @@ function is_safe(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLObs}, a
     end
     # check whether we will go into anyone else's lane so close that they might hit us
     if isinteger(s.env_cars[1].y) && a.lane_change != 0.0
-        new_lane = s.env_cars[1].y + (a.lane_change > 0. ? 1. : -1.)
         dt = mdp.dmodel.phys_param.dt
         l_car = mdp.dmodel.phys_param.l_car
         for i in 2:length(s.env_cars)
             car = s.env_cars[i]
             ego = s.env_cars[1]
-            if occupation_overlap(new_lane, car.y) && car.x < ego.x
-                # TODO: need a proxy HERE for max_dx if operating on observations
-                #   Note: can overestimate max_dx (operate conservatively)
-                dx = typeof(s)<:MLState ? max_dx(get(car.behavior), car, dt) : max_dx(car, dt)
-                if ego.x + (ego.vel + dt*a.acc/2.0)*dt - (car.x + dx) < mdp.dmodel.phys_param.l_car
+            if car.x < ego.x && occupation_overlap(ego.y, a.lane_change, car.y, 0.0)  # ego is in front of car
+                # #   Note: can overestimate max_dx (operate conservatively)
+                # #  this doesn't seem right - this only checks one step into the future
+                # dx = typeof(s)<:MLState ? max_dx(get(car.behavior), car, dt) : max_dx(car, dt)
+                # if ego.x + (ego.vel + dt*a.acc/2.0)*dt - (car.x + dx) < mdp.dmodel.phys_param.l_car
+                #     return false
+                # end
+                
+                # New definition of safe - the car behind can brake at max braking to avoid the ego if the ego
+                # slams on his brakes
+                gap = ego.x - car.x - l_car
+                braking_acc = max_safe_acc(gap, car.vel, ego.vel, mdp.dmodel.phys_param.brake_limit, dt)
+                if braking_acc < -mdp.dmodel.phys_param.brake_limit
                     return false
                 end
             end

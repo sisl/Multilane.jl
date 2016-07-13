@@ -34,6 +34,9 @@ s = ArgParseSettings()
     "--save-combined"
         help = "save results to a new file"
         action = :store_true
+    "--check-crashes"
+        help = "print out simulations that have crashes"
+        action = :store_true
 end
 
 args = parse_args(ARGS, s)

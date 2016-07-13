@@ -91,6 +91,7 @@ function fill_stats!(stats::DataFrame, problems::Vector, sims::Vector)
     stats[:time_to_lane] = DataArray(Float64, nb_sims)
     stats[:steps_in_lane] = DataArray(Int, nb_sims)
     stats[:steps] = Int[length(s.action_hist) for s in sims]
+    stats[:crash] = DataArray(Bool, nb_sims)
 
     for i in 1:nb_sims
         r = 0.0
@@ -98,6 +99,7 @@ function fill_stats!(stats::DataFrame, problems::Vector, sims::Vector)
         steps_to_lane = Nullable{Int}()
         steps_in_lane = 0
         nb_brakes = 0
+        crashed = false
 
         for (k,a) in enumerate(sims[i].action_hist)
             s = sims[i].state_hist[k]
@@ -115,6 +117,10 @@ function fill_stats!(stats::DataFrame, problems::Vector, sims::Vector)
                     steps_to_lane = Nullable{Int}(k-1)
                 end
             end
+
+            if is_crash(problems[i], s, sp)
+                crashed = true
+            end
         end
 
         if sims[i].state_hist[end].env_cars[1].y == problems[i].rmodel.desired_lane
@@ -128,6 +134,7 @@ function fill_stats!(stats::DataFrame, problems::Vector, sims::Vector)
         stats[:steps_to_lane][i] = isnull(steps_to_lane) ? NA : get(steps_to_lane)
         stats[:time_to_lane][i] = stats[:steps_to_lane][i]*dt
         stats[:steps_in_lane][i] = steps_in_lane
+        stats[:crash][i] = crashed
     end
     return stats
 end
@@ -244,7 +251,7 @@ function merge_results!(r1::Dict{UTF8String, Any}, r2::Dict{UTF8String, Any})
     return r1
 end
 
-function rerun{S<:AbstractString}(results::Dict{S, Any}, id)
+function rerun{S<:AbstractString}(results::Dict{S, Any}, id; reward_assertion=true)
     stats = results["stats"]
     @assert stats[:id][id] == id
     problem = results["problems"][stats[:problem_key][id]]
@@ -254,7 +261,9 @@ function rerun{S<:AbstractString}(results::Dict{S, Any}, id)
     steps = stats[:steps][id]
     sim, policy = test_run_return_policy(problem, is, solver, rng_seed, steps)
     r = sum([reward(problem, sim.state_hist[i], sim.action_hist[i], sim.state_hist[i+1]) for i in 1:length(sim.action_hist)])
-    @assert r == stats[:reward][id]
+    if reward_assertion
+        @assert r == stats[:reward][id]
+    end
     return problem, sim, policy
 end
 
