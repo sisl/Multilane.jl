@@ -3,7 +3,7 @@ Wed 13 Jul 2016 02:38:32 PM PDT
 [ ] Run tests on tula with changes
 [ ] Think about whether I need different solvers
 [ ] Read up on literature for doing this exact task
-[ ] Program a really aggressive heuristic
+[O] Program a really aggressive heuristic (the simple one is pretty aggressive now)
 [ ] Work on POMCP dpw
 
 Tue 12 Jul 2016 11:32:45 AM PDT

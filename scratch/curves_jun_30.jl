@@ -8,7 +8,7 @@ using POMDPs
 using DataFrames
 using Plots
 
-N=10
+N=50
 
 # filename = "initials_Jul_4_17_11.jld"
 filename = "initials_Jul_7_13_02.jld"
@@ -45,11 +45,11 @@ rsolver = RobustMCTSSolver(
 
 
 curve_solvers = Dict{UTF8String, Solver}(
-    "dpw" => dpws,
-    "robust" => RobustMLSolver(rsolver),
-    "single_behavior" => 
-        SingleBehaviorSolver(dpws,
-                 IDMMOBILBehavior("normal", 30.0, 10.0, 1))
+#     "dpw" => dpws,
+#     "robust" => RobustMLSolver(rsolver),
+#     "single_behavior" => 
+#         SingleBehaviorSolver(dpws,
+#                  IDMMOBILBehavior("normal", 30.0, 10.0, 1))
 )
 
 curve_results = evaluate(problems, initial_states, curve_solvers, parallel=true, N=N)
