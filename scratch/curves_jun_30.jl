@@ -8,10 +8,10 @@ using POMDPs
 using DataFrames
 using Plots
 
-N=10
+N=500
 
-# filename = "initials_Jul_4_17_11.jld"
-filename = "initials_Jul_7_13_02.jld"
+filename = "initials_Jul_4_17_11.jld"
+# filename = "initials_Jul_7_13_02.jld"
 initials = load(filename)
 problems = initials["problems"]
 initial_states = initials["initial_states"]
@@ -43,7 +43,6 @@ rsolver = RobustMCTSSolver(
     rollout_nature=StochasticBehaviorNoCrashMDP(collect(values(problems))[1]))
 
 
-
 curve_solvers = Dict{UTF8String, Solver}(
     "dpw" => dpws,
     "robust" => RobustMLSolver(rsolver),
@@ -52,7 +51,9 @@ curve_solvers = Dict{UTF8String, Solver}(
                  IDMMOBILBehavior("normal", 30.0, 10.0, 1))
 )
 
+tic()
 curve_results = evaluate(problems, initial_states, curve_solvers, parallel=true, N=N)
+toc()
 
 results = merge_results!(curve_results, point_results)
 
