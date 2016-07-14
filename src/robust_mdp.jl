@@ -67,6 +67,11 @@ type RobustMLPolicy <: Policy{MLState}
 end
 
 function action(p::RobustMLPolicy, s::MLState, a::MLAction=MLAction(0,0))
+    mdp = representative_mdp(p.rpolicy.rmdp)
+    as = actions(mdp, MLPhysicalState(s), actions(mdp))
+    if length(as) == 1
+        return collect(as)[1]
+    end
     action(p.rpolicy, MLPhysicalState(s))
 end
 

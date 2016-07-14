@@ -20,6 +20,10 @@ function solve(solver::SingleBehaviorSolver, mdp::NoCrashMDP)
 end
 
 function action(p::SingleBehaviorPolicy, s::MLState, a::MLAction=MLAction())
+    as = actions(p.inner_policy.mdp, s, actions(p.inner_policy.mdp))
+    if length(as) == 1
+        return collect(as)[1]
+    end
     return action(p.inner_policy, single_behavior_state(s, p.behavior))
 end
 

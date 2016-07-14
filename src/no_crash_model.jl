@@ -212,8 +212,8 @@ function is_safe(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLObs}, a
                     return false
                 end
                 braking_acc = max_safe_acc(gap, car.vel, ego.vel, mdp.dmodel.phys_param.brake_limit, dt)
-                # if braking_acc < -mdp.dmodel.phys_param.brake_limit
-                if braking_acc < 0.0
+                if braking_acc < -mdp.dmodel.phys_param.brake_limit
+                # if braking_acc < 0.0
                     return false
                 end
             end

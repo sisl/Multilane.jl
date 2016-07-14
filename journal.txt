@@ -1,3 +1,9 @@
+Thu 14 Jul 2016 10:52:30 AM PDT
+
+Timing test:
+with 38 cores: 11:50 Progress meter time
+with 20 cores: 14.59 Progress meter time (but a lot of the end was with only one core running)
+
 Wed 13 Jul 2016 02:38:32 PM PDT
 
 [ ] Run tests on tula with changes
