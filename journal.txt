@@ -1,3 +1,9 @@
+Thu 14 Jul 2016 11:24:02 AM PDT
+
+Local Theresa Speed Tests
+with 7 cores: 2:52
+with 4 cores: 4:13
+
 Thu 14 Jul 2016 10:52:30 AM PDT
 
 Timing test:
