@@ -6,6 +6,10 @@ Wed 13 Jul 2016 02:38:32 PM PDT
 [O] Program a really aggressive heuristic (the simple one is pretty aggressive now)
 [ ] Work on POMCP dpw
 
+[ ] XXX Cars do not seem to be braking to avoid the ego
+
+[ ] Change no_crash_model:217 to < 0.0
+
 Tue 12 Jul 2016 11:32:45 AM PDT
 
 [X] Debugging a crash - results_Jul_12_11_17.jld, 154
