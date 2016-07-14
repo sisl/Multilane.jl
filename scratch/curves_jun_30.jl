@@ -42,8 +42,6 @@ rsolver = RobustMCTSSolver(
     rollout_solver=SimpleSolver(),
     rollout_nature=StochasticBehaviorNoCrashMDP(collect(values(problems))[1]))
 
-
-
 curve_solvers = Dict{UTF8String, Solver}(
 #     "dpw" => dpws,
 #     "robust" => RobustMLSolver(rsolver),

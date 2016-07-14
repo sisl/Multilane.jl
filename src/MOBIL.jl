@@ -61,6 +61,8 @@ function get_neighborhood(pp::PhysicalParam,s::Union{MLState,MLObs},idx::Int)
 	5    |car|   2 ->
 	4      |     1
 	where 1/2/3 is the front, 3/6 is left
+    
+    Note: The same car can occupy two spots if the vehicle is changing lanes.
 	"""
 	x = s.env_cars[idx]
 	#rightmost lane: no one to the right
@@ -85,8 +87,8 @@ function get_neighborhood(pp::PhysicalParam,s::Union{MLState,MLObs},idx::Int)
 		#too distant to be a neighbor
 		if abs(dlane) > 2.
 			continue
-		elseif abs(dlane) <= 0.5
-			dlane = 0
+		# elseif abs(dlane) <= 0.5 # this is now handled below in the overlap section
+		# 	dlane = 0
 		else
 			dlane = convert(Int,sign(dlane))
 		end
@@ -99,6 +101,11 @@ function get_neighborhood(pp::PhysicalParam,s::Union{MLState,MLObs},idx::Int)
 			dists[offset+dlane] = abs(d)
 			nbhd[offset+dlane] = i
 		end
+
+        if occupation_overlap(car.y, x.y) && abs(d) < dists[offset]
+            dists[offset] = abs(d)
+            nbhd[offset] = i
+        end
 	end
 
 	return nbhd
