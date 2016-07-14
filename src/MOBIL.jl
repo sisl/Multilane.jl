@@ -112,7 +112,7 @@ function get_dv_ds(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,idy:
 	car = s.env_cars[idx]
 	nbr = nbhd[idy]
 	#dv: if ahead: me - him; behind: him - me
-	dv = nbr != 0 ? -1*sign((idy-3.5))*(car.vel - s.env_cars[nbr].vel) : 0.
+	dv = nbr != 0 ? -1*sign((idy-3.5))*(car.vel - s.env_cars[nbr].vel) : 0. #XXX What is idy doing here??? (Zach, 7/13/16)
 	ds = nbr != 0 ? abs(s.env_cars[nbr].x - car.x) - pp.l_car : 1000.
 
 	return dv, ds

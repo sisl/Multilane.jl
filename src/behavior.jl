@@ -24,11 +24,18 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsMode
 	dv, ds = get_dv_ds(pp,s,neighborhood,idx,2)
 
 	dvel = get_idm_dv(bmodel.p_idm,dt,vel,dv,ds) #call idm model
-	#TODO: add gaussian noise
-	dvel += randn(rng) * dmodel.vel_sigma
-	dvel = min(max(dvel/dt,-bmodel.p_idm.b),bmodel.p_idm.a)
+    acc = dvel/dt
 
-	return dvel
+    @assert acc <= 1.01*bmodel.p_idm.a
+
+	#add gaussian noise
+	acc += randn(rng) * dmodel.vel_sigma/dt
+
+	# dvel = min(max(dvel/dt,-bmodel.p_idm.b),bmodel.p_idm.a)
+    # ^ old: can delete after august
+
+    # enforce physical limit (maybe this should not be done right here?)
+	return max(acc, -dmodel.phys_param.brake_limit)
 end
 
 function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)

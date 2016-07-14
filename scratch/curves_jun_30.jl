@@ -8,7 +8,7 @@ using POMDPs
 using DataFrames
 using Plots
 
-N=50
+N=5000
 
 # filename = "initials_Jul_4_17_11.jld"
 filename = "initials_Jul_7_13_02.jld"

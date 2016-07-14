@@ -180,21 +180,22 @@ end
 max_dx(cs::CarStateObs, dt::Float64) = cs.x + (cs.vel + 2.1/2.)*dt # Max accel is 2.0 in aggressive
 =#
 
-"""
-Tests whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
-"""
+# """
+# Test whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
+# """
+
 function is_safe(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLObs}, a::MLAction)
     if a.acc >= max_safe_acc(mdp, s, a.lane_change)
         return false
     end
-    # check whether we will go into anyone else's lane so close that they might hit us
+    # check whether we will go into anyone else's lane so close that they might hit us or we might run into them
     if isinteger(s.env_cars[1].y) && a.lane_change != 0.0
         dt = mdp.dmodel.phys_param.dt
         l_car = mdp.dmodel.phys_param.l_car
         for i in 2:length(s.env_cars)
             car = s.env_cars[i]
             ego = s.env_cars[1]
-            if car.x < ego.x && occupation_overlap(ego.y, a.lane_change, car.y, 0.0)  # ego is in front of car
+            if car.x < ego.x + l_car && occupation_overlap(ego.y, a.lane_change, car.y, 0.0)  # ego is in front of car
                 # #   Note: can overestimate max_dx (operate conservatively)
                 # #  this doesn't seem right - this only checks one step into the future
                 # dx = typeof(s)<:MLState ? max_dx(get(car.behavior), car, dt) : max_dx(car, dt)
@@ -204,12 +205,15 @@ function is_safe(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLObs}, a
                 
                 # New definition of safe - the car behind can brake at max braking to avoid the ego if the ego
                 # slams on his brakes
+                # XXX IS THIS RIGHT??
+                # I think I need a better definition of "safe" here
                 gap = ego.x - car.x - l_car
                 if gap <= 0.0
                     return false
                 end
                 braking_acc = max_safe_acc(gap, car.vel, ego.vel, mdp.dmodel.phys_param.brake_limit, dt)
-                if braking_acc < -mdp.dmodel.phys_param.brake_limit
+                # if braking_acc < -mdp.dmodel.phys_param.brake_limit
+                if braking_acc < 0.0
                     return false
                 end
             end
@@ -281,7 +285,7 @@ function generate_s(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction
           if isinteger(car_i.y) && isinteger(car_j.y)
 
               # make sure there is a conflict longitudinally
-              if car_i.x - car_j.x <= pp.l_car
+              if car_i.x - car_j.x <= pp.l_car || car_i.x + dxs[i] - car_j.x + dxs[j] <= pp.l_car
 
                   # check if they are near each other lanewise
                   if abs(car_i.y - car_j.y) <= 2.0
