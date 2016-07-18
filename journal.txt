@@ -1,3 +1,36 @@
+Sat 16 Jul 2016 03:38:04 PM PDT
+
+Reducing the number of brakes
+Random solver:
+    With appear_clearance = 20
+        nb_brakes = 31.94
+        time_to_lane = 198.01
+        ratio = 0.16
+    With dynamic clearance
+        nb_brakes = 28.91
+        time_to_lane = 203.4
+        ratio = 0.14
+SimpleSolver:
+    With appear_clearance = 20
+        nb_brakes = 3.369
+        time_to_lane = 15.56
+        ratio = 0.217
+    With dynamic clearance
+        nb_brakes = 2.966
+        time_to_lane = 13.8697
+        ratio = 0.214
+
+Doesn't look like it's happening when new cars are generated
+
+back to clearance = 20
+tried to change aggressive b to 1.8
+    heuristic ratio = 0.217
+    random ratio = 0.164
+
+tried to change threshold to 2.5
+    heuristic ratio = 0.168
+    random ratio = 0.117
+
 Thu 14 Jul 2016 11:24:02 AM PDT
 
 Local Theresa Speed Tests

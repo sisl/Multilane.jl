@@ -41,8 +41,8 @@ function NoCrashIDMMOBILModel(nb_cars::Int, pp::PhysicalParam; lane_terminate=fa
         WeightVec(ones(length(behaviors))),
         1.,
         1.0/(2.0*pp.dt), # lane change rate
-        0.5,
-        20.0,
+        0.5, # p_appear
+        20.0, # appear_clearance
         0.5,
         ones(pp.nb_lanes),
         10.^2,
@@ -363,6 +363,7 @@ function generate_s(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction
         end
         clear_spots = Array(Tuple{Int,Bool}, 0)
         for i in 1:pp.nb_lanes, j in (true,false)
+            # if clearances[(i,j)] >= behavior.p_idm.T*behavior.p_idm.v0 # dynamic clearance
             if clearances[(i,j)] >= mdp.dmodel.appear_clearance
                 push!(clear_spots, (i,j))
             end
@@ -373,7 +374,7 @@ function generate_s(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction
             spot = rand(rng, clear_spots)
 
             next_id = maximum([c.id for c in s.env_cars]) + 1
-            behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
+            behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities) # now generated above
             if spot[2] # at front
                 velp = sp.env_cars[1].vel - rand(rng) * min(mdp.dmodel.vel_sigma, sp.env_cars[1].vel - pp.v_min)
                 push!(sp.env_cars, CarState(pp.lane_length, spot[1], velp, 0.0, behavior, next_id))
@@ -527,7 +528,7 @@ end
 function sample_distance(dmodel::NoCrashIDMMOBILModel, behavior::IDMMOBILBehavior, rng::AbstractRNG)
   mu = behavior.p_idm.T*behavior.p_idm.v0 - dmodel.appear_clearance
   var = dmodel.dist_var
-  assert(mu > 0.)
+  @assert mu > 0.
   dist_distr = Gamma((mu^2)/var,var/mu)
   dist = rand(dist_distr) + dmodel.appear_clearance + dmodel.phys_param.l_car
 
