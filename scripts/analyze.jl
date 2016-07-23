@@ -43,6 +43,11 @@ args = parse_args(ARGS, s)
 
 results = load(args["filename"][1])
 
+for f in args["filename"][2:]
+    new_results = load(f)
+    results = merge_results!(results, new_results)
+end
+
 stats = results["stats"]
 
 mean_performance = by(stats, :solver_key) do df
@@ -63,6 +68,8 @@ end
 mean_performance = @where(mean_performance,
                           collect(Bool[s in solvers for s in :solver_key]))
 
+mean_performance[:brakes_per_sec] = mean_performance[:nb_brakes]./mean_performance[:time_to_lane]
+
 if args["show"]
     println(mean_performance)
     println()
@@ -78,10 +85,12 @@ if args["unicode"] || args["plot"]
         for g in groupby(mean_performance, :solver_key)
             if size(g,1) > 1
                 # plot!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
-                plt = plot!(g, :time_to_lane, :nb_brakes, group=:solver_key)
+                # plt = plot!(g, :time_to_lane, :nb_brakes, group=:solver_key)
+                plot!(g, :time_to_lane, :brakes_per_sec, group=:solver_key)
             else
                 # scatter!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
-                plt = scatter!(g, :time_to_lane, :nb_brakes, group=:solver_key)
+                # scatter!(g, :time_to_lane, :nb_brakes, group=:solver_key)
+                scatter!(g, :time_to_lane, :brakes_per_sec, group=:solver_key)
             end
         end
         gui()
@@ -89,4 +98,10 @@ if args["unicode"] || args["plot"]
         warn("Plot could not be displayed:")
         println(ex)
     end
+end
+
+if args["save-combined"]
+    filename = string("combined_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")
+    save(filename, results)
+    println("combined results saved to $filename")
 end
