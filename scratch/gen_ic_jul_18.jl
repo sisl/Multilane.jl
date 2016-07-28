@@ -7,7 +7,7 @@ N = 5000
 # NOTE: assumes 4 lanes, desired lane is lane 4
 desired_lane_reward = 10.
 
-lambdas = Float64[0.1, 1., 10., 100., 1000.]
+lambdas = Float64[0.1, 1., 10., 17.78, 31.62, 56.23, 100., 1000.]
 
 nb_lanes = 4 # XXX assumption
 
