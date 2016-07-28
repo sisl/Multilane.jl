@@ -1,3 +1,115 @@
+type DiscreteBehaviorBelief
+    ps::MLPhysicalState
+    behaviors::AbstractVector
+    weights::Vector{Vector{Float64}}
+end
+DiscreteBehaviorBelief(ps::MLPhysicalState, behaviors::AbstractVector) = DiscreteBehaviorBelief(ps, behaviors, Array(Vector{Float64}, length(ps.env_cars)))
+
+function rand(rng::AbstractRNG,
+              b::DiscreteBehaviorBelief,
+              s::MLState=MLState(b.ps.crashed, Array(CarState, length(b.ps.env_cars))))
+    resize!(s.env_cars, length(b.ps.env_cars))
+    for i in 1:length(s.env_cars)
+        s.env_cars[i] = CarState(b.ps.env_cars[i], sample(rng, b.behaviors, WeightVec(b.weights[i])))
+    end
+    return s
+end
+
+#=
+type BehaviorBeliefUpdater <: Updater{DiscreteBehaviorBelief}
+    problem::NoCrashProblem
+end
+
+function update(up::BehaviorBeliefUpdater,
+                b_old::DiscreteBehaviorBelief,
+                a::MLAction,
+                o::MLPhysicalState,
+                b_new::DiscreteBehaviorBelief=DiscreteBehaviorBelief(o,
+                                                       up.problem.dmodel.behaviors,
+                                                       Array(Vector{Float64}, 0)))
+    # resize
+    # zeros
+    # for
+        # generate s by sampling from 
+        # generate sp
+        # add to weights proportional to likelihood of o
+
+# smoothing??
+
+end
+=#
+
+type BehaviorRootUpdaterStub <: Updater
+    smoothing::Float64
+end
+ 
+type BehaviorRootUpdater <: Updater # {Union{POMCP.BeliefNode,DiscreteBehaviorBelief}}
+    problem::NoCrashProblem
+    smoothing::Float64 # value between 0 and 1, adds this fraction of the max to each entry in the vecot
+    behavior_map::Dict{Any, Int} # maps behaviors back to their index in the problem's behavior vector
+end
+
+function BehaviorRootUpdater(problem::NoCrashProblem, smoothing::Float64)
+    d = Dict{Any, Int}()
+    for (i, b) in enumerate(problem.dmodel.behaviors)
+        d[b] = i
+    end
+    return BehaviorRootUpdater(problem, smoothing, d)
+end
+
+initialize_belief(up::BehaviorRootUpdater, b) = POMCP.RootNode(b)
+
+function update(up::BehaviorRootUpdater,
+                b_old::POMCP.BeliefNode,
+                a::MLAction,
+                o::MLPhysicalState,
+                b_new::POMCP.RootNode=POMCP.RootNode(DiscreteBehaviorBelief(o, up.problem.dmodel.behaviors)))
+
+    b_new.B.behaviors = up.problem.dmodel.behaviors
+    resize!(b_new.B.weights, length(o.env_cars))
+    for i in 1:length(o.env_cars)
+        b_new.B.weights[i] = zeros(length(up.behavior_map)) #XXX lots of allocation
+    end
+    # ASSUMING IDs are monotonically increasing (is this true?)
+    for child_node in values(b_old.children[a].children)
+        for sp in child_node.B.particles
+            isp = 1
+            io = 1
+            while io <= length(o.env_cars) && isp <= length(sp.env_cars)
+                co = o.env_cars[io]
+                csp = sp.env_cars[isp]
+                if co.id == csp.id
+                    # sigma_acc = dmodel.vel_sigma/dt
+                    # dv = acc*dt
+                    # sigma_v = sigma_dv = dmodel.vel_sigma
+                    proportional_likelihood = proportional_normal_pdf(csp.vel,
+                                                                      co.vel,
+                                                                      up.problem.dmodel.vel_sigma)
+                    b_new.B.weights[io][up.behavior_map[get(csp.behavior)]] += proportional_likelihood
+                    io += 1
+                    isp += 1
+                elseif co.id < csp.id
+                    io += 1
+                else 
+                    @assert co.id > csp.id
+                    isp += 1
+                end
+            end
+        end
+    end
+
+    # smoothing
+    for i in 1:length(o.env_cars)
+        b_new.B.weights[i] .+= up.smoothing * maximum(b_new.B.weights[i])
+    end
+
+    return b_new
+end
+
+proportional_normal_pdf(x, mu, sigma) = exp(-(x-mu)^2/(2.*sigma^2))
+
+
+#=
 type ParticleUpdater <: POMDPs.Updater{ParticleBelief{MLState}}
   nb_particles::Int
   problem::NoCrashPOMDP
@@ -85,6 +197,7 @@ function actions(pomdp::NoCrashPOMDP, b::ParticleBelief{MLState}, as::NoCrashAct
   as = NoCrashActionSpace(as.NORMAL_ACTIONS, acceptable, MLAction(min(brake, -pomdp.rmodel.dangerous_brake_threshold/2.0), 0.))
   return as
 end
+=#
 
 
 # TODO clean up

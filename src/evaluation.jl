@@ -4,7 +4,7 @@ import Iterators: take
 function test_run(problem::NoCrashMDP, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
     terminal_problem = deepcopy(problem)
-    terminal_problem.dmodel.lane_terminate=true
+    terminal_problem.dmodel.lane_terminate = true
     # @printf("[%5d] started. (%s)\n", id, typeof(solver))
     r = simulate(sim, terminal_problem, solve(solver,problem), initial_state)
     # @printf("[%5d] finished.\n", id)
@@ -15,23 +15,26 @@ function test_run_return_policy(problem::NoCrashMDP, initial_state::MLState, sol
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
     policy = solve(solver, problem)
     terminal_problem = deepcopy(problem)
-    terminal_problem.dmodel.lane_terminate=true
+    terminal_problem.dmodel.lane_terminate = true
     r = simulate(sim, terminal_problem, policy, initial_state)
     return sim, policy
 end
 
-function test_run(problem::NoCrashPOMDP, bu, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
-    error("Not maintained: look over the code before using this")
+function test_run(problem::NoCrashPOMDP, bu::Updater, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
+    # error("Not maintained: look over the code before using this")
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps,initial_state=initial_state)
+    policy = solve(solver, problem)
+    terminal_problem = deepcopy(problem)
+    terminal_problem.dmodel.lane_terminate = true
     r = simulate(sim, problem, solve(solver,problem), bu, create_belief(bu,initial_state))
     return sim
 end
 
-function run_simulations(problems::AbstractVector, initial_states::AbstractVector, solvers::AbstractVector, bu=nothing; rng_seeds::AbstractVector=collect(1:length(problems)), parallel=true, max_steps=10000)
+function run_simulations(problems::AbstractVector, initial_states::AbstractVector, solvers::AbstractVector, updaters::AbstractVector=Array(Void,0); rng_seeds::AbstractVector=collect(1:length(problems)), parallel=true, max_steps=10000)
     N = length(problems)
     if parallel
         prog = ProgressMeter.Progress( N, dt=0.1, barlen=50, output=STDERR)
-        if isa(bu,Void)
+        if isa(updaters,Array{Void})
             sims = pmap(test_run,
                         prog,
                         problems,
@@ -44,7 +47,7 @@ function run_simulations(problems::AbstractVector, initial_states::AbstractVecto
              sims = pmap(test_run,
                          prog,
                          problems,
-                         bu,
+                         updaters,
                          initial_states,
                          solvers,
                          rng_seeds,
@@ -52,13 +55,13 @@ function run_simulations(problems::AbstractVector, initial_states::AbstractVecto
          end
     else
         sims = Array(HistoryRecorder, length(problems))
-        if isa(bu,Void)
+        if isa(updaters,Array{Void})
             @showprogress for j in 1:length(problems)
                 sims[j] = test_run(problems[j], initial_states[j], solvers[j], rng_seeds[j], max_steps)
             end
         else
             @showprogress for j in 1:length(problems)
-                sims[j] = test_run(problems[j], bu[j], initial_states[j], solvers[j], rng_seeds[j], max_steps)
+                sims[j] = test_run(problems[j], updaters[j], initial_states[j], solvers[j], rng_seeds[j], max_steps)
             end
         end
     end
@@ -226,7 +229,7 @@ function evaluate(problems::Dict{UTF8String,Any}, initial_states::Dict{UTF8Strin
         end
     end
 
-    sims = run_simulations(all_problems, all_initial, all_solvers, nothing, rng_seeds=stats[:rng_seed], parallel=parallel)
+    sims = run_simulations(all_problems, all_initial, all_solvers, Array(Void, 0), rng_seeds=stats[:rng_seed], parallel=parallel)
     fill_stats!(stats, all_problems, sims)
     return Dict{UTF8String, Any}(
         "nb_sims"=>nb_sims,
