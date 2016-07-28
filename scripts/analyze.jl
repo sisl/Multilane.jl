@@ -43,7 +43,7 @@ args = parse_args(ARGS, s)
 
 results = load(args["filename"][1])
 
-for f in args["filename"][2:]
+for f in args["filename"][2:end]
     new_results = load(f)
     results = merge_results!(results, new_results)
 end
