@@ -12,7 +12,7 @@ import GenerativeModels: generate_s, generate_sr, initial_state, generate_o, gen
 
 import Distributions: Dirichlet, Exponential, Gamma, rand
 
-import Iterators.product
+import Iterators
 
 import Base: ==, hash, length, vec
 
@@ -27,6 +27,7 @@ using PmapProgressMeter
 using POMDPToolbox
 import MCTS # so that we can define node_tag, etc.
 using RobustMCTS # for RobustMDP
+import POMCP # for particle filter
 
 # package code goes here
 export
@@ -50,7 +51,11 @@ export
     FixedBehaviorNoCrashMDP,
     StochasticBehaviorNoCrashMDP,
     RobustMLSolver,
-    RobustMLPolicy
+    RobustMLPolicy,
+    MLPOMDPSolver,
+    MLPOMDPAgent,
+    BehaviorRootUpdater,
+    BehaviorRootUpdaterStub
 
 export
     NoCrashRewardModel,
@@ -99,7 +104,6 @@ include("util.jl")
 include("physical.jl")
 include("MDP_types.jl")
 include("crash.jl")
-# include("MDP.jl")
 include("IDM.jl")
 include("MOBIL.jl")
 include("behavior.jl")
@@ -107,6 +111,7 @@ include("no_crash_model.jl")
 include("visualization.jl")
 include("evaluation.jl")
 include("robust_mdp.jl")
+include("pomdp_glue.jl")
 include("single_behavior.jl")
 include("heuristics.jl")
 include("beliefs.jl")

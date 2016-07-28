@@ -31,7 +31,7 @@ end
 #XXX temporary
 function NoCrashIDMMOBILModel(nb_cars::Int, pp::PhysicalParam; lane_terminate=false)
     behaviors=IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
-                       enumerate(product(["cautious","normal","aggressive"],
+                       enumerate(Iterators.product(["cautious","normal","aggressive"],
                               [pp.v_slow+0.5;pp.v_med;pp.v_fast],
                               [pp.l_car]))]
     return NoCrashIDMMOBILModel(
@@ -54,8 +54,10 @@ typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewar
 
 typealias NoCrashPOMDP MLPOMDP{MLState, MLAction, MLObs, NoCrashIDMMOBILModel, NoCrashRewardModel}
 
+typealias NoCrashProblem Union{NoCrashMDP, NoCrashPOMDP}
+
 # TODO issue here VVV need a different way to create observation
-create_action(::Union{NoCrashMDP,NoCrashPOMDP}) = MLAction()
+create_action(::NoCrashProblem) = MLAction()
 
 # action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {brake}
 immutable NoCrashActionSpace <: AbstractSpace{MLAction}
@@ -66,18 +68,18 @@ end
 # TODO for performance, make this a macro?
 const NB_NORMAL_ACTIONS = 9
 
-function NoCrashActionSpace(mdp::Union{NoCrashMDP,NoCrashPOMDP})
+function NoCrashActionSpace(mdp::NoCrashProblem)
     accels = (-mdp.dmodel.adjustment_acceleration, 0.0, mdp.dmodel.adjustment_acceleration)
     lane_changes = (-mdp.dmodel.lane_change_rate, 0.0, mdp.dmodel.lane_change_rate)
-    NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in product(accels, lane_changes)]
+    NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in Iterators.product(accels, lane_changes)]
     return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: brake will be calculated later based on the state
 end
 
-function actions(mdp::Union{NoCrashMDP,NoCrashPOMDP})
+function actions(mdp::NoCrashProblem)
     return NoCrashActionSpace(mdp)
 end
 
-function actions(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState, MLPhysicalState}, as::NoCrashActionSpace) # no implementation without the third arg to enforce efficiency
+function actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}, as::NoCrashActionSpace) # no implementation without the third arg to enforce efficiency
     acceptable = IntSet()
     for i in 1:NB_NORMAL_ACTIONS
         a = as.NORMAL_ACTIONS[i]
@@ -123,7 +125,7 @@ end
 """
 Calculate the maximum safe acceleration that will allow the car to avoid a collision if the car in front slams on its brakes
 """
-function max_safe_acc(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLObs}, lane_change::Float64=0.0)
+function max_safe_acc(mdp::NoCrashProblem, s::Union{MLState,MLObs}, lane_change::Float64=0.0)
     dt = mdp.dmodel.phys_param.dt
     v_min = mdp.dmodel.phys_param.v_min
     l_car = mdp.dmodel.phys_param.l_car
@@ -184,7 +186,7 @@ max_dx(cs::CarStateObs, dt::Float64) = cs.x + (cs.vel + 2.1/2.)*dt # Max accel i
 # Test whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
 # """
 
-function is_safe(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLObs}, a::MLAction)
+function is_safe(mdp::NoCrashProblem, s::Union{MLState,MLObs}, a::MLAction)
     if a.acc >= max_safe_acc(mdp, s, a.lane_change)
         return false
     end
@@ -223,11 +225,11 @@ function is_safe(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::Union{MLState,MLObs}, a
 end
 
 #XXX temp
-create_state(p::Union{NoCrashMDP,NoCrashPOMDP}) = MLState(false, Array(CarState, p.dmodel.nb_cars))
+create_state(p::NoCrashProblem) = MLState(false, Array(CarState, p.dmodel.nb_cars))
 create_observation(pomdp::NoCrashPOMDP) = MLObs(false, Array(CarStateObs, pomdp.dmodel.nb_cars))
 
 
-function generate_s(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -393,7 +395,7 @@ function generate_s(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction
     return sp
 end
 
-function reward(mdp::Union{NoCrashMDP, NoCrashPOMDP}, s::MLState, ::MLAction, sp::MLState)
+function reward(mdp::NoCrashProblem, s::MLState, ::MLAction, sp::MLState)
     r = 0.0
     if sp.env_cars[1].y == mdp.rmodel.desired_lane
         r += mdp.rmodel.reward_in_desired_lane
@@ -406,7 +408,7 @@ end
 """
 Return the number of braking actions that occured during this state transition
 """
-function detect_braking(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, sp::MLState, threshold=mdp.rmodel.dangerous_brake_threshold)
+function detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=mdp.rmodel.dangerous_brake_threshold)
     nb_brakes = 0
     nb_leaving = 0 
     dt = mdp.dmodel.phys_param.dt
@@ -430,7 +432,7 @@ function detect_braking(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, sp::MLS
     return nb_brakes
 end
 
-function initial_state(mdp::Union{NoCrashMDP,NoCrashPOMDP}, rng::AbstractRNG, s::MLState=create_state(mdp))
+function initial_state(mdp::NoCrashProblem, rng::AbstractRNG, s::MLState=create_state(mdp))
 
   srand(rand(rng, UInt32))
   pp = mdp.dmodel.phys_param
@@ -536,14 +538,12 @@ function sample_distance(dmodel::NoCrashIDMMOBILModel, behavior::IDMMOBILBehavio
 end
 
 
-function generate_o(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState, a::MLAction, sp::MLState, o::MLObs=create_observation(mdp))
+function generate_o(mdp::NoCrashProblem, s::MLState, a::MLAction, sp::MLState, o::MLObs=create_observation(mdp))
   #TODO add noise? no?
 
   return MLObs(sp)
 
 end
-
-# TODO generate_sor
 
 function generate_sor(pomdp::NoCrashPOMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState, o::MLObs)
     sp, r = generate_sr(pomdp, s, a, rng, sp)
@@ -551,7 +551,7 @@ function generate_sor(pomdp::NoCrashPOMDP, s::MLState, a::MLAction, rng::Abstrac
     return sp, o, r
 end
 
-function pdf(mdp::Union{NoCrashMDP,NoCrashPOMDP}, sp::MLState, a::MLAction, o::MLObs)
+function pdf(mdp::NoCrashProblem, sp::MLState, a::MLAction, o::MLObs)
 
   """"
   P(o|s', a) (unweighted)
@@ -576,7 +576,7 @@ end
 discount(mdp::Union{MLMDP,MLPOMDP}) = mdp.discount
 isterminal(mdp::Union{MLMDP,MLPOMDP},s::MLState) = s.crashed
 
-function isterminal(mdp::Union{NoCrashMDP,NoCrashPOMDP}, s::MLState)
+function isterminal(mdp::NoCrashProblem, s::MLState)
     if s.crashed
         return true
     elseif mdp.dmodel.lane_terminate && s.env_cars[1].y == mdp.rmodel.desired_lane

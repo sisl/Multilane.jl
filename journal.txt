@@ -1,3 +1,19 @@
+Wed 27 Jul 2016 11:03:03 AM PDT
+
+Maybe the reason why there are so many brakes is because of the randomness in the acceleration
+
+Mon 25 Jul 2016 01:08:09 PM PDT
+
+[Y] All simulations are of the pomdp???
+    No, because of the upper bound
+    What we actually need is to verify that the POMDP and MDP produce the same thing
+    Yes, should just make fully observable version - still won't handle the fact that observations might mess up the random number sequence
+    Maybe generate a dummy observation to deal with the random alignment
+    
+[ ] Implement POMDP framework and start to run it
+[O] Add action playback policy to POMDPToolbox
+[O] Write tests to verify that POMDP and MDP are equivalent
+
 Sat 16 Jul 2016 03:38:04 PM PDT
 
 Reducing the number of brakes

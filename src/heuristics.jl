@@ -2,17 +2,19 @@
 # heuristic policies
 
 type Simple <: Policy #
-  mdp::MDP
+  mdp
   A::NoCrashActionSpace
   sweeping_up::Bool
 end
 type SimpleSolver <: Solver end
 
-Simple(mdp::MDP) = Simple(mdp,actions(mdp),true)
+Simple(mdp) = Simple(mdp,actions(mdp),true)
 solve(solver::SimpleSolver, problem::MDP) = Simple(problem)
 solve(solver::SimpleSolver, problem::EmbeddedBehaviorMDP) = Simple(problem.base)
+solve(solver::SimpleSolver, problem::POMDP) = Simple(problem)
 POMDPs.updater(::Simple) = POMDPToolbox.FastPreviousObservationUpdater{MLObs}()
 create_policy(s::SimpleSolver, problem::MDP) = Simple(problem)
+create_policy(s::SimpleSolver, problem::POMDP) = Simple(problem)
 
 function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.mdp))
 # lane changes if there is an opportunity
