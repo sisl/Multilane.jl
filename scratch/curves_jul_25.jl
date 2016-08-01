@@ -9,11 +9,10 @@ using POMDPs
 using DataFrames
 using Plots
 
-N=1
+N=500
 
-# filename = "initials_Jul_18_10_19.jld"
-# filename = "initials_Jul_4_17_11.jld"
-filename = "initials_Jul_7_13_02.jld"
+# filename = "initials_Jul_7_13_02.jld"
+filename = "initials_Jul_27_23_05.jld"
 initials = load(filename)
 problems = initials["problems"]
 initial_states = initials["initial_states"]
@@ -26,7 +25,7 @@ point_solvers = Dict{UTF8String, Solver}(
     "heuristic" => SimpleSolver()
 )
 
-point_results = evaluate(representative_problem, initial_states, point_solvers, parallel=false, N=N)
+point_results = evaluate(representative_problem, initial_states, point_solvers, parallel=true, N=N)
 
 dpws = DPWSolver(depth=20,
                  n_iterations=500,
@@ -37,7 +36,7 @@ dpws = DPWSolver(depth=20,
 
 rsolver = RobustMCTSSolver(
     depth=20,
-    c = 50.0,
+    c=50.0,
     n_iterations=2500,
     k_state=4.0,
     alpha_state=1/8,
@@ -57,16 +56,15 @@ pomcps = POMCPDPWSolver(
 )
 
 curve_solvers = Dict{UTF8String, Solver}(
-    # "upper_bound" => dpws,
-    # "robust" => RobustMLSolver(rsolver),
-    # "single_behavior" => 
-    #     SingleBehaviorSolver(dpws,
-    #              IDMMOBILBehavior("normal", 30.0, 10.0, 1)),
+    "upper_bound" => dpws,
+    "robust" => RobustMLSolver(rsolver),
+    "single_behavior" => 
+        SingleBehaviorSolver(dpws,
+                 IDMMOBILBehavior("normal", 30.0, 10.0, 1)),
     "pomcp" => MLPOMDPSolver(pomcps, BehaviorRootUpdaterStub(0.1))
-        
 )
 
-curve_results = evaluate(problems, initial_states, curve_solvers, parallel=false, N=N)
+curve_results = evaluate(problems, initial_states, curve_solvers, parallel=true, N=N)
 
 results = merge_results!(curve_results, point_results)
 

@@ -9,6 +9,9 @@ using MCTS
 using DataFrames
 using DataFramesMeta
 using Plots
+using StatPlots
+
+exception = Nullable{Any}()
 
 s = ArgParseSettings()
 
@@ -97,6 +100,8 @@ if args["unicode"] || args["plot"]
     catch ex
         warn("Plot could not be displayed:")
         println(ex)
+        exception = Nullable{Any}(ex)
+        # rethrow(ex)
     end
 end
 
@@ -104,4 +109,8 @@ if args["save-combined"]
     filename = string("combined_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")
     save(filename, results)
     println("combined results saved to $filename")
+end
+
+if !isnull(exception)
+    rethrow(get(exception))
 end
