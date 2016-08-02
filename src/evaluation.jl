@@ -2,16 +2,20 @@ import Base: mean, std, repr, length
 import Iterators: take
 
 function test_run(problem::NoCrashMDP, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
+    if isa(solver, RandomSolver)
+        solver.rng = MersenneTwister(rng_seed)
+    end
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
     terminal_problem = deepcopy(problem)
     terminal_problem.dmodel.lane_terminate = true
-    # @printf("[%5d] started. (%s)\n", id, typeof(solver))
     r = simulate(sim, terminal_problem, solve(solver,problem), initial_state)
-    # @printf("[%5d] finished.\n", id)
     return sim
 end
 
 function test_run_return_policy(problem::NoCrashMDP, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
+    if isa(solver, RandomSolver)
+        solver.rng = MersenneTwister(rng_seed)
+    end
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
     policy = solve(solver, problem)
     terminal_problem = deepcopy(problem)

@@ -78,5 +78,6 @@ test_actions()
 
 println("Running a NoCrashMDP example...")
 include("run_nocrash.jl")
+write_tmp_gif(mdp, sim)
 println("Running a NoCrashMDP example with the robust solver...")
 include("run_with_robust_solver.jl")

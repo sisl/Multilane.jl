@@ -1,3 +1,4 @@
+__precompile__()
 module Multilane
 
 import StatsBase: WeightVec, sample
@@ -16,7 +17,7 @@ import Iterators
 
 import Base: ==, hash, length, vec
 
-import POMDPToolbox: Particle, ParticleBelief
+# import POMDPToolbox: Particle, ParticleBelief
 
 # for visualization
 using Interact
@@ -79,7 +80,8 @@ export
     get_mobil_lane_change,
     is_crash,
     visualize,
-    display_sim
+    display_sim,
+    write_tmp_gif
 
 export #data structure stuff
     ste,
@@ -100,7 +102,6 @@ export # POMDP belief stuff
     initialize_belief
 
 
-include("util.jl")
 include("physical.jl")
 include("MDP_types.jl")
 include("crash.jl")

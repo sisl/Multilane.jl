@@ -1,4 +1,5 @@
 using PyPlot
+using Reel
 
 BEHAVIOR_COLORS = Dict{Float64,AbstractString}(0.5=>"#0101DF",0.25=>"#D7DF01",0.0=>"#FF0000")
 
@@ -17,6 +18,20 @@ end
 
 function display_sim(mdp, sim::HistoryRecorder)
     display_sim(mdp, sim.state_hist, sim.action_hist)
+end
+
+function write_tmp_gif(mdp, sim::HistoryRecorder)
+    dt = mdp.dmodel.phys_param.dt
+    S = sim.state_hist
+    A = sim.action_hist
+    film = roll(fps = 1/dt, duration = dt*(length(sim.action_hist)-1)) do t, dt
+        i = round(Int, t/dt)+1
+        print('.')
+        visualize(mdp, S[i], A[i], S[i+1])
+    end
+    filename = string(tempname(), ".gif")
+    write(filename, film)
+    return filename
 end
 
 function draw_bang(x::Union{Float64,Int},
