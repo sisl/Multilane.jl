@@ -90,7 +90,8 @@ export #data structure stuff
     merge_results!,
     rerun,
     assign_keys,
-    test_run_return_policy
+    test_run_return_policy,
+    lambda
 
 
 export # POMDP belief stuff

@@ -7,6 +7,7 @@ type NoCrashRewardModel <: AbstractMLRewardModel
 end
 #XXX temporary
 NoCrashRewardModel() = NoCrashRewardModel(100.,10.,8.0,4)
+lambda(rm::NoCrashRewardModel) = rm.cost_dangerous_brake/rm.reward_in_desired_lane
 
 type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     nb_cars::Int
@@ -32,16 +33,18 @@ end
 function NoCrashIDMMOBILModel(nb_cars::Int,
                               pp::PhysicalParam;
                               vel_sigma = 0.5,
-                              lane_terminate=false)
-    behaviors=IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
-                       enumerate(Iterators.product(["cautious","normal","aggressive"],
-                              [pp.v_slow+0.5;pp.v_med;pp.v_fast],
-                              [pp.l_car]))]
+                              lane_terminate=false,
+                              behaviors=IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
+                                                 enumerate(Iterators.product(["cautious","normal","aggressive"],
+                                                        [pp.v_slow+0.5;pp.v_med;pp.v_fast],
+                                                        [pp.l_car]))],
+                              behavior_probabilities=WeightVec(ones(length(behaviors)))
+                              )
     return NoCrashIDMMOBILModel(
         nb_cars,
         pp,
         behaviors,
-        WeightVec(ones(length(behaviors))),
+        behavior_probabilities,
         1., # adjustment accel
         1.0/(2.0*pp.dt), # lane change rate
         0.5, # p_appear
