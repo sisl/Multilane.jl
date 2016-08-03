@@ -151,75 +151,27 @@ function assign_keys(problems::AbstractVector; rng=MersenneTwister(rand(UInt32))
     return Dict{UTF8String,Any}([(p_keys[i], problems[i]) for i in 1:length(problems)])
 end
 
-#=
-# can get rid of this after August 10 or so
-function evaluate(problem_pairs::AbstractVector,
-                  initial_states::AbstractVector,
-                  solvers::Dict{UTF8String, Solver};
-                  rng_offset=0, parallel=true)
-
-
-    nb_sims = length(problems)*length(initial_states)*length(solvers)
-    all_problems = Array(Any, nb_sims)
-    p_keys = UTF8String[randstring() for p in problems]
-    all_initial = Array(Any, nb_sims)
-    is_keys = UTF8String[randstring() for is in initial_states]
-    all_solvers = Array(Any, nb_sims)
-    stats = DataFrame(
-        id=1:nb_sims,
-        uuid=UInt128[Base.Random.uuid4() for i in 1:nb_sims],
-        solver_key=DataArray(UTF8String,nb_sims),
-        problem_key=DataArray(UTF8String,nb_sims),
-        initial_key=DataArray(UTF8String,nb_sims),
-        rng_seed=DataArray(Int,nb_sims),
-        time=ones(nb_sims).*time(),
-        )
-
-    id = 0
-    for p_i in 1:length(problems)
-        for is_i in 1:length(initial_states)
-            for solver_key in keys(solvers)
-                id += 1
-                stats[:solver_key][id] = solver_key
-                all_solvers[id] = deepcopy(solvers[solver_key])
-                stats[:problem_key][id] = p_keys[p_i]
-                all_problems[id] = problems[p_i]
-                stats[:initial_key][id] = is_keys[is_i]
-                all_initial[id] = initial_states[is_i]
-                stats[:rng_seed][id] = is_i+rng_offset
-            end
-        end
-    end
-
-    sims = run_simulations(all_problems, all_initial, all_solvers, nothing, rng_seeds=stats[:rng_seed], parallel=parallel)
-    fill_stats!(stats, all_problems, sims)
-    return Dict{UTF8String, Any}(
-        "nb_sims"=>nb_sims,
-        "solvers"=>solvers,
-        "problems"=>Dict{UTF8String,Any}([(p_keys[i], problems[i]) for i in 1:length(problems)]),
-        "initial_states"=>Dict{UTF8String,Any}([(is_keys[i], initial_states[i]) for i in 1:length(initial_states)]),
-        "stats"=>stats,
-        "histories"=>sims
-        )
-end
-=#
-
-function evaluate(problem::Dict{UTF8String,Any},
-                  initial_states::Dict{UTF8String,Any},
-                  solvers::Dict{UTF8String, Solver};
-                  soln_problems::Dict{UTF8String, Any}=problems,
+function evaluate(problem_keys::AbstractVector,
+                  is_keys::AbstractVector,
+                  solver_keys::AbstractVector,
+                  objects::Dict{UTF8String, Any};
+                  soln_problem_keys::AbstractVector=problem_keys,
                   N=length(initial_states),
                   rng_offset=0, parallel=true)
 
-    @assert length(problems) = length(soln_problems)
-    nb_sims = length(problems)*min(N,length(initial_states))*length(solvers)
+    @assert length(problem_keys) = length(soln_problem_keys)
+    nb_sims = length(problem_keys)*min(N,length(initial_states))*length(solvers)
     all_problems = Array(Any, nb_sims)
-    ep_keys = collect(keys(problems))
+    ep_keys = problem_keys
     all_soln_problems = Array(Any, nb_sims)
-    sp_keys = collect(keys(soln_problems))
+    sp_keys = soln_problem_keys
     all_initial = Array(Any, nb_sims)
-    is_keys = keys(initial_states)
     all_solvers = Array(Any, nb_sims)
+
+    solvers = objects["solvers"]
+    problems = objects["problems"]
+    initial_states = objects["initial_states"]
+
     stats = DataFrame(
         id=1:nb_sims,
         uuid=UInt128[Base.Random.uuid4() for i in 1:nb_sims],
@@ -232,18 +184,18 @@ function evaluate(problem::Dict{UTF8String,Any},
         )
 
     id = 0
-    for j in 1:length(problems)
+    for j in 1:length(problem_keys)
         ep_key = ep_keys[j]
         sp_key = sp_keys[j]
         for (is_i, is_key) in enumerate(take(is_keys, N))
-            for solver_key in keys(solvers)
+            for solver_key in solver_keys
                 id += 1
                 stats[:solver_key][id] = solver_key
                 all_solvers[id] = deepcopy(solvers[solver_key])
                 stats[:eval_problem_key][id] = ep_key
                 all_problems[id] = problems[p_key]
                 stats[:soln_problem_key][id] = sp_key
-                all_soln_problems[id] = soln_problems[sp_key]
+                all_soln_problems[id] = problems[sp_key]
                 stats[:initial_key][id] = is_key
                 all_initial[id] = initial_states[is_key]
                 stats[:rng_seed][id] = is_i+rng_offset

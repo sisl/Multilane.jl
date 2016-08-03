@@ -46,15 +46,6 @@ end
 type BehaviorRootUpdater <: Updater # {Union{POMCP.BeliefNode,DiscreteBehaviorBelief}}
     problem::NoCrashProblem
     smoothing::Float64 # value between 0 and 1, adds this fraction of the max to each entry in the vecot
-    behavior_map::Dict{Any, Int} # maps behaviors back to their index in the problem's behavior vector
-end
-
-function BehaviorRootUpdater(problem::NoCrashProblem, smoothing::Float64)
-    d = Dict{Any, Int}()
-    for (i, b) in enumerate(problem.dmodel.behaviors)
-        d[b] = i
-    end
-    return BehaviorRootUpdater(problem, smoothing, d)
 end
 
 initialize_belief(up::BehaviorRootUpdater, b) = POMCP.RootNode(b)
@@ -85,7 +76,7 @@ function update(up::BehaviorRootUpdater,
                     proportional_likelihood = proportional_normal_pdf(csp.vel,
                                                                       co.vel,
                                                                       up.problem.dmodel.vel_sigma)
-                    b_new.B.weights[io][up.behavior_map[get(csp.behavior)]] += proportional_likelihood
+                    b_new.B.weights[io][get(csp.behavior).idx] += proportional_likelihood
                     io += 1
                     isp += 1
                 elseif co.id < csp.id

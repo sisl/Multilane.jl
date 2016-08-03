@@ -438,6 +438,18 @@ function detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=
     return nb_brakes
 end
 
+"""
+Assign behaviors to a given physical state.
+"""
+function initial_state(mdp::NoCrashProblem, ps::MLPhysicalState, rng::AbstractRNG)
+    s = MLState(ps.crashed, Array(CarState, length(ps.env_cars)))
+    for i in 1:length(s.env_cars)
+        behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
+        s.env_cars[i] = CarState(ps.env_cars[i], behavior)
+    end
+    return s
+end
+
 function initial_state(mdp::NoCrashProblem, rng::AbstractRNG, s::MLState=create_state(mdp))
 
   srand(rand(rng, UInt32))
