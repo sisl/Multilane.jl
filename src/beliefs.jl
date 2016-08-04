@@ -59,7 +59,7 @@ function update(up::BehaviorRootUpdater,
     b_new.B.behaviors = up.problem.dmodel.behaviors
     resize!(b_new.B.weights, length(o.env_cars))
     for i in 1:length(o.env_cars)
-        b_new.B.weights[i] = zeros(length(up.behavior_map)) #XXX lots of allocation
+        b_new.B.weights[i] = zeros(length(up.problem.dmodel.behaviors)) #XXX lots of allocation
     end
     # ASSUMING IDs are monotonically increasing (is this true?)
     for child_node in values(b_old.children[a].children)

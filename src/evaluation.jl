@@ -42,8 +42,11 @@ function run_simulations(eval_problems::AbstractVector,
                          solvers::AbstractVector;
                          rng_seeds::AbstractVector=collect(1:length(eval_problems)),
                          parallel=true,
-                         max_steps=10000)
+                         max_steps=10000,
+                         desc="Progress: ")
+
     N = length(eval_problems)
+    prog = ProgressMeter.Progress( N, dt=0.1, barlen=30, output=STDERR, desc=desc)
     if parallel
         sims = pmap(test_run,
                     prog,
@@ -157,10 +160,11 @@ function evaluate(problem_keys::AbstractVector,
                   objects::Dict{UTF8String, Any};
                   soln_problem_keys::AbstractVector=problem_keys,
                   N=length(initial_states),
-                  rng_offset=0, parallel=true)
+                  rng_offset=0, parallel=true,
+                  desc="Progress: ")
 
-    @assert length(problem_keys) = length(soln_problem_keys)
-    nb_sims = length(problem_keys)*min(N,length(initial_states))*length(solvers)
+    @assert length(problem_keys) == length(soln_problem_keys)
+    nb_sims = length(problem_keys)*min(N,length(is_keys))*length(solver_keys)
     all_problems = Array(Any, nb_sims)
     ep_keys = problem_keys
     all_soln_problems = Array(Any, nb_sims)
@@ -193,7 +197,7 @@ function evaluate(problem_keys::AbstractVector,
                 stats[:solver_key][id] = solver_key
                 all_solvers[id] = deepcopy(solvers[solver_key])
                 stats[:eval_problem_key][id] = ep_key
-                all_problems[id] = problems[p_key]
+                all_problems[id] = problems[ep_key]
                 stats[:soln_problem_key][id] = sp_key
                 all_soln_problems[id] = problems[sp_key]
                 stats[:initial_key][id] = is_key
@@ -203,13 +207,11 @@ function evaluate(problem_keys::AbstractVector,
         end
     end
 
-    sims = run_simulations(all_problems, all_initial, all_soln_problems, all_solvers, rng_seeds=stats[:rng_seed], parallel=parallel)
+    sims = run_simulations(all_problems, all_initial, all_soln_problems, all_solvers, rng_seeds=stats[:rng_seed], parallel=parallel, desc=desc)
     fill_stats!(stats, all_problems, sims)
     return Dict{UTF8String, Any}(
-        "nb_sims"=>nb_sims,
         "solvers"=>solvers,
         "problems"=>problems,
-        "soln_problems"=>soln_problems,
         "initial_states"=>initial_states,
         "stats"=>stats,
         "histories"=>sims
@@ -221,13 +223,22 @@ end
 function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any}, r2::Dict{S2, Any})
     merge!(r1["solvers"], r2["solvers"])
     merge!(r1["problems"], r2["problems"])
-    merge!(r1["soln_problems"], r2["soln_problems"])
     merge!(r1["initial_states"], r2["initial_states"])
-    append!(r1["stats"], r2["stats"])
-    r1["stats"][:id][end-r2["nb_sims"]+1:end] += r1["nb_sims"]
-    r1["nb_sims"] += r2["nb_sims"]
-    if r1["histories"] != nothing && r2["histories"] != nothing
-        append!(r1["histories"], r2["histories"])
+    if haskey(r1, "stats")
+        len = nrow(r1["stats"])
+        append!(r1["stats"], r2["stats"])
+        r1["stats"][:id][end-len+1:end] += len
+    else
+        r1["stats"] = r2["stats"]
+    end
+    if haskey(r2, "histories")
+        if haskey(r1, "histories")
+            if r1["histories"] != nothing && r2["histories"] != nothing
+                append!(r1["histories"], r2["histories"])
+            end
+        else
+        r1["histories"] = r2["histories"]
+        end
     end
     return r1
 end
