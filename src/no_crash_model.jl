@@ -13,8 +13,9 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     nb_cars::Int
     phys_param::PhysicalParam
 
-    behaviors::Vector{BehaviorModel}
-    behavior_probabilities::WeightVec
+    # behaviors::Vector{BehaviorModel}
+    # behavior_probabilities::WeightVec
+    behaviors::BehaviorGenerator
 
     adjustment_acceleration::Float64
     lane_change_rate::Float64 # in LANES PER SECOND
