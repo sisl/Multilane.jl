@@ -196,7 +196,7 @@ function evaluate(problem_keys::AbstractVector,
                 id += 1
                 stats[:solver_key][id] = solver_key
                 all_solvers[id] = deepcopy(solvers[solver_key])
-                stats[:eval_problem_key][id] = ep_key
+                stats[:problem_key][id] = ep_key
                 all_problems[id] = problems[ep_key]
                 stats[:soln_problem_key][id] = sp_key
                 all_soln_problems[id] = problems[sp_key]
@@ -246,7 +246,7 @@ end
 function rerun{S<:AbstractString}(results::Dict{S, Any}, id; reward_assertion=true)
     stats = results["stats"]
     @assert stats[:id][id] == id
-    problem = results["problems"][stats[:eval_problem_key][id]]
+    problem = results["problems"][stats[:problem_key][id]]
     is = results["initial_states"][stats[:initial_key][id]]
     solver = results["solvers"][stats[:solver_key][id]]
     soln_problem = results["soln_problems"][stats[:soln_problem_key][id]]

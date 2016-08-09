@@ -91,7 +91,9 @@ export #data structure stuff
     rerun,
     assign_keys,
     test_run_return_policy,
-    lambda
+    lambda,
+    TestSet,
+    gen_initials
 
 
 export # POMDP belief stuff
@@ -112,6 +114,7 @@ include("behavior.jl")
 include("no_crash_model.jl")
 include("visualization.jl")
 include("evaluation.jl")
+include("test_sets.jl")
 include("robust_mdp.jl")
 include("pomdp_glue.jl")
 include("single_behavior.jl")

@@ -1,4 +1,4 @@
-using PyPlot
+# using PyPlot
 using Reel
 
 BEHAVIOR_COLORS = Dict{Float64,AbstractString}(0.5=>"#0101DF",0.25=>"#D7DF01",0.0=>"#FF0000")

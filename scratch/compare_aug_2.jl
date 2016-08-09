@@ -9,7 +9,7 @@ using POMDPs
 using DataFrames
 using Plots
 
-N=1
+N=500
 
 nb_lanes = 4
 desired_lane_reward = 10.
@@ -43,8 +43,8 @@ initial_states = Dict{UTF8String, Any}()
 state_lists = Dict{UTF8String, Any}()
 
 params = Dict{Symbol, Any}()
-# params[:lambda] = Float64[0.1, 1., 10., 17.78, 31.62, 56.23, 100., 1000.]
-params[:lambda] = Float64[0.1, 1.]
+params[:lambda] = Float64[0.1, 1., 10., 17.78, 31.62, 56.23, 100., 1000.]
+# params[:lambda] = Float64[0.1, 1.]
 params[:p_normal] = Float64[0.2, 1.0]
 
 initial_relevant = [:p_normal]
@@ -157,9 +157,6 @@ for p_normal in unique(param_table[:p_normal])
     end
 end
 
-@show results
-
-
 #=
 # Calculate single points
 point_solvers = Dict{UTF8String, Solver}(
@@ -209,6 +206,7 @@ curve_solvers = Dict{UTF8String, Solver}(
 curve_results = evaluate(problems, initial_states, curve_solvers, parallel=true, N=N)
 
 results = merge_results!(curve_results, point_results)
+=#
 
 println(results["stats"])
 
@@ -217,6 +215,7 @@ results["histories"] = nothing
 save(filename, results)
 println("results saved to $filename")
 
+#=
 stats = results["stats"]
 mean_performance = by(stats, :solver_key) do df
     by(df, :lambda) do df
