@@ -1,3 +1,4 @@
+include(Pkg.dir("AutomotiveDrivingModels", "src", "viz", "AutoViz.jl"))
 __precompile__()
 module Multilane
 
@@ -29,6 +30,11 @@ using POMDPToolbox
 import MCTS # so that we can define node_tag, etc.
 using RobustMCTS # for RobustMDP
 import POMCP # for particle filter
+
+using Reel
+using AutomotiveDrivingModels
+using AutoViz
+
 
 # package code goes here
 export
