@@ -5,16 +5,15 @@ solvers = Dict{UTF8String, Any}(
     "heuristic" => SimpleSolver()
 )
 
-curve = TestSet(lambda=[1., 10., 17.78, 31.62, 56.23, 100., 1000.], N=500)
+curve = TestSet(lambda=[1., 10., 17.78, 31.62, 56.23, 100., 1000.], N=1)
 
 tests = []
 push!(tests, TestSet(curve, solver_key="heuristic"))
-push!(tests, TestSet(curve, solver_key="heuristic", solver_behavior_probabilities=WeightVec([1.0,0,0])))
-# push!(tests, TestSet(curve, solver_key="dpw_300"))
-# push!(tests, TestSet(curve, solver_key="dpw_500"))
+push!(tests, TestSet(curve, solver_key="heuristic", solver_behaviors="3_even"))
 
-initials = gen_initials(tests)
+objects = gen_initials(tests)
 
-@show initials["param_table"]
+@show objects["param_table"] 
+objects["solvers"] = solvers
 
-# results = evaluate(tests, initials, solvers)
+results = evaluate(tests, objects)

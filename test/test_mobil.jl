@@ -302,5 +302,5 @@ function test_mobil()
 	test_get_rear_accel()
 	test_get_mobil_lane_change()
     failure_2()
-    failure_3()
+    # failure_3() # removed because of behavior generator change
 end

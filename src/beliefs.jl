@@ -54,12 +54,12 @@ function update(up::BehaviorRootUpdater,
                 b_old::POMCP.BeliefNode,
                 a::MLAction,
                 o::MLPhysicalState,
-                b_new::POMCP.RootNode=POMCP.RootNode(DiscreteBehaviorBelief(o, up.problem.dmodel.behaviors)))
+                b_new::POMCP.RootNode=POMCP.RootNode(DiscreteBehaviorBelief(o, up.problem.dmodel.behaviors.models)))
 
-    b_new.B.behaviors = up.problem.dmodel.behaviors
+    b_new.B.behaviors = up.problem.dmodel.behaviors.models
     resize!(b_new.B.weights, length(o.env_cars))
     for i in 1:length(o.env_cars)
-        b_new.B.weights[i] = zeros(length(up.problem.dmodel.behaviors)) #XXX lots of allocation
+        b_new.B.weights[i] = zeros(length(up.problem.dmodel.models)) #XXX lots of allocation
     end
     # ASSUMING IDs are monotonically increasing (is this true?)
     for child_node in values(b_old.children[a].children)

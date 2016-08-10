@@ -42,7 +42,7 @@ end
 
 type ParticleGenerator
     physical_state::MLPhysicalState
-    behaviors
+    behaviors # TODO: replace this with a DiscreteBehaviorSet
     weights::WeightVec
 end
 function ParticleGenerator(problem::NoCrashProblem, state::Union{MLState, MLPhysicalState})

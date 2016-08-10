@@ -7,7 +7,7 @@ function RobustMCTS.next_model(gen::RandomModelGenerator, rmdp::RobustNoCrashMDP
     behaviors = Dict{Int, Nullable{BehaviorModel}}(1=>nothing)
     for c in s.env_cars
         # TODO instead of just using sample, try to pick models that will be bad
-        behaviors[c.id] = sample(gen.rng, rmdp.base.dmodel.behaviors, rmdp.base.dmodel.behavior_probabilities)
+        behaviors[c.id] = rand(gen.rng, rmdp.base.dmodel.behaviors)
     end
     return FixedBehaviorNoCrashMDP(behaviors, rmdp.base)
 end
@@ -47,7 +47,7 @@ end
 function generate_sr(mdp::StochasticBehaviorNoCrashMDP, s::MLPhysicalState, a::MLAction, rng::AbstractRNG, sp::MLPhysicalState=create_state(mdp))
     full_s = MLState(s.crashed, Array(CarState, length(s.env_cars)))
     for i in 1:length(s.env_cars) 
-        full_s.env_cars[i] = CarState(s.env_cars[i], sample(rng, mdp.base.dmodel.behaviors, mdp.base.dmodel.behavior_probabilities))
+        full_s.env_cars[i] = CarState(s.env_cars[i], rand(rng, mdp.base.dmodel.behaviors))
     end
     full_sp = generate_s(mdp.base, full_s, a, rng)
     return MLPhysicalState(full_sp), reward(mdp.base, full_s, a, full_sp)

@@ -12,8 +12,7 @@ end
 
 function solve(solver::SingleBehaviorSolver, mdp::NoCrashMDP)
     single_behavior_mdp = deepcopy(mdp)
-    single_behavior_mdp.dmodel.behaviors = BehaviorModel[solver.behavior]
-    single_behavior_mdp.dmodel.behavior_probabilities = WeightVec([1.0])
+    single_behavior_mdp.dmodel.behaviors = DiscreteBehaviorSet(BehaviorModel[solver.behavior], WeightVec([1.0]))
 
     inner_policy = solve(solver.inner_solver, single_behavior_mdp)
     return SingleBehaviorPolicy(inner_policy, solver.behavior)

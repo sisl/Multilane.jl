@@ -8,31 +8,36 @@ const THREE_BEHAVIORS = IDMMOBILBehavior[
                     IDMMOBILBehavior("aggressive", PP.v_fast, PP.l_car, 3)
                     ]
 
+const NINE_BEHAVIORS = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
+                                                 enumerate(Iterators.product(["cautious","normal","aggressive"],
+                                                        [PP.v_slow+0.5;PP.v_med;PP.v_fast],
+                                                        [PP.l_car]))]
+
+
 const DEFAULT_BEHAVIORS = Dict{UTF8String, Any}(
-    "3" => THREE_BEHAVIORS
+    "3_even" => DiscreteBehaviorSet(THREE_BEHAVIORS, WeightVec(ones(3))),
+    "9_even" => DiscreteBehaviorSet(NINE_BEHAVIORS, WeightVec(ones(9)))
 )
 
 const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS like in linked
-    :behavior_probabilities => WeightVec([1/3, 1/3, 1/3]),
+    :behaviors => "9_even",
+    :lambda => [1.0]
     # :behavior_probabilities => 1
 )
-const DEFAULT_LINKED_PROBLEM_PARAMS = Dict{Symbol, AbstractVector}(
-    :lambda => [1.0]
-)
 
-const INITIAL_RELEVANT = [:behavior_probabilities]
+const INITIAL_RELEVANT = [:behaviors]
 
 type TestSet
     solver_key::UTF8String
     problem_params::Dict{Symbol, Any}
     solver_problem_params::Dict{Symbol, Any}
     linked_problem_params::Dict{Symbol, AbstractVector}
-    N::Int
+    N::Int # number of initial conditions
+    nb_problems::Int
     rng_seed::UInt32
     key::UTF8String
 end
 
-#=
 """
 Generate a test set.
 
@@ -45,20 +50,25 @@ will only be applied to the problem given to the solver, otherwise it will be
 applied to both problems. The arguments will be applied in order, so solver_
 parameter values should come later.
 """
-=#
-
 function TestSet(ts::TestSet=TestSet(randstring()); kwargs...)
     ts = deepcopy(ts)
     fn = fieldnames(TestSet)
     for (k,v) in kwargs
         if k in fn
             ts.(k) = v
-        elseif haskey(ts.linked_problem_params, k)
-            if isa(v, AbstractVector)
-                ts.linked_problem_params[k] = v
-            else
-                ts.linked_problem_params[k] = collect(v)
+        elseif isa(v, AbstractVector)
+            if ts.nb_problems == 1
+                ts.nb_problems = length(v)
             end
+            if length(v) != ts.nb_problems
+                error("""
+                    All linked parameters in a TestSet must have the same number of values.
+                    Argument $k had had $(length(v)) entries while others had $(ts.nb_problems) entries.
+                    """)
+            end
+            ts.linked_problem_params[k] = v
+            delete!(ts.problem_params, k)
+            delete!(ts.solver_problem_params, k)
         elseif haskey(ts.problem_params, k)
             problem_params[k] = v
             solver_problem_params[k] = v
@@ -81,10 +91,8 @@ function TestSet(key::AbstractString=randstring())
     return TestSet("",
             deepcopy(DEFAULT_PROBLEM_PARAMS),
             deepcopy(DEFAULT_PROBLEM_PARAMS),
-            deepcopy(DEFAULT_LINKED_PROBLEM_PARAMS),
-            500,
-            1,
-            key)
+            Dict{UTF8String, AbstractVector}(),
+            500, 1, 1, key)
 end
 
 # function TestSet(;key::AbstractString=randstring(), kwargs...)
@@ -120,20 +128,18 @@ function gen_base_problem()
     _discount = 1.0
     nb_cars = 10
     dmodel = NoCrashIDMMOBILModel(nb_cars, pp,
-                              behaviors=DEFAULT_BEHAVIORS["3"],
-                              behavior_probabilities=WeightVec([0.2, 0.4, 0.4]),
+                              behaviors=DEFAULT_BEHAVIORS["9_even"],
                               lane_terminate=false)
 
     base_problem = NoCrashMDP(dmodel, rmodel, _discount)
 end
 
-function gen_problem(row, rng::AbstractRNG)
+function gen_problem(row, behaviors::Dict{UTF8String,Any}, rng::AbstractRNG)
     problem = deepcopy(gen_base_problem())
     # lambda
     problem.rmodel.cost_dangerous_brake = row[:lambda]*problem.rmodel.reward_in_desired_lane
     # p_normal
-    probs = row[:behavior_probabilities]
-    problem.dmodel.behavior_probabilities = probs
+    problem.dmodel.behaviors = behaviors[row[:behaviors]]
     return problem
 end
 
@@ -194,7 +200,7 @@ function add_initials!(objects::Dict{UTF8String, Any}, ts::TestSet; behaviors::D
     for row in eachrow(param_table)
         if first(isna(row[:problem_key]))
             key = randstring(rng)
-            problems[key] = gen_problem(row, rng)
+            problems[key] = gen_problem(row, behaviors, rng)
             row[:problem_key] = key
         end
     end
@@ -220,7 +226,30 @@ function add_initials!(objects::Dict{UTF8String, Any}, ts::TestSet; behaviors::D
     return objects
 end
 
-function evaluate(tests::Vector{TestSet}, initials::Dict{UTF8String,Any}, solvers::Dict{UTF8String,Any})
+function find_row(table::DataFrame, vals::Dict{Symbol,Any})
+    for i in 1:nrow(table)
+        for (k,v) in vals
+            if table[i,k] != v
+                continue
+            end
+        end
+        return table[i,:]
+    end
+end
+
+"""
+Run the simulations in tests.
+"""
+function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any}; parallel=true, desc="Progress: ")
+
+    solvers = objects["solvers"]
+    problems = objects["problems"]
+    initial_states = objects["initial_states"]
+    param_table = objects["param_table"]
+    state_lists = objects["state_lists"]
+
+    nb_sims = sum([t.N*t.nb_problems for t in tests])
+
     stats = DataFrame(
         id=1:nb_sims,
         uuid=UInt128[Base.Random.uuid4() for i in 1:nb_sims],
@@ -232,22 +261,42 @@ function evaluate(tests::Vector{TestSet}, initials::Dict{UTF8String,Any}, solver
         time=ones(nb_sims).*time(),
     )
 
+    all_solvers = Array(Any, nb_sims)
+    all_problems = Array(Any, nb_sims)
+    all_soln_problems = Array(Any, nb_sims)
+    all_initial = Array(Any, nb_sims)
+
     id = 0
-    for j in 1:length(problem_keys)
-        ep_key = ep_keys[j]
-        sp_key = sp_keys[j]
-        for (is_i, is_key) in enumerate(take(is_keys, N))
-            for solver_key in solver_keys
+    for t in tests
+        solver_key = t.solver_key
+        for i in 1:t.nb_problems
+            # find the row  
+            d = Dict{Symbol, Any}()
+            solver_d = Dict{Symbol, Any}()
+            for (k,v) in t.problem_params
+                d[k] = v
+                solver_d[k] = t.solver_problem_params[k]
+            end
+            for (k,v) in t.linked_problem_params
+                d[k] = v[i]
+                solver_d[k] = v[i]
+            end
+            row = find_row(param_table, d)
+            ep_key = first(row[:problem_key])
+            solver_row = find_row(param_table, solver_d)
+            sp_key = first(solver_row[:problem_key])
+            is_keys = state_lists[first(row[:state_list_key])]
+            for (is_i, is_key) in enumerate(take(is_keys, t.N))
                 id += 1
                 stats[:solver_key][id] = solver_key
                 all_solvers[id] = deepcopy(solvers[solver_key])
-                stats[:problem_key][id] = ep_key
+                stats[:eval_problem_key][id] = ep_key
                 all_problems[id] = problems[ep_key]
                 stats[:soln_problem_key][id] = sp_key
                 all_soln_problems[id] = problems[sp_key]
                 stats[:initial_key][id] = is_key
                 all_initial[id] = initial_states[is_key]
-                stats[:rng_seed][id] = is_i+rng_offset
+                stats[:rng_seed][id] = is_i+t.rng_seed
             end
         end
     end

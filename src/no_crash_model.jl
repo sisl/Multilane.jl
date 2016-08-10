@@ -35,17 +35,15 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
                               pp::PhysicalParam;
                               vel_sigma = 0.5,
                               lane_terminate=false,
-                              behaviors=IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
+                              behaviors=DiscreteBehaviorSet(IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
                                                  enumerate(Iterators.product(["cautious","normal","aggressive"],
                                                         [pp.v_slow+0.5;pp.v_med;pp.v_fast],
-                                                        [pp.l_car]))],
-                              behavior_probabilities=WeightVec(ones(length(behaviors)))
+                                                        [pp.l_car]))], WeightVec(ones(9)))
                               )
     return NoCrashIDMMOBILModel(
         nb_cars,
         pp,
         behaviors,
-        behavior_probabilities,
         1., # adjustment accel
         1.0/(2.0*pp.dt), # lane change rate
         0.5, # p_appear
@@ -383,7 +381,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
             spot = rand(rng, clear_spots)
 
             next_id = maximum([c.id for c in s.env_cars]) + 1
-            behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities) # now generated above
+            behavior = rand(rng, mdp.dmodel.behaviors) # now generated above
             if spot[2] # at front
                 velp = sp.env_cars[1].vel - rand(rng) * min(mdp.dmodel.vel_sigma, sp.env_cars[1].vel - pp.v_min)
                 push!(sp.env_cars, CarState(pp.lane_length, spot[1], velp, 0.0, behavior, next_id))
@@ -445,7 +443,7 @@ Assign behaviors to a given physical state.
 function initial_state(mdp::NoCrashProblem, ps::MLPhysicalState, rng::AbstractRNG)
     s = MLState(ps.crashed, Array(CarState, length(ps.env_cars)))
     for i in 1:length(s.env_cars)
-        behavior = sample(rng, mdp.dmodel.behaviors, mdp.dmodel.behavior_probabilities)
+        behavior = rand(rng, mdp.dmodel.behaviors)
         s.env_cars[i] = CarState(ps.env_cars[i], behavior)
     end
     return s
@@ -495,8 +493,7 @@ function initial_state(mdp::NoCrashProblem, rng::AbstractRNG, s::MLState=create_
         continue
       end
       #sample Behavior TODO sample(rng,v,wv) in utils?
-      behavior = sample(rng, mdp.dmodel.behaviors,
-                        mdp.dmodel.behavior_probabilities)
+      behavior = rand(rng, mdp.dmodel.behaviors)
       #TODO need generic interface with behavior models for desired speed
 
       if lane == pos_y
@@ -505,7 +502,7 @@ function initial_state(mdp::NoCrashProblem, rng::AbstractRNG, s::MLState=create_
         if sample_front
           dist = sample_distance(mdp.dmodel,
                                   get(s.env_cars[last_front].behavior,
-                                      mdp.dmodel.behaviors[1]), #XXX temp
+                                      rand(rng, mdp.dmodel.behaviors)), #XXX temp
                                   rng)
           x = s.env_cars[last_front].x + dist
           last_front = idx
