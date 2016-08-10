@@ -1,5 +1,7 @@
 using Multilane
 using StatsBase
+using MCTS
+using JLD
 
 solvers = Dict{UTF8String, Any}()
 
@@ -29,3 +31,8 @@ objects = gen_initials(tests)
 objects["solvers"] = solvers
 
 results = evaluate(tests, objects)
+
+filename = string("results_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")
+results["histories"] = nothing
+save(filename, results)
+println("results saved to $filename")

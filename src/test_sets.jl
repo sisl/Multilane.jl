@@ -308,7 +308,8 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any}; parallel
         "problems"=>problems,
         "initial_states"=>initial_states,
         "stats"=>stats,
-        "histories"=>sims
+        "histories"=>sims,
+        "tests"=>Dict{UTF8String,Any}([(t.key, t) for t in tests])
         )
 
 end
