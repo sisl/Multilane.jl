@@ -3,6 +3,8 @@ using StatsBase
 using MCTS
 using JLD
 
+
+
 solvers = Dict{UTF8String, Any}()
 
 dpws = DPWSolver(depth=20,
@@ -17,6 +19,8 @@ dpws.n_iterations = 300
 solvers["dpw_300"] = deepcopy(dpws)
 dpws.n_iterations = 500
 solvers["dpw_500"] = deepcopy(dpws)
+dpws.n_iterations = 1000
+solvers["dpw_1000"] = deepcopy(dpws)
 
 curve = TestSet(lambda=[1., 10., 17.78, 31.62, 56.23, 100.], N=500)
 

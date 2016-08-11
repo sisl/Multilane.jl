@@ -85,18 +85,24 @@ if args["unicode"] || args["plot"]
         else
             pyplot()
         end
-        for g in groupby(mean_performance, :solver_key)
-            if size(g,1) > 1
-                # plot!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
-                # plt = plot!(g, :time_to_lane, :nb_brakes, group=:solver_key)
-                plot!(g, :time_to_lane, :brakes_per_sec, group=:solver_key)
-            else
-                # scatter!(g, :steps_in_lane, :nb_brakes, group=:solver_key)
-                # scatter!(g, :time_to_lane, :nb_brakes, group=:solver_key)
-                scatter!(g, :time_to_lane, :brakes_per_sec, group=:solver_key)
+        if haskey(results, "tests")
+            for g in groupby(mean_performance, test_key)
+                if size(g,1) > 1
+                    plot!(g, :time_to_lane, :brakes_per_sec, group=:test_key)
+                else
+                    scatter!(g, :time_to_lane, :brakes_per_sec, group=:test_key)
+                end
             end
+        else # old way, before test sets
+            for g in groupby(mean_performance, :solver_key)
+                if size(g,1) > 1
+                    plot!(g, :time_to_lane, :brakes_per_sec, group=:solver_key)
+                else
+                    scatter!(g, :time_to_lane, :brakes_per_sec, group=:solver_key)
+                end
+            end
+            gui()
         end
-        gui()
     catch ex
         warn("Plot could not be displayed:")
         println(ex)

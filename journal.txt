@@ -1,6 +1,12 @@
+Thu 11 Aug 2016 09:33:51 AM PDT
+
+[X] rename :eval_problem_key to :problem_key in stats
+[X] rename :soln_problem_key to :solver_problem_key
+[X] record test_set_key in stats
+
 Wed 10 Aug 2016 09:43:55 AM PDT
 
-[ ] separate parameters by product and non-product
+[X] separate parameters by product and non-product
 
 Wed 27 Jul 2016 11:03:03 AM PDT
 

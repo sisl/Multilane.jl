@@ -1,4 +1,3 @@
-
 const PP = PhysicalParam(4)
 
 const NORMAL_BEHAVIOR = IDMMOBILBehavior("normal", PP.v_med, PP.l_car, 1)
@@ -21,7 +20,7 @@ const DEFAULT_BEHAVIORS = Dict{UTF8String, Any}(
 
 const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS like in linked
     :behaviors => "9_even",
-    :lambda => [1.0]
+    :lambda => 1.0
     # :behavior_probabilities => 1
 )
 
@@ -70,8 +69,8 @@ function TestSet(ts::TestSet=TestSet(randstring()); kwargs...)
             delete!(ts.problem_params, k)
             delete!(ts.solver_problem_params, k)
         elseif haskey(ts.problem_params, k)
-            problem_params[k] = v
-            solver_problem_params[k] = v
+            ts.problem_params[k] = v
+            ts.solver_problem_params[k] = v
         else
             solver_match = match(r"solver_(.*)", string(k))
             if solver_match != nothing
@@ -228,12 +227,16 @@ end
 
 function find_row(table::DataFrame, vals::Dict{Symbol,Any})
     for i in 1:nrow(table)
+        found = true
         for (k,v) in vals
             if table[i,k] != v
-                continue
+                found = false
+                break
             end
         end
-        return table[i,:]
+        if found
+            return table[i,:]
+        end
     end
 end
 
@@ -254,8 +257,9 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any}; parallel
         id=1:nb_sims,
         uuid=UInt128[Base.Random.uuid4() for i in 1:nb_sims],
         solver_key=DataArray(UTF8String,nb_sims),
-        eval_problem_key=DataArray(UTF8String,nb_sims),
-        soln_problem_key=DataArray(UTF8String,nb_sims),
+        problem_key=DataArray(UTF8String,nb_sims),
+        solver_problem_key=DataArray(UTF8String,nb_sims),
+        test_key=DataArray(UTF8String,nb_sims),
         initial_key=DataArray(UTF8String,nb_sims),
         rng_seed=DataArray(Int,nb_sims),
         time=ones(nb_sims).*time(),
@@ -263,11 +267,12 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any}; parallel
 
     all_solvers = Array(Any, nb_sims)
     all_problems = Array(Any, nb_sims)
-    all_soln_problems = Array(Any, nb_sims)
+    all_solver_problems = Array(Any, nb_sims)
     all_initial = Array(Any, nb_sims)
 
     id = 0
     for t in tests
+        test_key = t.key
         solver_key = t.solver_key
         for i in 1:t.nb_problems
             # find the row  
@@ -290,19 +295,28 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any}; parallel
                 id += 1
                 stats[:solver_key][id] = solver_key
                 all_solvers[id] = deepcopy(solvers[solver_key])
-                stats[:eval_problem_key][id] = ep_key
+                stats[:problem_key][id] = ep_key
                 all_problems[id] = problems[ep_key]
-                stats[:soln_problem_key][id] = sp_key
-                all_soln_problems[id] = problems[sp_key]
+                stats[:solver_problem_key][id] = sp_key
+                all_solver_problems[id] = problems[sp_key]
                 stats[:initial_key][id] = is_key
                 all_initial[id] = initial_states[is_key]
                 stats[:rng_seed][id] = is_i+t.rng_seed
+                stats[:test_key][id] = test_key
             end
         end
     end
 
-    sims = run_simulations(all_problems, all_initial, all_soln_problems, all_solvers, rng_seeds=stats[:rng_seed], parallel=parallel, desc=desc)
+    sims = run_simulations(all_problems, all_initial, all_solver_problems, all_solvers, rng_seeds=stats[:rng_seed], parallel=parallel, desc=desc)
     fill_stats!(stats, all_problems, sims)
+
+    results = deepcopy(objects)
+    results["stats"] = stats
+    results["histories"] = sims
+    results["tests"] = Dict{UTF8String,Any}([(t.key, t) for t in tests])
+    return results
+
+    #=
     return Dict{UTF8String, Any}(
         "solvers"=>solvers,
         "problems"=>problems,
@@ -311,5 +325,6 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any}; parallel
         "histories"=>sims,
         "tests"=>Dict{UTF8String,Any}([(t.key, t) for t in tests])
         )
+        =#
 
 end

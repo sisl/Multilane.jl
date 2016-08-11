@@ -1,4 +1,3 @@
-include(Pkg.dir("AutomotiveDrivingModels", "src", "viz", "AutoViz.jl"))
 __precompile__()
 module Multilane
 
@@ -62,7 +61,8 @@ export
     MLPOMDPSolver,
     MLPOMDPAgent,
     BehaviorRootUpdater,
-    BehaviorRootUpdaterStub
+    BehaviorRootUpdaterStub,
+    DiscreteBehaviorSet
 
 export
     NoCrashRewardModel,
