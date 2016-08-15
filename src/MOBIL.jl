@@ -64,6 +64,7 @@ function get_neighborhood(pp::PhysicalParam,s::Union{MLState,MLObs},idx::Int)
     
     Note: The same car can occupy two spots if the vehicle is changing lanes.
 	"""
+
 	x = s.env_cars[idx]
 	#rightmost lane: no one to the right
 	if x.y <= 1.
@@ -85,7 +86,8 @@ function get_neighborhood(pp::PhysicalParam,s::Union{MLState,MLObs},idx::Int)
 
 		dlane = lane - x.y #NOTE float: convert to int
 		#too distant to be a neighbor
-		if abs(dlane) > 2.
+		# if abs(dlane) > 2.
+		if abs(dlane) >= 2. # changed august 13 - don't remember why this was > 2
 			continue
 		# elseif abs(dlane) <= 0.5 # this is now handled below in the overlap section
 		# 	dlane = 0
@@ -142,7 +144,8 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 	if isnull(s.env_cars[nbhd[5+dir]].behavior)
         # calculate the braking they will have to do for safety
         gap = s.env_cars[idx].x - s.env_cars[nbhd[5+dir]].x - pp.l_car
-        braking_acc = max_safe_acc(gap, s.env_cars[nbhd[5+dir]].vel, v, pp.brake_limit, pp.dt)
+        n_braking_acc = nullable_max_safe_acc(gap, s.env_cars[nbhd[5+dir]].vel, v, pp.brake_limit, pp.dt)
+        braking_acc = get(n_braking_acc, -pp.brake_limit)
 		return min(braking_acc, 0.0), 0.0
 	end
 

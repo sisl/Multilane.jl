@@ -23,19 +23,37 @@ function write_tmp_gif(mdp, sim::HistoryRecorder)
     dt = mdp.dmodel.phys_param.dt
     S = sim.state_hist
     A = sim.action_hist
-    film = roll(fps = 1/dt, duration = dt*(length(sim.action_hist)-1)) do t, dt
+    length(sim.action_hist)
+    film = roll(fps = 1/dt, duration = dt*(length(sim.state_hist))) do t, dt
         i = round(Int, t/dt)+1
-        print('.')
-        visualize(mdp, S[i], A[i], S[i+1])
+        if i == length(sim.state_hist)
+            visualize(mdp, S[i])
+        else
+            visualize(mdp, S[i], A[i], S[i+1], idx=Nullable(i))
+        end
     end
     filename = string(tempname(), ".gif")
     write(filename, film)
     return filename
 end
 
-function visualize(mdp::Union{MLMDP,MLPOMDP},
-                   s::MLState, a::MLAction, sp=create_state(mdp))
-    visualize(mdp, s)
+function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState, a::MLAction, sp=create_state(mdp);
+                   idx::Nullable{Int}=nothing)
+    pp = mdp.dmodel.phys_param
+    roadway = gen_straight_roadway(pp.nb_lanes,
+                                   pp.lane_length,
+                                   lane_width=pp.w_lane)
+
+    hbol = HardBrakeOverlay(pp, braking_ids(mdp, s, sp))
+    iol = InfoOverlay(pp, idx, s.env_cars[1].vel)
+    cidol = CarIDOverlay()
+
+    scene = Scene()
+    for cs in s.env_cars
+        push!(scene, Vehicle(VehicleState(VecSE2(cs.x, (cs.y-1.0)*pp.w_lane, 0.0), roadway, 30.0), 
+                                VehicleDef(cs.id, AgentClass.CAR, pp.l_car, pp.w_car)))
+    end
+    render(scene, roadway, [hbol, iol, cidol], cam=FitToContentCamera())
 end
 
 function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState)
@@ -50,6 +68,72 @@ function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState)
     end
     render(scene, roadway, cam=FitToContentCamera())
 end
+
+type HardBrakeOverlay <: SceneOverlay
+    pp::PhysicalParam
+    ids::Vector{Int}
+end
+
+function AutoViz.render!(rm::RenderModel, o::HardBrakeOverlay, scene::Scene, roadway::Roadway)
+    for veh in scene
+        if veh.def.id in o.ids
+            for (size, offset) in [(1.2,0.4), (1.0,0.8), (0.8,1.2)]
+                top = VecE2(veh.state.posG) + VecE2(-((1.+offset)*o.pp.l_car/2), size*o.pp.w_car/2)
+                bottom = VecE2(veh.state.posG) + VecE2(-((1.+offset)*o.pp.l_car/2), -size*o.pp.w_car/2)
+                add_instruction!(rm, render_line_segment, (top.x, top.y, bottom.x, bottom.y, colorant"red", 0.3))
+            end
+        end
+    end
+    # if !isempty(o.ids)
+    #     add_instruction!(rendermodel, render_text, ("Hard Brake(s)!", 0, 15, 12, colorant"red"))
+    # end
+end
+
+type InfoOverlay <: SceneOverlay
+    pp::PhysicalParam
+    state_index::Nullable{Int}
+    vel::Float64
+end
+
+function AutoViz.render!(rm::RenderModel, o::InfoOverlay, scene::Scene, roadway::Roadway)
+    line_delta = 1.6
+    top_line_y = -o.pp.w_lane/2.0 - line_delta
+    y = top_line_y
+    if !isnull(o.state_index)
+        add_instruction!(rm, render_text,
+                         ("state index: $(get(o.state_index))", 0, y, 12, colorant"white"))
+        y -= line_delta
+    end
+    add_instruction!(rm, render_text,
+                     (@sprintf("velocity: %5.2f m/s", o.vel), 0, y, 12, colorant"white"))
+    y -= line_delta
+end
+
+type CarIDOverlay <: SceneOverlay end
+
+function AutoViz.render!(rm::RenderModel, o::CarIDOverlay, scene::Scene, roadway::Roadway)
+    for (i,v) in enumerate(scene)
+        cx = v.state.posG.x
+        cy = v.state.posG.y
+        nx = cx - v.def.length/2
+        ny = cy + v.def.width/2 - 0.6
+        add_instruction!(rm, render_text,
+                         (@sprintf("%02.d",i), nx, ny, 7, colorant"white"))
+        idx = cx - v.def.length/2
+        idy = cy - v.def.width/2 + 0.1
+        add_instruction!(rm, render_text,
+                         (@sprintf("id %02.d",v.def.id), idx, idy, 7, colorant"white"))
+    end
+end
+
+
+#=
+type HelloWorldOverlay <: SceneOverlay end
+
+function AutoViz.render!(rendermodel::RenderModel, overlay::HelloWorldOverlay, scene::Scene, roadway::Roadway)
+    add_instruction!(rendermodel, render_text, ("Hello World!", 0, 0, 12, colorant"white"))
+end
+=#
 
 #=
 function draw_bang(x::Union{Float64,Int},

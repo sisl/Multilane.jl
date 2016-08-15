@@ -20,7 +20,7 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsMode
 	dt = pp.dt
 	car = s.env_cars[idx]
 	vel = car.vel
-
+    
 	dv, ds = get_dv_ds(pp,s,neighborhood,idx,2)
 
 	dvel = get_idm_dv(bmodel.p_idm,dt,vel,dv,ds) #call idm model

@@ -87,7 +87,9 @@ export
     is_crash,
     visualize,
     display_sim,
-    write_tmp_gif
+    write_tmp_gif,
+    detect_braking,
+    braking_ids
 
 export #data structure stuff
     ste,
@@ -99,7 +101,8 @@ export #data structure stuff
     test_run_return_policy,
     lambda,
     TestSet,
-    gen_initials
+    gen_initials,
+    run_simulations
 
 
 export # POMDP belief stuff

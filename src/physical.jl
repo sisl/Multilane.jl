@@ -13,7 +13,7 @@ type PhysicalParam
 	v_med::Float64
 	v_max::Float64
 	v_min::Float64
-    brake_limit::Float64
+    brake_limit::Float64 # always positive
     nb_lanes::Int
 	lane_length::Float64
 end

@@ -154,7 +154,8 @@ function max_safe_acc(mdp::NoCrashProblem, s::Union{MLState,MLObs}, lane_change:
         if car_in_front == 0
             return Inf
         else
-            return max_safe_acc(smallest_gap, ego.vel, s.env_cars[car_in_front].vel, bp, dt)
+            n_brake_acc = nullable_max_safe_acc(smallest_gap, ego.vel, s.env_cars[car_in_front].vel, bp, dt)
+            return get(n_brake_acc, -mdp.dmodel.phys_param.brake_limit)
         end
     end
     return Inf
@@ -168,10 +169,39 @@ function max_safe_acc(gap, v_behind, v_ahead, braking_limit, dt)
     v = v_behind
     vo = v_ahead
     g = gap
-    bp = braking_limit
     # VVV see mathematica notebook
-    return - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
+    # return - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
+    ret = 0.0
+    try
+        ret = - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
+    catch ex
+        @show gap
+        @show v_behind
+        @show v_ahead
+        @show braking_limit
+        @show dt
+        rethrow(ex)
+    end
+    return ret
 end
+
+"""
+Return max_safe_acc or an empty Nullable if the discriminant is negative.
+"""
+function nullable_max_safe_acc(gap, v_behind, v_ahead, braking_limit, dt)
+    bp = braking_limit
+    v = v_behind
+    vo = v_ahead
+    g = gap
+    # VVV see mathematica notebook
+    discriminant = 8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2
+    if discriminant >= 0.0
+        return Nullable{Float64}(- (bp*dt + 2.*v - sqrt(discriminant)) / (2.*dt))
+    else
+        return Nullable{Float64}()
+    end
+end
+
 
 #=
 # I think this is wrong (7/13)
@@ -192,24 +222,17 @@ max_dx(cs::CarStateObs, dt::Float64) = cs.x + (cs.vel + 2.1/2.)*dt # Max accel i
 # """
 
 function is_safe(mdp::NoCrashProblem, s::Union{MLState,MLObs}, a::MLAction)
+    dt = mdp.dmodel.phys_param.dt
     if a.acc >= max_safe_acc(mdp, s, a.lane_change)
         return false
     end
     # check whether we will go into anyone else's lane so close that they might hit us or we might run into them
     if isinteger(s.env_cars[1].y) && a.lane_change != 0.0
-        dt = mdp.dmodel.phys_param.dt
         l_car = mdp.dmodel.phys_param.l_car
         for i in 2:length(s.env_cars)
             car = s.env_cars[i]
             ego = s.env_cars[1]
             if car.x < ego.x + l_car && occupation_overlap(ego.y, a.lane_change, car.y, 0.0)  # ego is in front of car
-                # #   Note: can overestimate max_dx (operate conservatively)
-                # #  this doesn't seem right - this only checks one step into the future
-                # dx = typeof(s)<:MLState ? max_dx(get(car.behavior), car, dt) : max_dx(car, dt)
-                # if ego.x + (ego.vel + dt*a.acc/2.0)*dt - (car.x + dx) < mdp.dmodel.phys_param.l_car
-                #     return false
-                # end
-                
                 # New definition of safe - the car behind can brake at max braking to avoid the ego if the ego
                 # slams on his brakes
                 # XXX IS THIS RIGHT??
@@ -218,8 +241,8 @@ function is_safe(mdp::NoCrashProblem, s::Union{MLState,MLObs}, a::MLAction)
                 if gap <= 0.0
                     return false
                 end
-                braking_acc = max_safe_acc(gap, car.vel, ego.vel, mdp.dmodel.phys_param.brake_limit, dt)
-                if braking_acc < -mdp.dmodel.phys_param.brake_limit
+                n_braking_acc = nullable_max_safe_acc(gap, car.vel, ego.vel, mdp.dmodel.phys_param.brake_limit, dt)
+                if isnull(n_braking_acc) || get(n_braking_acc) < -mdp.dmodel.phys_param.brake_limit
                 # if braking_acc < 0.0
                     return false
                 end
@@ -318,7 +341,8 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         car = s.env_cars[i]
         xp = car.x + (dxs[i] - dxs[1])
         yp = car.y + dys[i]
-        velp = max(min(car.vel + dvs[i],pp.v_max), pp.v_min)
+        # velp = max(min(car.vel + dvs[i],pp.v_max), pp.v_min)
+        velp = max(car.vel + dvs[i], 0.0) # removed speed limits on 8/13
         # note lane change is updated above
 
         # check if a lane was crossed and snap back to it
@@ -436,6 +460,36 @@ function detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=
     # @assert nb_leaving <= 5 # sanity check - can remove this if it is violated as long as it doesn't happen all the time
     return nb_brakes
 end
+
+"""
+Return the ids of cars that brake during this state transition
+"""
+function braking_ids(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=mdp.rmodel.dangerous_brake_threshold)
+    braking = Int[]
+    nb_leaving = 0 
+    dt = mdp.dmodel.phys_param.dt
+    for (i,c) in enumerate(s.env_cars)
+        if length(sp.env_cars) >= i-nb_leaving
+            cp = sp.env_cars[i-nb_leaving]
+        else
+            break
+        end
+        if cp.id != c.id
+            nb_leaving += 1
+            continue
+        else
+            acc = (cp.vel-c.vel)/dt
+            if acc < -threshold
+                push!(braking, c.id)
+            end
+        end
+    end
+    # @assert nb_leaving <= 5 # sanity check - can remove this if it is violated as long as it doesn't happen all the time
+    return braking
+end
+
+
+
 
 """
 Assign behaviors to a given physical state.

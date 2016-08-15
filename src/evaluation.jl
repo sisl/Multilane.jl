@@ -1,23 +1,23 @@
 import Base: mean, std, repr, length
 import Iterators: take
 
-function test_run(eval_problem::NoCrashMDP, initial_state::MLState, soln_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
+function test_run(eval_problem::NoCrashMDP, initial_state::MLState, solver_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
     if isa(solver, RandomSolver)
         solver.rng = MersenneTwister(rng_seed)
     end
-    sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
+    sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps, capture_exception=true)
     terminal_problem = deepcopy(eval_problem)
     terminal_problem.dmodel.lane_terminate = true
-    r = simulate(sim, terminal_problem, solve(solver,soln_problem), initial_state)
+    r = simulate(sim, terminal_problem, solve(solver,solver_problem), initial_state)
     return sim
 end
 
-function test_run_return_policy(eval_problem::NoCrashMDP, initial_state::MLState, soln_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
+function test_run_return_policy(eval_problem::NoCrashMDP, initial_state::MLState, solver_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
     if isa(solver, RandomSolver)
         solver.rng = MersenneTwister(rng_seed)
     end
-    sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
-    policy = solve(solver, soln_problem)
+    sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps, capture_exception=true)
+    policy = solve(solver, solver_problem)
     terminal_problem = deepcopy(eval_problem)
     terminal_problem.dmodel.lane_terminate = true
     r = simulate(sim, terminal_problem, policy, initial_state)
@@ -38,7 +38,7 @@ end
 
 function run_simulations(eval_problems::AbstractVector,
                          initial_states::AbstractVector,
-                         soln_problems::AbstractVector,
+                         solver_problems::AbstractVector,
                          solvers::AbstractVector;
                          rng_seeds::AbstractVector=collect(1:length(eval_problems)),
                          parallel=true,
@@ -52,7 +52,7 @@ function run_simulations(eval_problems::AbstractVector,
                     prog,
                     eval_problems,
                     initial_states,
-                    soln_problems,
+                    solver_problems,
                     solvers,
                     rng_seeds,
                     max_steps*ones(Int,N)
@@ -60,17 +60,31 @@ function run_simulations(eval_problems::AbstractVector,
     else
         sims = Array(HistoryRecorder, length(eval_problems))
         @showprogress for j in 1:length(eval_problems)
-            sims[j] = test_run(eval_problems[j], initial_states[j], solvers[j], rng_seeds[j], max_steps)
+            sims[j] = test_run(eval_problems[j],
+                               initial_states[j],
+                               solver_problems[j],
+                               solvers[j],
+                               rng_seeds[j],
+                               max_steps)
         end
     end
 
     for (i,r) in enumerate(sims)
-        if isa(r, RemoteException)
+        if isa(r, RemoteException) || !isnull(r.exception)
             println("Exception in simulation $(i)!")
             println("===============================")
-            println(r.captured.ex)
-            # @show r.captured.processed_bt
-            Base.show_backtrace(STDOUT, r.captured.processed_bt)
+            if isa(r, RemoteException)
+                Base.showerror(STDOUT, r.captured.ex)
+                println()
+                # @show r.captured.processed_bt
+                Base.show_backtrace(STDOUT, r.captured.processed_bt)
+                println()
+            else
+                Base.showerror(STDOUT, get(r.exception))
+                println()
+                Base.show_backtrace(STDOUT, get(r.backtrace))
+                println()
+            end
             println("===============================")
             println("")
         end
@@ -158,17 +172,17 @@ function evaluate(problem_keys::AbstractVector,
                   is_keys::AbstractVector,
                   solver_keys::AbstractVector,
                   objects::Dict{UTF8String, Any};
-                  soln_problem_keys::AbstractVector=problem_keys,
+                  solver_problem_keys::AbstractVector=problem_keys,
                   N=length(initial_states),
                   rng_offset=0, parallel=true,
                   desc="Progress: ")
 
-    @assert length(problem_keys) == length(soln_problem_keys)
+    @assert length(problem_keys) == length(solver_problem_keys)
     nb_sims = length(problem_keys)*min(N,length(is_keys))*length(solver_keys)
     all_problems = Array(Any, nb_sims)
     ep_keys = problem_keys
-    all_soln_problems = Array(Any, nb_sims)
-    sp_keys = soln_problem_keys
+    all_solver_problems = Array(Any, nb_sims)
+    sp_keys = solver_problem_keys
     all_initial = Array(Any, nb_sims)
     all_solvers = Array(Any, nb_sims)
 
@@ -181,7 +195,7 @@ function evaluate(problem_keys::AbstractVector,
         uuid=UInt128[Base.Random.uuid4() for i in 1:nb_sims],
         solver_key=DataArray(UTF8String,nb_sims),
         eval_problem_key=DataArray(UTF8String,nb_sims),
-        soln_problem_key=DataArray(UTF8String,nb_sims),
+        solver_problem_key=DataArray(UTF8String,nb_sims),
         initial_key=DataArray(UTF8String,nb_sims),
         rng_seed=DataArray(Int,nb_sims),
         time=ones(nb_sims).*time(),
@@ -198,8 +212,8 @@ function evaluate(problem_keys::AbstractVector,
                 all_solvers[id] = deepcopy(solvers[solver_key])
                 stats[:problem_key][id] = ep_key
                 all_problems[id] = problems[ep_key]
-                stats[:soln_problem_key][id] = sp_key
-                all_soln_problems[id] = problems[sp_key]
+                stats[:solver_problem_key][id] = sp_key
+                all_solver_problems[id] = problems[sp_key]
                 stats[:initial_key][id] = is_key
                 all_initial[id] = initial_states[is_key]
                 stats[:rng_seed][id] = is_i+rng_offset
@@ -207,7 +221,7 @@ function evaluate(problem_keys::AbstractVector,
         end
     end
 
-    sims = run_simulations(all_problems, all_initial, all_soln_problems, all_solvers, rng_seeds=stats[:rng_seed], parallel=parallel, desc=desc)
+    sims = run_simulations(all_problems, all_initial, all_solver_problems, all_solvers, rng_seeds=stats[:rng_seed], parallel=parallel, desc=desc)
     fill_stats!(stats, all_problems, sims)
     return Dict{UTF8String, Any}(
         "solvers"=>solvers,
@@ -219,7 +233,7 @@ function evaluate(problem_keys::AbstractVector,
 end
 
 
-
+#= # does not work right now
 function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any}, r2::Dict{S2, Any})
     merge!(r1["solvers"], r2["solvers"])
     merge!(r1["problems"], r2["problems"])
@@ -242,6 +256,7 @@ function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any
     end
     return r1
 end
+=#
 
 function rerun{S<:AbstractString}(results::Dict{S, Any}, id; reward_assertion=true)
     stats = results["stats"]
@@ -249,7 +264,7 @@ function rerun{S<:AbstractString}(results::Dict{S, Any}, id; reward_assertion=tr
     problem = results["problems"][stats[:problem_key][id]]
     is = results["initial_states"][stats[:initial_key][id]]
     solver = results["solvers"][stats[:solver_key][id]]
-    soln_problem = results["soln_problems"][stats[:soln_problem_key][id]]
+    solver_problem = results["solver_problems"][stats[:solver_problem_key][id]]
     rng_seed = stats[:rng_seed][id]
     steps = stats[:steps][id]
     sim, policy = test_run_return_policy(problem, is, solver, rng_seed, steps)

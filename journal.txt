@@ -1,3 +1,17 @@
+Sat 13 Aug 2016 10:48:57 AM PDT
+
+[X] State num overlay
+[X] Car ID Overlay
+[ ] Debug braking
+
+Thu 11 Aug 2016 05:50:20 PM PDT
+
+Overlays:
+[O] crash
+[X] Hello World
+[X] hard brake
+[O] behavior type
+
 Thu 11 Aug 2016 09:33:51 AM PDT
 
 [X] rename :eval_problem_key to :problem_key in stats
