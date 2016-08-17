@@ -60,5 +60,5 @@ function get_idm_dv(p::IDMParam,dt::Float64,v::Float64,dv::Float64,s::Float64)
 	s_ = get_idm_s_star(p, v, dv)
     dvdt = p.a*(1.-(v/p.v0)^p.del - (s_/s)^2)
 	#dvdt = min(max(dvdt,-p.b),p.a)
-	return dvdt*dt
+	return (dvdt*dt)::Float64
 end #get_idm_dv

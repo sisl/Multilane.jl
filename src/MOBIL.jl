@@ -124,7 +124,7 @@ function get_dv_ds(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,idy:
 	dv = nbr != 0 ? -1*sign((idy-3.5))*(car.vel - s.env_cars[nbr].vel) : 0. #XXX What is idy doing here??? (Zach, 7/13/16)
 	ds = nbr != 0 ? abs(s.env_cars[nbr].x - car.x) - pp.l_car : 1000.
 
-	return dv, ds
+	return dv::Float64, ds::Float64
 end
 
 """
@@ -136,7 +136,7 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 
 	#there is no car behind in that spot
 	if nbhd[5+dir] == 0
-		return 0., 0.
+		return 0.::Float64, 0.::Float64
 	end
 
 	v = s.env_cars[idx].vel
@@ -146,7 +146,7 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
         gap = s.env_cars[idx].x - s.env_cars[nbhd[5+dir]].x - pp.l_car
         n_braking_acc = nullable_max_safe_acc(gap, s.env_cars[nbhd[5+dir]].vel, v, pp.brake_limit, pp.dt)
         braking_acc = get(n_braking_acc, -pp.brake_limit)
-		return min(braking_acc, 0.0), 0.0
+		return min(braking_acc, 0.0)::Float64, 0.0::Float64
 	end
 
 	#behind - me
@@ -170,9 +170,10 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 	a_follower = get_idm_dv(behind_idm,dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
 	a_follower_ = get_idm_dv(behind_idm,dt,v_behind,dv_behind_,s_behind_)/dt
 
-	return a_follower, a_follower_
+	return a_follower::Float64, a_follower_::Float64
 end
 
+# should return a float
 function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,rng::AbstractRNG=MersenneTwister(123))
 	#TODO: catch if the parameters don't exist
 
@@ -186,7 +187,7 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 	p_mobil = get(state.behavior).p_mobil
 	#println(neighborhood)
 	if sum(nbhd) == 0
-		return 0 #no reason to change lanes if you're all alone
+		return 0. #no reason to change lanes if you're all alone
 	end
 
 	##if between lanes, return +1 if moving left, -1 if moving right
@@ -197,7 +198,7 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 	v = state.vel
 	#get predicted and potential accelerations
 
-	#TODO generalize to get_dv()? # btw this takes a lot of processing time
+	#TODO generalize to get_dv()? # btw this takes a lot of processing time # should we cache?
     dv2, ds2 = get_dv_ds(pp,s,nbhd,idx,2)
     dv3, ds3 = get_dv_ds(pp,s,nbhd,idx,3)
     dv1, ds1 = get_dv_ds(pp,s,nbhd,idx,1)
@@ -215,7 +216,7 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 
 	#check safety criterion, also check if there is physically space
 	if (a_follower_right_ < -p_mobil.b_safe) && (a_follower_left_ < -p_mobil.b_safe)
-		return 0 #neither safe
+		return 0. #neither safe
 	end
 	if is_lanechange_dangerous(pp,s,nbhd,idx,1) || (a_follower_left_ < -p_mobil.b_safe)
 		left_crit = -Inf
@@ -234,7 +235,7 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 
 	#check incentive criterion
 	if max(left_crit,right_crit) > p_mobil.a_thr
-		return dir_flag
+		return float(dir_flag)
 	end
 	return 0.
 end

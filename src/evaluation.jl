@@ -16,7 +16,7 @@ function test_run_return_policy(eval_problem::NoCrashMDP, initial_state::MLState
     if isa(solver, RandomSolver)
         solver.rng = MersenneTwister(rng_seed)
     end
-    sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps, capture_exception=true)
+    sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
     policy = solve(solver, solver_problem)
     terminal_problem = deepcopy(eval_problem)
     terminal_problem.dmodel.lane_terminate = true
@@ -289,10 +289,10 @@ function rerun{S<:AbstractString}(results::Dict{S, Any}, id; reward_assertion=tr
     problem = results["problems"][stats[:problem_key][id]]
     is = results["initial_states"][stats[:initial_key][id]]
     solver = results["solvers"][stats[:solver_key][id]]
-    solver_problem = results["solver_problems"][stats[:solver_problem_key][id]]
+    solver_problem = results["problems"][stats[:solver_problem_key][id]]
     rng_seed = stats[:rng_seed][id]
     steps = stats[:steps][id]
-    sim, policy = test_run_return_policy(problem, is, solver, rng_seed, steps)
+    sim, policy = test_run_return_policy(problem, is, solver_problem, solver, rng_seed, steps)
     r = sum([reward(problem, sim.state_hist[i], sim.action_hist[i], sim.state_hist[i+1]) for i in 1:length(sim.action_hist)])
     if reward_assertion
         @assert r == stats[:reward][id]

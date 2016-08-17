@@ -184,7 +184,11 @@ function add_initials!(objects::Dict{UTF8String, Any},
         specific_table = DataFrame(vectors)
     end
 
-    new_table = join(new_table, specific_table, kind=:cross)
+    if nrow(new_table) == 0 # there were no linked params
+        new_table = specific_table
+    else
+        new_table = join(new_table, specific_table, kind=:cross)
+    end
     param_list = names(new_table)
 
     problems = get(objects, "problems", Dict{UTF8String,Any}())

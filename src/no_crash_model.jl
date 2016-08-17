@@ -377,6 +377,30 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
     #=====================#
 
     if nb_cars < mdp.dmodel.nb_cars && rand(rng) <= mdp.dmodel.p_appear
+
+        # spot = at_front*nb_lanes + lane
+        clearances = Array(Float64, 2*pp.nb_lanes)
+        fill!(clearances, Inf)
+        for i in 1:nb_cars
+            lowlane = floor(Int, s.env_cars[i].y)
+            highlane = ceil(Int, s.env_cars[i].y)
+            front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
+            back = s.env_cars[i].x - pp.l_car
+            clearances[pp.nb_lanes+lowlane] = min(front, clearances[pp.nb_lanes+lowlane])
+            clearances[pp.nb_lanes+highlane] = min(front, clearances[pp.nb_lanes+highlane])
+            clearances[lowlane] = min(back, clearances[lowlane])
+            clearances[highlane] = min(back, clearances[highlane])
+        end
+        clear_spots=IntSet()
+        for lane in 1:pp.nb_lanes, at_front in (true,false)
+            # if clearances[(i,j)] >= behavior.p_idm.T*behavior.p_idm.v0 # dynamic clearance
+            spot = at_front*pp.nb_lanes + lane
+            if clearances[spot] >= mdp.dmodel.appear_clearance
+                push!(clear_spots, spot)
+            end
+        end
+
+        #= XXX begin rewrite
         # calculate clearance for all the lanes
         clearances = Dict{Tuple{Int,Bool},Float64}() # integer is lane, bool is true if front, false if back
         for i in 1:pp.nb_lanes, j in (true,false)
@@ -399,19 +423,24 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                 push!(clear_spots, (i,j))
             end
         end
+        =# #XXX end rewrite
 
         if length(clear_spots) > 0
             # pick one
-            spot = rand(rng, clear_spots)
+            spot = rand(rng, collect(clear_spots)) # potentially slow because of collect
+            lane = mod(spot, pp.nb_lanes)
+            if lane == 0
+                lane = pp.nb_lanes
+            end
 
             next_id = maximum([c.id for c in s.env_cars]) + 1
             behavior = rand(rng, mdp.dmodel.behaviors) # now generated above
-            if spot[2] # at front
+            if spot > pp.nb_lanes # at front
                 velp = sp.env_cars[1].vel - rand(rng) * min(mdp.dmodel.vel_sigma, sp.env_cars[1].vel - pp.v_min)
-                push!(sp.env_cars, CarState(pp.lane_length, spot[1], velp, 0.0, behavior, next_id))
+                push!(sp.env_cars, CarState(pp.lane_length, lane, velp, 0.0, behavior, next_id))
             else # at back
                 velp = rand(rng) * min(mdp.dmodel.vel_sigma, pp.v_max - sp.env_cars[1].vel) + sp.env_cars[1].vel
-                push!(sp.env_cars, CarState(0.0, spot[1], velp, 0.0, behavior, next_id))
+                push!(sp.env_cars, CarState(0.0, lane, velp, 0.0, behavior, next_id))
             end
         end
     end
