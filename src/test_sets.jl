@@ -20,7 +20,8 @@ const DEFAULT_BEHAVIORS = Dict{UTF8String, Any}(
 
 const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS like in linked
     :behaviors => "9_even",
-    :lambda => 1.0
+    :lambda => 1.0,
+    :brake_threshold => 2.5
     # :behavior_probabilities => 1
 )
 
@@ -109,8 +110,10 @@ function TestSet(;kwargs...)
 end
 =#
 
-function gen_initials(tests::AbstractVector; behaviors::Dict{UTF8String,Any}=DEFAULT_BEHAVIORS, rng::AbstractRNG=MersenneTwister(123))
-    initials = Dict{UTF8String,Any}()
+function gen_initials(tests::AbstractVector, initials::Dict=Dict{UTF8String,Any}();
+                      behaviors::Dict{UTF8String,Any}=get(initials, "behaviors", DEFAULT_BEHAVIORS),
+                      rng::AbstractRNG=MersenneTwister(rand(UInt32)))
+    initials=Dict{UTF8String,Any}([k=>v for (k,v) in initials])
     for t in tests
         add_initials!(initials, t, behaviors=behaviors, rng=rng)
     end
@@ -139,15 +142,20 @@ function gen_problem(row, behaviors::Dict{UTF8String,Any}, rng::AbstractRNG)
     problem.rmodel.cost_dangerous_brake = row[:lambda]*problem.rmodel.reward_in_desired_lane
     # p_normal
     problem.dmodel.behaviors = behaviors[row[:behaviors]]
+    # brake_threshold
+    problem.rmodel.dangerous_brake_threshold = row[:brake_threshold]
     return problem
 end
 
-function gen_initial_physical(N; rng::AbstractRNG=MersenneTwister(123))
+function gen_initial_physical(N; rng::AbstractRNG=MersenneTwister(rand(UInt32)))
     base_problem = gen_base_problem()
     return [MLPhysicalState(initial_state(base_problem, rng)) for i in 1:N]
 end
 
-function add_initials!(objects::Dict{UTF8String, Any}, ts::TestSet; behaviors::Dict{UTF8String,Any}=DEFAULT_BEHAVIORS, rng::AbstractRNG=MersenneTwister(123))
+function add_initials!(objects::Dict{UTF8String, Any},
+                       ts::TestSet;
+                       behaviors::Dict{UTF8String,Any}=get(objects, "behaviors"),
+                       rng::AbstractRNG=MersenneTwister(rand(UInt32)))
 
     new_table = DataFrame()
 
@@ -188,6 +196,13 @@ function add_initials!(objects::Dict{UTF8String, Any}, ts::TestSet; behaviors::D
 
     if haskey(objects, "param_table")
         param_table = objects["param_table"]
+        for p in param_list
+            if !(p in names(param_table))
+                default = DEFAULT_PROBLEM_PARAMS[p]
+                warn("adding $p to param table with default value $default.")
+                param_table[p] = default
+            end
+        end
         param_table = join(param_table, new_table, on=param_list, kind=:outer)
     else
         param_table = new_table
@@ -221,6 +236,7 @@ function add_initials!(objects::Dict{UTF8String, Any}, ts::TestSet; behaviors::D
     objects["state_lists"] = state_lists
     objects["initial_states"] = initial_states
     objects["initial_physical_states"] = initial_physical_states
+    objects["behaviors"] = behaviors
 
     return objects
 end
@@ -327,4 +343,25 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any}; parallel
         )
         =#
 
+end
+
+function merge_tests!(t1::Dict, t2::Dict)
+    for (k,t) in t2
+        if haskey(t1, k)
+            this = t1[k]
+            @assert this.solver_key == t.solver_key
+            careful_merge!(this.problem_params, t.problem_params)
+            careful_merge!(this.solver_problem_params, t.solver_problem_params)
+            @assert this.N == t.N
+            @assert this.rng_seed == t.rng_seed
+            @assert this.key == t.key
+            for p in keys(t.linked_problem_params)
+                this.linked_problem_params[p] = cat(1,this.linked_problem_params[p],t.linked_problem_params[p])
+            end
+            this.nb_problems += t.nb_problems
+        else
+            t1[k] = t
+        end
+    end
+    return t1
 end

@@ -53,14 +53,13 @@ end
 
 stats = results["stats"]
 
-mean_performance = by(stats, :solver_key) do df
-    by(df, :lambda) do df
-        DataFrame(steps_in_lane=mean(df[:steps_in_lane]),
-                  nb_brakes=mean(df[:nb_brakes]),
-                  time_to_lane=mean(df[:time_to_lane]),
-                  steps=mean(df[:steps]),
-                  )
-    end
+mean_performance = by(stats, [:solver_key, :lambda, :problem_key, :solver_problem_key]) do df
+    DataFrame(steps_in_lane=mean(df[:steps_in_lane]),
+              nb_brakes=mean(df[:nb_brakes]),
+              time_to_lane=mean(df[:time_to_lane]),
+              steps=mean(df[:steps]),
+              test_key=first(df[:test_key])
+              )
 end
 
 solvers = args["solvers"]
@@ -86,13 +85,14 @@ if args["unicode"] || args["plot"]
             pyplot()
         end
         if haskey(results, "tests")
-            for g in groupby(mean_performance, test_key)
+            for g in groupby(mean_performance, :test_key)
                 if size(g,1) > 1
                     plot!(g, :time_to_lane, :brakes_per_sec, group=:test_key)
                 else
                     scatter!(g, :time_to_lane, :brakes_per_sec, group=:test_key)
                 end
             end
+            gui()
         else # old way, before test sets
             for g in groupby(mean_performance, :solver_key)
                 if size(g,1) > 1

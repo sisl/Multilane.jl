@@ -232,12 +232,27 @@ function evaluate(problem_keys::AbstractVector,
         )
 end
 
+"""
+Checks that all common keys have equal values in both dictionaries and adds keys not in common
+"""
+function careful_merge!(d1::Dict, d2::Dict)
+    for k in keys(d2)
+        if haskey(d1, k)
+            @assert d1[k] == d2[k]
+        else
+            d1[k] = d2[k]
+        end
+    end
+    return d1
+end
 
-#= # does not work right now
 function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any}, r2::Dict{S2, Any})
     merge!(r1["solvers"], r2["solvers"])
     merge!(r1["problems"], r2["problems"])
-    merge!(r1["initial_states"], r2["initial_states"])
+    careful_merge!(r1["initial_states"], r2["initial_states"])
+    merge!(r1["behaviors"], r2["behaviors"])
+    r1["param_table"] = join(r1["param_table"], r2["param_table"], on=names(r1["param_table"]), kind=:outer)
+    @show r1["param_table"]
     if haskey(r1, "stats")
         len = nrow(r1["stats"])
         append!(r1["stats"], r2["stats"])
@@ -254,9 +269,19 @@ function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any
         r1["histories"] = r2["histories"]
         end
     end
+
+    r1ips = r1["initial_physical_states"]
+    if length(r2["initial_physical_states"]) > length(r1ips)
+        r1["initial_physical_states"] = r2["initial_physical_states"]
+    end
+    for i in 1:min(length(r1ips), length(r2["initial_physical_states"]))
+        @assert r1ips[i] == r2["initial_physical_states"][i]
+    end
+
+    merge_tests!(r1["tests"], r2["tests"])
     return r1
 end
-=#
+
 
 function rerun{S<:AbstractString}(results::Dict{S, Any}, id; reward_assertion=true)
     stats = results["stats"]
