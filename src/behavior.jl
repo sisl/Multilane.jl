@@ -14,7 +14,6 @@ generate_accel(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLStat
 
 generate_lane_change(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState,neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
 
-
 function generate_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 	pp = dmodel.phys_param
 	dt = pp.dt
@@ -140,10 +139,10 @@ function generate_accel(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, n
 	cc = s.env_cars[closest_car]
 
 	if p.jerk #TODO fix this so it doesn't always accelerate if there's no space
-    accel = cs.x - x > 2*dmodel.phys_param.l_car ? 1 : -3. #slam brakes
-  else
-    accel = -sign(cs.x - x)
-  end
+        accel = cs.x - x > 2*dmodel.phys_param.l_car ? 1 : -3. #slam brakes
+    else
+        accel = -sign(cs.x - x)
+    end
 
 	return accel*dmodel.phys_param.dt #XXX times accel interval?
 

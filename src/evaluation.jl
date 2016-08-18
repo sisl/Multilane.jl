@@ -283,7 +283,7 @@ function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any
 end
 
 
-function rerun{S<:AbstractString}(results::Dict{S, Any}, id; reward_assertion=true)
+function rerun{S<:AbstractString}(results::Dict{S, Any}, id; enforce_match=true)
     stats = results["stats"]
     @assert stats[:id][id] == id
     problem = results["problems"][stats[:problem_key][id]]
@@ -291,10 +291,14 @@ function rerun{S<:AbstractString}(results::Dict{S, Any}, id; reward_assertion=tr
     solver = results["solvers"][stats[:solver_key][id]]
     solver_problem = results["problems"][stats[:solver_problem_key][id]]
     rng_seed = stats[:rng_seed][id]
-    steps = stats[:steps][id]
+    if enforce_match
+        steps = stats[:steps][id]
+    else
+        steps = 10000
+    end
     sim, policy = test_run_return_policy(problem, is, solver_problem, solver, rng_seed, steps)
     r = sum([reward(problem, sim.state_hist[i], sim.action_hist[i], sim.state_hist[i+1]) for i in 1:length(sim.action_hist)])
-    if reward_assertion
+    if enforce_match
         @assert r == stats[:reward][id]
     end
     return problem, sim, policy
