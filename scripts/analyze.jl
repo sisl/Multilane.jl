@@ -75,6 +75,7 @@ mean_performance[:brakes_per_sec] = mean_performance[:nb_brakes]./mean_performan
 if args["show"]
     println(mean_performance)
     println()
+    println(results["param_table"])
 end
 
 if args["unicode"] || args["plot"]

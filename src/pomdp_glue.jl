@@ -42,20 +42,18 @@ end
 
 type ParticleGenerator
     physical_state::MLPhysicalState
-    behaviors # TODO: replace this with a DiscreteBehaviorSet
-    weights::WeightVec
+    behaviors::BehaviorGenerator
 end
 function ParticleGenerator(problem::NoCrashProblem, state::Union{MLState, MLPhysicalState})
     return ParticleGenerator(MLPhysicalState(state),
-                problem.dmodel.behaviors,
-                problem.dmodel.behavior_probabilities)
+                problem.dmodel.behaviors)
 end
 
 function rand(rng::AbstractRNG, gen::ParticleGenerator)
     s = gen.physical_state
     full_s = MLState(s.crashed, Array(CarState, length(s.env_cars)))
     for i in 1:length(s.env_cars)
-        behavior = sample(rng, gen.behaviors, gen.weights)
+        behavior = rand(rng, gen.behaviors)
         full_s.env_cars[i] = CarState(s.env_cars[i], behavior)
     end
     return full_s

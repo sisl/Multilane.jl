@@ -1,16 +1,16 @@
 type DiscreteBehaviorBelief
     ps::MLPhysicalState
-    behaviors::AbstractVector
+    models::AbstractVector
     weights::Vector{Vector{Float64}}
 end
-DiscreteBehaviorBelief(ps::MLPhysicalState, behaviors::AbstractVector) = DiscreteBehaviorBelief(ps, behaviors, Array(Vector{Float64}, length(ps.env_cars)))
+DiscreteBehaviorBelief(ps::MLPhysicalState, models::AbstractVector) = DiscreteBehaviorBelief(ps, models, Array(Vector{Float64}, length(ps.env_cars)))
 
 function rand(rng::AbstractRNG,
               b::DiscreteBehaviorBelief,
               s::MLState=MLState(b.ps.crashed, Array(CarState, length(b.ps.env_cars))))
     resize!(s.env_cars, length(b.ps.env_cars))
     for i in 1:length(s.env_cars)
-        s.env_cars[i] = CarState(b.ps.env_cars[i], sample(rng, b.behaviors, WeightVec(b.weights[i])))
+        s.env_cars[i] = CarState(b.ps.env_cars[i], sample(rng, b.models, WeightVec(b.weights[i])))
     end
     return s
 end
@@ -56,10 +56,10 @@ function update(up::BehaviorRootUpdater,
                 o::MLPhysicalState,
                 b_new::POMCP.RootNode=POMCP.RootNode(DiscreteBehaviorBelief(o, up.problem.dmodel.behaviors.models)))
 
-    b_new.B.behaviors = up.problem.dmodel.behaviors.models
+    b_new.B.models = up.problem.dmodel.behaviors.models
     resize!(b_new.B.weights, length(o.env_cars))
     for i in 1:length(o.env_cars)
-        b_new.B.weights[i] = zeros(length(up.problem.dmodel.models)) #XXX lots of allocation
+        b_new.B.weights[i] = zeros(length(up.problem.dmodel.behaviors.models)) #XXX lots of allocation
     end
     # ASSUMING IDs are monotonically increasing (is this true?)
     for child_node in values(b_old.children[a].children)
