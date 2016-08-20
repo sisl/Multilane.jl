@@ -275,7 +275,8 @@ Run the simulations in tests.
 function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
                   parallel=true,
                   desc="Progress: ",
-                  metrics::AbstractVector=[])
+                  metrics::AbstractVector=[],
+                  max_steps=10000)
 
     solvers = objects["solvers"]
     problems = objects["problems"]
@@ -339,7 +340,10 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
         end
     end
 
-    sims = run_simulations(all_problems, all_initial, all_solver_problems, all_solvers, rng_seeds=stats[:rng_seed], parallel=parallel, desc=desc)
+    sims = run_simulations(all_problems, all_initial,
+                           all_solver_problems, all_solvers,
+                           rng_seeds=stats[:rng_seed], parallel=parallel,
+                           desc=desc, max_steps=max_steps)
     fill_stats!(stats, all_problems, sims, metrics=metrics)
 
     results = deepcopy(objects)

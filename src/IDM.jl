@@ -56,6 +56,7 @@ function get_idm_s_star(p::IDMParam, v::Float64, dv::Float64)
     return p.s0 + max(0.,v*p.T+v*dv/(2*sqrt(p.a*p.b)))
 end
 
+# dv is positive if vehicles are closing
 function get_idm_dv(p::IDMParam,dt::Float64,v::Float64,dv::Float64,s::Float64)
 	s_ = get_idm_s_star(p, v, dv)
     dvdt = p.a*(1.-(v/p.v0)^p.del - (s_/s)^2)

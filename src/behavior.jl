@@ -10,6 +10,8 @@ function IDMMOBILBehavior(s::AbstractString,v0::Float64,s0::Float64,idx::Int)
 	return IDMMOBILBehavior(IDMParam(s,v0,s0),MOBILParam(s),idx)
 end
 
+typical_velocity(b::IDMMOBILBehavior) = b.p_idm.v0
+
 generate_accel(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
 
 generate_lane_change(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState,neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")

@@ -372,6 +372,9 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
             sp.env_cars[i] = CarState(xp, yp, velp, lcs[i], car.behavior, s.env_cars[i].id)
         end
     end
+
+    next_id = maximum([c.id for c in s.env_cars]) + 1
+
     deleteat!(sp.env_cars, exits)
     nb_cars -= length(exits)
 
@@ -380,68 +383,74 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
 
     if nb_cars < mdp.dmodel.nb_cars && rand(rng) <= mdp.dmodel.p_appear
 
-        # spot = at_front*nb_lanes + lane
-        clearances = Array(Float64, 2*pp.nb_lanes)
+        behavior = rand(rng, mdp.dmodel.behaviors)
+        vel = typical_velocity(behavior)
+
+        clearances = Array(Float64, pp.nb_lanes)
         fill!(clearances, Inf)
-        for i in 1:length(s.env_cars) # this cannot be nb_cars because that value has been adjusted for exits
-            lowlane, highlane = occupation_lanes(s.env_cars[i].y, lcs[i])
-            front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
-            back = s.env_cars[i].x - pp.l_car
-            clearances[pp.nb_lanes+lowlane] = min(front, clearances[pp.nb_lanes+lowlane])
-            clearances[pp.nb_lanes+highlane] = min(front, clearances[pp.nb_lanes+highlane])
-            clearances[lowlane] = min(back, clearances[lowlane])
-            clearances[highlane] = min(back, clearances[highlane])
-        end
-        clear_spots=IntSet()
-        for lane in 1:pp.nb_lanes, at_front in (true,false)
-            # if clearances[(i,j)] >= behavior.p_idm.T*behavior.p_idm.v0 # dynamic clearance
-            spot = at_front*pp.nb_lanes + lane
-            if clearances[spot] >= mdp.dmodel.appear_clearance
-                push!(clear_spots, spot)
+        closest_cars = Array(Int, pp.nb_lanes)
+        fill!(closest_cars, 0)
+        sstar_margins = Array(Float64, pp.nb_lanes)
+        if vel > s.env_cars[1].vel
+            # put at back
+            # sstar is the sstar of the new guy
+            for i in 1:length(s.env_cars)
+                lowlane, highlane = occupation_lanes(s.env_cars[i].y, lcs[i])
+                back = s.env_cars[i].x - pp.l_car
+                if back < clearances[lowlane]
+                    clearances[lowlane] = back
+                    closest_cars[lowlane] = i
+                end
+                if back < clearances[highlane]
+                    clearances[highlane] = back
+                    closest_cars[highlane] = i
+                end
+            end
+            for j in 1:pp.nb_lanes
+                other = closest_cars[j]
+                if other == 0
+                    sstar = 0
+                else
+                    sstar = get_idm_s_star(behavior.p_idm, vel, vel-s.env_cars[other].vel)
+                end
+                sstar_margins[j] = clearances[j] - sstar
+            end
+        else
+            for i in 1:length(s.env_cars)
+                lowlane, highlane = occupation_lanes(s.env_cars[i].y, lcs[i])
+                front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
+                if front < clearances[lowlane]
+                    clearances[lowlane] = front
+                    closest_cars[lowlane] = i
+                end
+                if front < clearances[highlane]
+                    clearances[highlane] = front
+                    closest_cars[highlane] = i
+                end
+            end
+            for j in 1:pp.nb_lanes
+                other = closest_cars[j]
+                if other == 0
+                    sstar = 0
+                elseif isnull(s.env_cars[other].behavior)
+                    sstar = mdp.dmodel.appear_clearance
+                else
+                    sstar = get_idm_s_star(get(s.env_cars[other].behavior).p_idm,
+                                           s.env_cars[other].vel,
+                                           s.env_cars[other].vel-vel)
+                end
+                sstar_margins[j] = clearances[j] - sstar
             end
         end
 
-        #= XXX begin rewrite
-        # calculate clearance for all the lanes
-        clearances = Dict{Tuple{Int,Bool},Float64}() # integer is lane, bool is true if front, false if back
-        for i in 1:pp.nb_lanes, j in (true,false)
-            clearances[(i,j)] = Inf
-        end
-        for i in 1:nb_cars
-            lowlane = floor(Int, s.env_cars[i].y)
-            highlane = ceil(Int, s.env_cars[i].y)
-            front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
-            back = s.env_cars[i].x - pp.l_car
-            clearances[(lowlane, true)] = min(front, clearances[(lowlane, true)])
-            clearances[(highlane, true)] = min(front, clearances[(highlane, true)])
-            clearances[(lowlane, false)] = min(back, clearances[(lowlane, false)])
-            clearances[(highlane, false)] = min(back, clearances[(highlane, false)])
-        end
-        clear_spots = Array(Tuple{Int,Bool}, 0)
-        for i in 1:pp.nb_lanes, j in (true,false)
-            # if clearances[(i,j)] >= behavior.p_idm.T*behavior.p_idm.v0 # dynamic clearance
-            if clearances[(i,j)] >= mdp.dmodel.appear_clearance
-                push!(clear_spots, (i,j))
-            end
-        end
-        =# #XXX end rewrite
-
-        if length(clear_spots) > 0
-            # pick one
-            spot = rand(rng, collect(clear_spots)) # potentially slow because of collect
-            lane = mod(spot, pp.nb_lanes)
-            if lane == 0
-                lane = pp.nb_lanes
-            end
-
-            next_id = maximum([c.id for c in s.env_cars]) + 1
-            behavior = rand(rng, mdp.dmodel.behaviors)
-            if spot > pp.nb_lanes # at front
-                velp = sp.env_cars[1].vel - rand(rng) * min(mdp.dmodel.vel_sigma, sp.env_cars[1].vel - pp.v_min)
-                push!(sp.env_cars, CarState(pp.lane_length, lane, velp, 0.0, behavior, next_id))
-            else # at back
-                velp = rand(rng) * min(mdp.dmodel.vel_sigma, pp.v_max - sp.env_cars[1].vel) + sp.env_cars[1].vel
-                push!(sp.env_cars, CarState(0.0, lane, velp, 0.0, behavior, next_id))
+        margin, lane = findmax(sstar_margins)
+        
+        if margin > 0.0
+            if vel > s.env_cars[1].vel
+                # at back
+                push!(sp.env_cars, CarState(0.0, lane, vel, 0.0, behavior, next_id))
+            else
+                push!(sp.env_cars, CarState(pp.lane_length, lane, vel, 0.0, behavior, next_id))
             end
         end
     end
@@ -550,7 +559,8 @@ Assign behaviors to a given physical state.
 """
 function initial_state(mdp::NoCrashProblem, ps::MLPhysicalState, rng::AbstractRNG)
     s = MLState(ps.crashed, Array(CarState, length(ps.env_cars)))
-    for i in 1:length(s.env_cars)
+    s.env_cars[1] = CarState(ps.env_cars[1], NORMAL)
+    for i in 2:length(s.env_cars)
         behavior = rand(rng, mdp.dmodel.behaviors)
         s.env_cars[i] = CarState(ps.env_cars[i], behavior)
     end
