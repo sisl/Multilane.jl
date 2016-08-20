@@ -1,4 +1,4 @@
-type DiscreteBehaviorBelief
+type DiscreteBehaviorBelief <: AbstractDistribution
     ps::MLPhysicalState
     models::AbstractVector
     weights::Vector{Vector{Float64}}
@@ -43,7 +43,7 @@ type BehaviorRootUpdaterStub <: Updater
     smoothing::Float64
 end
  
-type BehaviorRootUpdater <: Updater # {Union{POMCP.BeliefNode,DiscreteBehaviorBelief}}
+type BehaviorRootUpdater <: Updater{POMCP.BeliefNode}
     problem::NoCrashProblem
     smoothing::Float64 # value between 0 and 1, adds this fraction of the max to each entry in the vecot
 end
@@ -55,7 +55,7 @@ function update(up::BehaviorRootUpdater,
                 a::MLAction,
                 o::MLPhysicalState,
                 b_new::POMCP.RootNode=POMCP.RootNode(DiscreteBehaviorBelief(o, up.problem.dmodel.behaviors.models)))
-
+    b_new.B.ps = o
     b_new.B.models = up.problem.dmodel.behaviors.models
     resize!(b_new.B.weights, length(o.env_cars))
     for i in 1:length(o.env_cars)
@@ -88,10 +88,14 @@ function update(up::BehaviorRootUpdater,
             end
         end
     end
+    
+    for i in 1:length(b_new.B.weights)
+        @assert sum(b_new.B.weights[i]) > 0.0
+    end
 
     # smoothing
     for i in 1:length(o.env_cars)
-        b_new.B.weights[i] .+= up.smoothing * maximum(b_new.B.weights[i])
+        b_new.B.weights[i] .+= up.smoothing * sum(b_new.B.weights[i])
     end
 
     return b_new

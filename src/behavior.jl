@@ -59,7 +59,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 	end
 
 	#sample normally
-	lanechange_::Int = get_mobil_lane_change(pp, s, neighborhood, idx, rng)
+	lanechange_::Int = get_mobil_lane_change(bmodel, pp, s, neighborhood, idx, rng)
 	#gives +1, -1 or 0
 	#if frnot neighbor is lanechanging, don't lane change
     # I DONT think this works because lane_change may not be updated

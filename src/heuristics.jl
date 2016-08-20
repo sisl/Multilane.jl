@@ -16,39 +16,59 @@ POMDPs.updater(::Simple) = POMDPToolbox.FastPreviousObservationUpdater{MLObs}()
 create_policy(s::SimpleSolver, problem::MDP) = Simple(problem)
 create_policy(s::SimpleSolver, problem::POMDP) = Simple(problem)
 
+set_rng!(solver::SimpleSolver, rng::AbstractRNG) = nothing
+
 function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.mdp))
 # lane changes if there is an opportunity
-  goal_lane = p.mdp.rmodel.desired_lane
-  y_desired = goal_lane
-  dmodel = p.mdp.dmodel
-  lc = sign(y_desired-s.env_cars[1].y) * dmodel.lane_change_rate
-  acc = dmodel.adjustment_acceleration
+    goal_lane = p.mdp.rmodel.desired_lane
+    y_desired = goal_lane
+    dmodel = p.mdp.dmodel
+    lc = sign(y_desired-s.env_cars[1].y) * dmodel.lane_change_rate
+    acc = dmodel.adjustment_acceleration
+  
+    #if can't move towards desired lane sweep through accelerating and decelerating
+  
+    # TODO need an equivalent of is_safe that can operate on observations
+    if is_safe(p.mdp, s, MLAction(0.,lc))
+      return MLAction(0.,lc)
+    end
+    # maintain distance from other cars
+  
+    # maintain distance
+    nbhd = get_neighborhood(dmodel.phys_param,s,1)
+  
+    if nbhd[2] == 0 && nbhd[5] == 0
+      return MLAction(0.,0.)
+    end
+  
+    dist_ahead = nbhd[2] != 0 ? s.env_cars[nbhd[2]].x - s.env_cars[1].x : Inf
+    dist_behind = nbhd[5] != 0 ? s.env_cars[nbhd[5]].x - s.env_cars[1].x : Inf
+  
+    sgn = abs(dist_ahead) <= abs(dist_behind) ? -1 : 1
+  
+    accel = sgn * acc
+  
+    max_accel = max_safe_acc(p.mdp, s, 0.0)
+  
+    return MLAction(min(accel, max_accel),0.)
+end
 
-  #if can't move towards desired lane sweep through accelerating and decelerating
+type BehaviorSolver <: Solver
+    b::BehaviorModel
+    rng::AbstractRNG
+end
+type BehaviorPolicy <: Policy
+    problem::NoCrashProblem
+    b::BehaviorModel
+    rng::AbstractRNG
+end
+solve(s::BehaviorSolver, p::NoCrashProblem) = BehaviorPolicy(p, s.b, s.rng)
 
-  # TODO need an equivalent of is_safe that can operate on observations
-  if is_safe(p.mdp, s, MLAction(0.,lc))
-    return MLAction(0.,lc)
-  end
-  # maintain distance from other cars
-
-  # maintain distance
-  nbhd = get_neighborhood(dmodel.phys_param,s,1)
-
-  if nbhd[2] == 0 && nbhd[5] == 0
-    return MLAction(0.,0.)
-  end
-
-  dist_ahead = nbhd[2] != 0 ? s.env_cars[nbhd[2]].x - s.env_cars[1].x : Inf
-  dist_behind = nbhd[5] != 0 ? s.env_cars[nbhd[5]].x - s.env_cars[1].x : Inf
-
-  sgn = abs(dist_ahead) <= abs(dist_behind) ? -1 : 1
-
-  accel = sgn * acc
-
-  max_accel = max_safe_acc(p.mdp, s, 0.0)
-
-  return MLAction(min(accel, max_accel),0.)
+function action(p::BehaviorPolicy, s::Union{MLState,MLObs}, a::MLAction=MLAction(0.0,0.0))
+    nbhd = get_neighborhood(p.problem.dmodel.phys_param, s, 1)
+    acc = generate_accel(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
+    lc = generate_lane_change(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
+    return MLAction(acc, lc)
 end
 
 #=

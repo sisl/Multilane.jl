@@ -97,4 +97,3 @@ for g in groupby(mean_performance, :solver_key)
     end
 end
 gui()
-

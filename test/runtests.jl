@@ -76,6 +76,8 @@ test_actions()
 # println("Running an OriginalMDP example...")
 # include("run_example.jl")
 
+include("change_into.jl")
+
 println("Running a NoCrashMDP example...")
 include("run_nocrash.jl")
 write_tmp_gif(mdp, sim)

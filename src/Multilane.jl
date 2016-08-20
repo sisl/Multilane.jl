@@ -62,7 +62,8 @@ export
     MLPOMDPAgent,
     BehaviorRootUpdater,
     BehaviorRootUpdaterStub,
-    DiscreteBehaviorSet
+    DiscreteBehaviorSet,
+    DiscreteBehaviorBelief
 
 export
     NoCrashRewardModel,
@@ -70,7 +71,9 @@ export
     NoCrashMDP,
     NoCrashPOMDP,
     Simple,
-    SimpleSolver
+    SimpleSolver,
+    BehaviorSolver
+
 
 export
     SingleBehaviorSolver,
@@ -113,6 +116,10 @@ export # POMDP belief stuff
     sample,
     initialize_belief
 
+export
+    MaxBrakeMetric,
+    NumBehaviorBrakesMetric
+
 
 include("physical.jl")
 include("MDP_types.jl")
@@ -123,6 +130,7 @@ include("behavior.jl")
 include("behavior_gen.jl")
 include("no_crash_model.jl")
 include("visualization.jl")
+include("metrics.jl")
 include("evaluation.jl")
 include("test_sets.jl")
 include("robust_mdp.jl")

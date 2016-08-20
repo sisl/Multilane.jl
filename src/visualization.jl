@@ -38,22 +38,26 @@ function write_tmp_gif(mdp, sim::HistoryRecorder)
 end
 
 function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState, a::MLAction, sp=create_state(mdp);
-                   idx::Nullable{Int}=nothing)
+                   idx::Nullable{Int}=Nullable{Int}())
     pp = mdp.dmodel.phys_param
     roadway = gen_straight_roadway(pp.nb_lanes,
                                    pp.lane_length,
                                    lane_width=pp.w_lane)
 
     hbol = HardBrakeOverlay(pp, braking_ids(mdp, s, sp))
-    iol = InfoOverlay(pp, idx, s.env_cars[1].vel)
+    iol = InfoOverlay(pp, idx,
+                      s.env_cars[1].vel,
+                      max_braking(mdp, s, sp),
+                      is_crash(mdp, s, sp))
     cidol = CarIDOverlay()
+    cvol = CarVelOverlay()
 
     scene = Scene()
     for cs in s.env_cars
-        push!(scene, Vehicle(VehicleState(VecSE2(cs.x, (cs.y-1.0)*pp.w_lane, 0.0), roadway, 30.0), 
+        push!(scene, Vehicle(VehicleState(VecSE2(cs.x, (cs.y-1.0)*pp.w_lane, 0.0), roadway, cs.vel), 
                                 VehicleDef(cs.id, AgentClass.CAR, pp.l_car, pp.w_car)))
     end
-    render(scene, roadway, [hbol, iol, cidol], cam=FitToContentCamera())
+    render(scene, roadway, [hbol, iol, cidol, cvol], cam=FitToContentCamera())
 end
 
 function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState)
@@ -63,7 +67,7 @@ function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState)
                                    lane_width=pp.w_lane)
     scene = Scene()
     for cs in s.env_cars
-        push!(scene, Vehicle(VehicleState(VecSE2(cs.x, (cs.y-1.0)*pp.w_lane, 0.0), roadway, 30.0), 
+        push!(scene, Vehicle(VehicleState(VecSE2(cs.x, (cs.y-1.0)*pp.w_lane, 0.0), roadway, cs.vel), 
                                 VehicleDef(cs.id, AgentClass.CAR, pp.l_car, pp.w_car)))
     end
     render(scene, roadway, cam=FitToContentCamera())
@@ -93,6 +97,8 @@ type InfoOverlay <: SceneOverlay
     pp::PhysicalParam
     state_index::Nullable{Int}
     vel::Float64
+    max_braking::Float64
+    iscrash::Bool
 end
 
 function AutoViz.render!(rm::RenderModel, o::InfoOverlay, scene::Scene, roadway::Roadway)
@@ -107,6 +113,15 @@ function AutoViz.render!(rm::RenderModel, o::InfoOverlay, scene::Scene, roadway:
     add_instruction!(rm, render_text,
                      (@sprintf("velocity: %5.2f m/s", o.vel), 0, y, 12, colorant"white"))
     y -= line_delta
+    add_instruction!(rm, render_text,
+                     (@sprintf("max braking: %5.2f m/s", o.max_braking), 0, y, 12,
+                      o.max_braking==o.pp.brake_limit ? colorant"red" : colorant"white"))
+    y -= line_delta
+    if o.iscrash
+        add_instruction!(rm, render_text,
+                         ("crash!", 0, y, 12, colorant"red"))
+        y -= line_delta
+    end
 end
 
 type CarIDOverlay <: SceneOverlay end
@@ -126,6 +141,18 @@ function AutoViz.render!(rm::RenderModel, o::CarIDOverlay, scene::Scene, roadway
     end
 end
 
+type CarVelOverlay <: SceneOverlay end
+
+function AutoViz.render!(rm::RenderModel, o::CarVelOverlay, scene::Scene, roadway::Roadway)
+    for (i,v) in enumerate(scene)
+        cx = v.state.posG.x
+        cy = v.state.posG.y
+        vx = cx + v.def.length/2 - 1.4
+        vy = cy + v.def.width/2 - 0.6
+        add_instruction!(rm, render_text,
+                         (@sprintf("%04.1f",v.state.v), vx, vy, 7, colorant"white"))
+    end
+end
 
 #=
 type HelloWorldOverlay <: SceneOverlay end

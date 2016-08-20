@@ -174,7 +174,7 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 end
 
 # should return a float
-function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,rng::AbstractRNG=MersenneTwister(123))
+function get_mobil_lane_change(behavior, pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,rng::AbstractRNG=MersenneTwister(123))
 	#TODO: catch if the parameters don't exist
 
 	#need 6 distances: distance to person behind me, ahead of me
@@ -183,8 +183,8 @@ function get_mobil_lane_change(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},i
 	#need sets of idm parameters
 	dt = pp.dt
 	state = s.env_cars[idx]
-	p_idm_self = get(state.behavior).p_idm
-	p_mobil = get(state.behavior).p_mobil
+	p_idm_self = behavior.p_idm
+	p_mobil = behavior.p_mobil
 	#println(neighborhood)
 	if sum(nbhd) == 0
 		return 0. #no reason to change lanes if you're all alone

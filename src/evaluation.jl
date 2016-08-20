@@ -1,10 +1,12 @@
 import Base: mean, std, repr, length
 import Iterators: take
 
+function set_rng!(solver::Solver, rng::AbstractRNG)
+    solver.rng = rng
+end
+
 function test_run(eval_problem::NoCrashMDP, initial_state::MLState, solver_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
-    if isa(solver, RandomSolver)
-        solver.rng = MersenneTwister(rng_seed)
-    end
+    set_rng!(solver, MersenneTwister(rng_seed))
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps, capture_exception=true)
     terminal_problem = deepcopy(eval_problem)
     terminal_problem.dmodel.lane_terminate = true
@@ -13,9 +15,7 @@ function test_run(eval_problem::NoCrashMDP, initial_state::MLState, solver_probl
 end
 
 function test_run_return_policy(eval_problem::NoCrashMDP, initial_state::MLState, solver_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
-    if isa(solver, RandomSolver)
-        solver.rng = MersenneTwister(rng_seed)
-    end
+    set_rng!(solver, MersenneTwister(rng_seed))
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
     policy = solve(solver, solver_problem)
     terminal_problem = deepcopy(eval_problem)
@@ -23,18 +23,6 @@ function test_run_return_policy(eval_problem::NoCrashMDP, initial_state::MLState
     r = simulate(sim, terminal_problem, policy, initial_state)
     return sim, policy
 end
-
-#=
-function test_run(problem::NoCrashPOMDP, bu::Updater, initial_state::MLState, solver::Solver, rng_seed::Integer, max_steps=10000)
-    # error("Not maintained: look over the code before using this")
-    sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps,initial_state=initial_state)
-    policy = solve(solver, problem)
-    terminal_problem = deepcopy(problem)
-    terminal_problem.dmodel.lane_terminate = true
-    r = simulate(sim, problem, solve(solver,problem), bu, create_belief(bu,initial_state))
-    return sim
-end
-=#
 
 function run_simulations(eval_problems::AbstractVector,
                          initial_states::AbstractVector,
@@ -94,7 +82,7 @@ function run_simulations(eval_problems::AbstractVector,
     return sims
 end
 
-function fill_stats!(stats::DataFrame, eval_problems::Vector, sims::Vector)
+function fill_stats!(stats::DataFrame, eval_problems::Vector, sims::Vector; metrics::AbstractVector=[])
     nb_sims = length(sims)
 
     # add new columns
@@ -107,6 +95,10 @@ function fill_stats!(stats::DataFrame, eval_problems::Vector, sims::Vector)
     stats[:steps_in_lane] = DataArray(Int, nb_sims)
     stats[:steps] = Int[length(s.action_hist) for s in sims]
     stats[:crash] = DataArray(Bool, nb_sims)
+
+    for m in metrics
+        stats[key(m)] = DataArray(datatype(m), nb_sims)
+    end
 
     for i in 1:nb_sims
         r = 0.0
@@ -150,6 +142,10 @@ function fill_stats!(stats::DataFrame, eval_problems::Vector, sims::Vector)
         stats[:time_to_lane][i] = stats[:steps_to_lane][i]*dt
         stats[:steps_in_lane][i] = steps_in_lane
         stats[:crash][i] = crashed
+
+        for m in metrics
+            stats[key(m)][i] = calculate(m, eval_problems[i], sims[i])
+        end
     end
     return stats
 end
@@ -168,6 +164,7 @@ function assign_keys(problems::AbstractVector; rng=MersenneTwister(rand(UInt32))
     return Dict{UTF8String,Any}([(p_keys[i], problems[i]) for i in 1:length(problems)])
 end
 
+#=
 function evaluate(problem_keys::AbstractVector,
                   is_keys::AbstractVector,
                   solver_keys::AbstractVector,
@@ -231,6 +228,7 @@ function evaluate(problem_keys::AbstractVector,
         "histories"=>sims
         )
 end
+=#
 
 """
 Checks that all common keys have equal values in both dictionaries and adds keys not in common
@@ -302,52 +300,3 @@ function rerun{S<:AbstractString}(results::Dict{S, Any}, id; enforce_match=true)
     end
     return problem, sim, policy
 end
-
-
-#=
-function save_results(results, filename=string("results_", Dates.format(Dates.now(),"_u_d_HH_MM"), ".jld"))
-    string_dict = Dict([(string(k),v) for (k,v) in results])
-    save(filename, string_dict)
-end
-
-function load_results(filename)
-    string_dict = load(filename)
-    return Dict{Symbol, Any}([(symbol(k), v) for (k,v) in string_dict])
-end
-=#
-
-#=
-results::Dict{UTF8String, Any}
-    - nb_sims::Int
-    - solvers::Dict{UTF8String,Solver}
-    - problems::Dict{UTF8String,Any}
-    - initial_states::Dict{UTF8String,Any}
-    - stats::DataFrame
-    - histories::Vector{HistoryRecorder}
-=#
-
-#= evaluate
-inputs: problems, initial conditions, solvers 
-outputs: sim_dict
-=#
-
-#= Dataframe fields
-    id::Int
-    uuid::UInt128
-    solver_key::UTF8String
-    problem_key::UTF8String
-    initial_key::UTF8String
-    time::Float64
-
-    # filled later
-    reward::Float64
-    brake_thresh::Float64
-    lambda::Float64 # brake_cost/lane_reward
-    nb_brakes::Int
-    steps_to_lane::Int
-    time_to_lane::Float64
-    steps_in_lane::Int
-    steps::Int
-=#
-
-# TODO: rng stuff?

@@ -12,10 +12,19 @@ const NINE_BEHAVIORS = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for
                                                         [PP.v_slow+0.5;PP.v_med;PP.v_fast],
                                                         [PP.l_car]))]
 
+const NORMAL_IDM = IDMParam(1.4, 2.0, 1.5, 120/3.6, 2.0, 4.0) 
+const TIMID_IDM = IDMParam(1.0, 1.0, 1.8, 100/3.6, 4.0, 4.0)
+const AGGRESSIVE_IDM = IDMParam(2.0, 3.0, 1.0, 140/3.6, 1.0, 4.0)
+agents_behavior(idm, idx) = IDMMOBILBehavior(idm, MOBILParam(0.4, idm.b, 0.1), idx)
+
+const NORMAL = agents_behavior(NORMAL_IDM, 1)
+const TIMID = agents_behavior(TIMID_IDM, 2)
+const AGGRESSIVE = agents_behavior(AGGRESSIVE_IDM, 3)
 
 const DEFAULT_BEHAVIORS = Dict{UTF8String, Any}(
     "3_even" => DiscreteBehaviorSet(THREE_BEHAVIORS, WeightVec(ones(3))),
-    "9_even" => DiscreteBehaviorSet(NINE_BEHAVIORS, WeightVec(ones(9)))
+    "9_even" => DiscreteBehaviorSet(NINE_BEHAVIORS, WeightVec(ones(9))),
+    "agents" => DiscreteBehaviorSet([NORMAL, TIMID, AGGRESSIVE], WeightVec(ones(3)))
 )
 
 const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS like in linked
@@ -263,7 +272,10 @@ end
 """
 Run the simulations in tests.
 """
-function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any}; parallel=true, desc="Progress: ")
+function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
+                  parallel=true,
+                  desc="Progress: ",
+                  metrics::AbstractVector=[])
 
     solvers = objects["solvers"]
     problems = objects["problems"]
@@ -328,7 +340,7 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any}; parallel
     end
 
     sims = run_simulations(all_problems, all_initial, all_solver_problems, all_solvers, rng_seeds=stats[:rng_seed], parallel=parallel, desc=desc)
-    fill_stats!(stats, all_problems, sims)
+    fill_stats!(stats, all_problems, sims, metrics=metrics)
 
     results = deepcopy(objects)
     results["stats"] = stats

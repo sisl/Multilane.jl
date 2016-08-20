@@ -6,7 +6,7 @@ type NoCrashRewardModel <: AbstractMLRewardModel
     desired_lane::Int
 end
 #XXX temporary
-NoCrashRewardModel() = NoCrashRewardModel(100.,10.,8.0,4)
+NoCrashRewardModel() = NoCrashRewardModel(100.,10.,2.5,4)
 lambda(rm::NoCrashRewardModel) = rm.cost_dangerous_brake/rm.reward_in_desired_lane
 
 type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
@@ -256,7 +256,6 @@ end
 create_state(p::NoCrashProblem) = MLState(false, Array(CarState, p.dmodel.nb_cars))
 create_observation(pomdp::NoCrashPOMDP) = MLObs(false, Array(CarStateObs, pomdp.dmodel.nb_cars))
 
-
 function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
     pp = mdp.dmodel.phys_param
@@ -278,11 +277,9 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
     lcs[1] = a.lane_change
     dys[1] = a.lane_change*dt
 
-    changers = IntSet()
     for i in 2:nb_cars
         neighborhood = get_neighborhood(pp, s, i)
 
-        # To distinguish between different models--is there a better way?
         behavior = get(s.env_cars[i].behavior)
 
         acc = generate_accel(behavior, mdp.dmodel, s, neighborhood, i, rng)
@@ -291,46 +288,51 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
 
         lcs[i] = generate_lane_change(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dys[i] = lcs[i] * dt
-        if lcs[i] != 0
-            push!(changers, i)
-        end
     end
 
     ## Consistency checking ##
     #========================#
 
+    changers = IntSet()
+    for i in 1:nb_cars
+        if lcs[i] != 0
+            push!(changers, i)
+        end
+    end
     sorted_changers = sort!(collect(changers), by=i->s.env_cars[i].x, rev=true) # this might be slow because anonymous functions are slow
 
     if length(sorted_changers) >= 2 #something to compare
-      # iterate through pairs
-      iter_state = start(sorted_changers)
-      j, iter_state = next(sorted_changers, iter_state)
-      while !done(sorted_changers, iter_state)
-          i = j
-          j, iter_state = next(sorted_changers, iter_state)
-          car_i = s.env_cars[i]
-          car_j = s.env_cars[j]
+       # iterate through pairs
+        iter_state = start(sorted_changers)
+        j, iter_state = next(sorted_changers, iter_state)
+        while !done(sorted_changers, iter_state)
+            i = j
+            j, iter_state = next(sorted_changers, iter_state)
+            car_i = s.env_cars[i]
+            car_j = s.env_cars[j]
 
-          # check if they are both starting to change lanes on this step
-          if isinteger(car_i.y) && isinteger(car_j.y)
+            # check if they are both starting to change lanes on this step
+            if isinteger(car_i.y) && isinteger(car_j.y)
 
-              # make sure there is a conflict longitudinally
-              if car_i.x - car_j.x <= pp.l_car || car_i.x + dxs[i] - car_j.x + dxs[j] <= pp.l_car
+                # make sure there is a conflict longitudinally
+                # if car_i.x - car_j.x <= pp.l_car || car_i.x + dxs[i] - car_j.x + dxs[j] <= pp.l_car
+                if car_i.x - car_j.x <= mdp.dmodel.appear_clearance # made more conservative on 8/19
 
-                  # check if they are near each other lanewise
-                  if abs(car_i.y - car_j.y) <= 2.0
+                    # check if they are near each other lanewise
+                    if abs(car_i.y - car_j.y) <= 2.0
 
-                      # check if they are moving towards each other
-                      if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[i] - car_j.y+dys[j]) < 2.0
+                        # check if they are moving towards each other
+                        # if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[i] - car_j.y+dys[j]) < 2.0
+                        if true # prevent lockstepping 8/19
 
-                          # make j stay in his lane
-                          dys[j] = 0.0
-                          lcs[j] = 0.0
-                      end
-                  end
-              end
-          end
-      end
+                            # make j stay in his lane
+                            dys[j] = 0.0
+                            lcs[j] = 0.0
+                        end
+                    end
+                end
+            end
+        end
     end
 
     ## Dynamics and Exits ##
@@ -381,9 +383,8 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         # spot = at_front*nb_lanes + lane
         clearances = Array(Float64, 2*pp.nb_lanes)
         fill!(clearances, Inf)
-        for i in 1:nb_cars
-            lowlane = floor(Int, s.env_cars[i].y)
-            highlane = ceil(Int, s.env_cars[i].y)
+        for i in 1:length(s.env_cars) # this cannot be nb_cars because that value has been adjusted for exits
+            lowlane, highlane = occupation_lanes(s.env_cars[i].y, lcs[i])
             front = pp.lane_length - (s.env_cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
             back = s.env_cars[i].x - pp.l_car
             clearances[pp.nb_lanes+lowlane] = min(front, clearances[pp.nb_lanes+lowlane])
@@ -434,7 +435,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
             end
 
             next_id = maximum([c.id for c in s.env_cars]) + 1
-            behavior = rand(rng, mdp.dmodel.behaviors) # now generated above
+            behavior = rand(rng, mdp.dmodel.behaviors)
             if spot > pp.nb_lanes # at front
                 velp = sp.env_cars[1].vel - rand(rng) * min(mdp.dmodel.vel_sigma, sp.env_cars[1].vel - pp.v_min)
                 push!(sp.env_cars, CarState(pp.lane_length, lane, velp, 0.0, behavior, next_id))
@@ -517,8 +518,32 @@ function braking_ids(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=mdp
     return braking
 end
 
-
-
+"""
+Return the maximum braking (a positive number) by any car during the transition between s an sp
+"""
+function max_braking(mdp::NoCrashProblem, s::MLState, sp::MLState)
+    nb_leaving = 0 
+    dt = mdp.dmodel.phys_param.dt
+    min_acc = 0.0
+    for (i,c) in enumerate(s.env_cars)
+        if length(sp.env_cars) >= i-nb_leaving
+            cp = sp.env_cars[i-nb_leaving]
+        else
+            break
+        end
+        if cp.id != c.id
+            nb_leaving += 1
+            continue
+        else
+            acc = (cp.vel-c.vel)/dt
+            if acc < min_acc
+                min_acc = acc
+            end
+        end
+    end
+    # @assert nb_leaving <= 5 # sanity check - can remove this if it is violated as long as it doesn't happen all the time
+    return -min_acc
+end
 
 """
 Assign behaviors to a given physical state.
