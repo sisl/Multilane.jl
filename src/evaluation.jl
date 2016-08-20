@@ -24,11 +24,45 @@ function test_run_return_policy(eval_problem::NoCrashMDP, initial_state::MLState
     return sim, policy
 end
 
+function run_simulations(stats::DataFrame,
+                         objects::Dict;
+                         parallel=true,
+                         max_steps=10000,
+                         desc="Progress: ")
+
+    nb_sims = nrow(stats)
+
+    all_solvers = Array(Any, nb_sims)
+    all_problems = Array(Any, nb_sims)
+    all_solver_problems = Array(Any, nb_sims)
+    all_initial = Array(Any, nb_sims)
+
+    solvers = objects["solvers"]
+    problems = objects["problems"]
+    initial_states = objects["initial_states"]
+
+    for i in 1:nrow(stats)
+        all_solvers[i] = deepcopy(solvers[stats[i,:solver_key]])
+        all_problems[i] = problems[stats[i,:problem_key]]
+        all_solver_problems[i] = problems[stats[i,:solver_problem_key]]
+        all_initial[i] = initial_states[stats[i,:initial_key]]
+    end
+
+    return run_simulations(all_problems,
+                           all_initial,
+                           all_solver_problems,
+                           all_solvers,
+                           stats[:rng_seed],
+                           parallel=parallel,
+                           max_steps=max_steps,
+                           desc=desc)
+end
+
 function run_simulations(eval_problems::AbstractVector,
                          initial_states::AbstractVector,
                          solver_problems::AbstractVector,
-                         solvers::AbstractVector;
-                         rng_seeds::AbstractVector=collect(1:length(eval_problems)),
+                         solvers::AbstractVector,
+                         rng_seeds::AbstractVector=collect(1:length(eval_problems));
                          parallel=true,
                          max_steps=10000,
                          desc="Progress: ")
@@ -82,8 +116,11 @@ function run_simulations(eval_problems::AbstractVector,
     return sims
 end
 
-function fill_stats!(stats::DataFrame, eval_problems::Vector, sims::Vector; metrics::AbstractVector=[])
+function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector; metrics::AbstractVector=[])
+    @assert nrow(stats) == length(sims)
+    problems = objects["problems"]
     nb_sims = length(sims)
+    eval_problems = [problems[key] for key in stats[:problem_key]]
 
     # add new columns
     stats[:reward] = DataArray(Float64, nb_sims)

@@ -15,7 +15,7 @@ const NINE_BEHAVIORS = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for
 const NORMAL_IDM = IDMParam(1.4, 2.0, 1.5, 120/3.6, 2.0, 4.0) 
 const TIMID_IDM = IDMParam(1.0, 1.0, 1.8, 100/3.6, 4.0, 4.0)
 const AGGRESSIVE_IDM = IDMParam(2.0, 3.0, 1.0, 140/3.6, 1.0, 4.0)
-agents_behavior(idm, idx) = IDMMOBILBehavior(idm, MOBILParam(0.4, idm.b, 0.1), idx)
+agents_behavior(idm, idx) = IDMMOBILBehavior(idm, MOBILParam(0.6, idm.b, 0.1), idx)
 
 const NORMAL = agents_behavior(NORMAL_IDM, 1)
 const TIMID = agents_behavior(TIMID_IDM, 2)
@@ -269,18 +269,7 @@ function find_row(table::DataFrame, vals::Dict{Symbol,Any})
     end
 end
 
-"""
-Run the simulations in tests.
-"""
-function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
-                  parallel=true,
-                  desc="Progress: ",
-                  metrics::AbstractVector=[],
-                  max_steps=10000)
-
-    solvers = objects["solvers"]
-    problems = objects["problems"]
-    initial_states = objects["initial_states"]
+function setup_stats(tests::AbstractVector, objects::Dict{UTF8String,Any})
     param_table = objects["param_table"]
     state_lists = objects["state_lists"]
 
@@ -297,11 +286,6 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
         rng_seed=DataArray(Int,nb_sims),
         time=ones(nb_sims).*time(),
     )
-
-    all_solvers = Array(Any, nb_sims)
-    all_problems = Array(Any, nb_sims)
-    all_solver_problems = Array(Any, nb_sims)
-    all_initial = Array(Any, nb_sims)
 
     id = 0
     for t in tests
@@ -327,24 +311,32 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
             for (is_i, is_key) in enumerate(take(is_keys, t.N))
                 id += 1
                 stats[:solver_key][id] = solver_key
-                all_solvers[id] = deepcopy(solvers[solver_key])
                 stats[:problem_key][id] = ep_key
-                all_problems[id] = problems[ep_key]
                 stats[:solver_problem_key][id] = sp_key
-                all_solver_problems[id] = problems[sp_key]
                 stats[:initial_key][id] = is_key
-                all_initial[id] = initial_states[is_key]
                 stats[:rng_seed][id] = is_i+t.rng_seed
                 stats[:test_key][id] = test_key
             end
         end
     end
+    return stats
+end
 
-    sims = run_simulations(all_problems, all_initial,
-                           all_solver_problems, all_solvers,
-                           rng_seeds=stats[:rng_seed], parallel=parallel,
+"""
+Run the simulations in tests.
+"""
+function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
+                  parallel=true,
+                  desc="Progress: ",
+                  metrics::AbstractVector=[],
+                  max_steps=10000)
+
+    stats = setup_stats(tests, objects)
+
+    sims = run_simulations(stats, objects,
+                           parallel=parallel,
                            desc=desc, max_steps=max_steps)
-    fill_stats!(stats, all_problems, sims, metrics=metrics)
+    fill_stats!(stats, objects, sims, metrics=metrics)
 
     results = deepcopy(objects)
     results["stats"] = stats

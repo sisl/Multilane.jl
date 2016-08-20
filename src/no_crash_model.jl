@@ -316,7 +316,8 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
 
                 # make sure there is a conflict longitudinally
                 # if car_i.x - car_j.x <= pp.l_car || car_i.x + dxs[i] - car_j.x + dxs[j] <= pp.l_car
-                if car_i.x - car_j.x <= mdp.dmodel.appear_clearance # made more conservative on 8/19
+                # if car_i.x - car_j.x <= mdp.dmodel.appear_clearance # made more conservative on 8/19
+                if car_i.x - car_j.x <= get_idm_s_star(get(car_j.behavior).p_idm, car_j.vel, car_j.vel-car_i.vel) # upgraded to sstar on 8/19
 
                     # check if they are near each other lanewise
                     if abs(car_i.y - car_j.y) <= 2.0
@@ -384,7 +385,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
     if nb_cars < mdp.dmodel.nb_cars && rand(rng) <= mdp.dmodel.p_appear
 
         behavior = rand(rng, mdp.dmodel.behaviors)
-        vel = typical_velocity(behavior)
+        vel = typical_velocity(behavior) + randn(rng)*mdp.dmodel.vel_sigma
 
         clearances = Array(Float64, pp.nb_lanes)
         fill!(clearances, Inf)

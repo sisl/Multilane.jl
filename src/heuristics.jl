@@ -64,11 +64,36 @@ type BehaviorPolicy <: Policy
 end
 solve(s::BehaviorSolver, p::NoCrashProblem) = BehaviorPolicy(p, s.b, s.rng)
 
-function action(p::BehaviorPolicy, s::Union{MLState,MLObs}, a::MLAction=MLAction(0.0,0.0))
+function action(p::BehaviorPolicy, s::MLState, a::MLAction=MLAction(0.0,0.0))
     nbhd = get_neighborhood(p.problem.dmodel.phys_param, s, 1)
     acc = generate_accel(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
     lc = generate_lane_change(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
     return MLAction(acc, lc)
+end
+
+
+type IDMLaneSeekingSolver <: Solver
+    b::BehaviorModel
+    rng::AbstractRNG
+end
+
+type IDMLaneSeekingPolicy <: Policy
+    problem::NoCrashProblem
+    b::BehaviorModel
+    rng::AbstractRNG
+end
+solve(s::IDMLaneSeekingSolver, p::NoCrashProblem) = IDMLaneSeekingPolicy(p, s.b, s.rng)
+
+function action(p::IDMLaneSeekingPolicy, s::MLState, a::MLAction=MLAction(0.0,0.0))
+    nbhd = get_neighborhood(p.problem.dmodel.phys_param, s, 1)
+    acc = generate_accel(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
+    # try to positive lanechange
+    # lc = problem.dmodel.lane_change_rate * !is_lanechange_dangerous(pp,s,nbhd,1,1)
+    lc = p.problem.dmodel.lane_change_rate
+    if is_safe(p.problem, s, MLAction(acc, lc))
+        return MLAction(acc, lc)
+    end
+    return MLAction(acc, 0.0)
 end
 
 #=

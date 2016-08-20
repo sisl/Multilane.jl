@@ -72,7 +72,8 @@ export
     NoCrashPOMDP,
     Simple,
     SimpleSolver,
-    BehaviorSolver
+    BehaviorSolver,
+    IDMLaneSeekingSolver
 
 
 export
