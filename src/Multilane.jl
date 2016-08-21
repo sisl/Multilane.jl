@@ -34,6 +34,8 @@ using Reel
 using AutomotiveDrivingModels
 using AutoViz
 
+import Mustache
+import JLD
 
 # package code goes here
 export
@@ -106,7 +108,10 @@ export #data structure stuff
     lambda,
     TestSet,
     gen_initials,
-    run_simulations
+    run_simulations,
+    fill_stats!,
+    sbatch_spawn,
+    gather_results
 
 
 export # POMDP belief stuff
@@ -140,5 +145,6 @@ include("single_behavior.jl")
 include("heuristics.jl")
 include("beliefs.jl")
 include("tree_vis.jl")
+include("sherlock.jl")
 
 end # module

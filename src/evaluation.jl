@@ -28,6 +28,7 @@ function run_simulations(stats::DataFrame,
                          objects::Dict;
                          parallel=true,
                          max_steps=10000,
+                         progress=true,
                          desc="Progress: ")
 
     nb_sims = nrow(stats)
@@ -55,6 +56,7 @@ function run_simulations(stats::DataFrame,
                            stats[:rng_seed],
                            parallel=parallel,
                            max_steps=max_steps,
+                           progress=progress,
                            desc=desc)
 end
 
@@ -65,29 +67,52 @@ function run_simulations(eval_problems::AbstractVector,
                          rng_seeds::AbstractVector=collect(1:length(eval_problems));
                          parallel=true,
                          max_steps=10000,
+                         progress=true,
                          desc="Progress: ")
 
     N = length(eval_problems)
     prog = ProgressMeter.Progress( N, dt=0.1, barlen=30, output=STDERR, desc=desc)
     if parallel
-        sims = pmap(test_run,
-                    prog,
-                    eval_problems,
-                    initial_states,
-                    solver_problems,
-                    solvers,
-                    rng_seeds,
-                    max_steps*ones(Int,N)
-                    )
+        if progress
+            sims = pmap(test_run,
+                        prog,
+                        eval_problems,
+                        initial_states,
+                        solver_problems,
+                        solvers,
+                        rng_seeds,
+                        max_steps*ones(Int,N)
+                        )
+        else
+            sims = pmap(test_run,
+                        eval_problems,
+                        initial_states,
+                        solver_problems,
+                        solvers,
+                        rng_seeds,
+                        max_steps*ones(Int,N)
+                        )
+        end
     else
         sims = Array(HistoryRecorder, length(eval_problems))
-        @showprogress for j in 1:length(eval_problems)
-            sims[j] = test_run(eval_problems[j],
-                               initial_states[j],
-                               solver_problems[j],
-                               solvers[j],
-                               rng_seeds[j],
-                               max_steps)
+        if progress
+            @showprogress for j in 1:length(eval_problems)
+                sims[j] = test_run(eval_problems[j],
+                                   initial_states[j],
+                                   solver_problems[j],
+                                   solvers[j],
+                                   rng_seeds[j],
+                                   max_steps)
+            end
+        else
+            for j in 1:length(eval_problems)
+                sims[j] = test_run(eval_problems[j],
+                                   initial_states[j],
+                                   solver_problems[j],
+                                   solvers[j],
+                                   rng_seeds[j],
+                                   max_steps)
+            end
         end
     end
 
@@ -116,7 +141,8 @@ function run_simulations(eval_problems::AbstractVector,
     return sims
 end
 
-function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector; metrics::AbstractVector=[])
+function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
+                     metrics::AbstractVector=get(objects, "metrics", []))
     @assert nrow(stats) == length(sims)
     problems = objects["problems"]
     nb_sims = length(sims)
@@ -201,71 +227,6 @@ function assign_keys(problems::AbstractVector; rng=MersenneTwister(rand(UInt32))
     return Dict{UTF8String,Any}([(p_keys[i], problems[i]) for i in 1:length(problems)])
 end
 
-#=
-function evaluate(problem_keys::AbstractVector,
-                  is_keys::AbstractVector,
-                  solver_keys::AbstractVector,
-                  objects::Dict{UTF8String, Any};
-                  solver_problem_keys::AbstractVector=problem_keys,
-                  N=length(initial_states),
-                  rng_offset=0, parallel=true,
-                  desc="Progress: ")
-
-    @assert length(problem_keys) == length(solver_problem_keys)
-    nb_sims = length(problem_keys)*min(N,length(is_keys))*length(solver_keys)
-    all_problems = Array(Any, nb_sims)
-    ep_keys = problem_keys
-    all_solver_problems = Array(Any, nb_sims)
-    sp_keys = solver_problem_keys
-    all_initial = Array(Any, nb_sims)
-    all_solvers = Array(Any, nb_sims)
-
-    solvers = objects["solvers"]
-    problems = objects["problems"]
-    initial_states = objects["initial_states"]
-
-    stats = DataFrame(
-        id=1:nb_sims,
-        uuid=UInt128[Base.Random.uuid4() for i in 1:nb_sims],
-        solver_key=DataArray(UTF8String,nb_sims),
-        eval_problem_key=DataArray(UTF8String,nb_sims),
-        solver_problem_key=DataArray(UTF8String,nb_sims),
-        initial_key=DataArray(UTF8String,nb_sims),
-        rng_seed=DataArray(Int,nb_sims),
-        time=ones(nb_sims).*time(),
-        )
-
-    id = 0
-    for j in 1:length(problem_keys)
-        ep_key = ep_keys[j]
-        sp_key = sp_keys[j]
-        for (is_i, is_key) in enumerate(take(is_keys, N))
-            for solver_key in solver_keys
-                id += 1
-                stats[:solver_key][id] = solver_key
-                all_solvers[id] = deepcopy(solvers[solver_key])
-                stats[:problem_key][id] = ep_key
-                all_problems[id] = problems[ep_key]
-                stats[:solver_problem_key][id] = sp_key
-                all_solver_problems[id] = problems[sp_key]
-                stats[:initial_key][id] = is_key
-                all_initial[id] = initial_states[is_key]
-                stats[:rng_seed][id] = is_i+rng_offset
-            end
-        end
-    end
-
-    sims = run_simulations(all_problems, all_initial, all_solver_problems, all_solvers, rng_seeds=stats[:rng_seed], parallel=parallel, desc=desc)
-    fill_stats!(stats, all_problems, sims)
-    return Dict{UTF8String, Any}(
-        "solvers"=>solvers,
-        "problems"=>problems,
-        "initial_states"=>initial_states,
-        "stats"=>stats,
-        "histories"=>sims
-        )
-end
-=#
 
 """
 Checks that all common keys have equal values in both dictionaries and adds keys not in common
