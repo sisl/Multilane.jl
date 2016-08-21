@@ -27,7 +27,7 @@ for p in linspace(0., 1., 5)
                                 WeightVec([p, (1-p)/2, (1-p)/2]))
 end
 
-@show behaviors
+# @show behaviors
 
 dpws = DPWSolver(depth=20,
                  n_iterations=500,
@@ -56,8 +56,11 @@ objects = gen_initials(tests, behaviors=behaviors)
 
 @show objects["param_table"] 
 objects["solvers"] = solvers
+for is in values(objects["initial_states"])
+    @assert !isnull(is.env_cars[1].behavior)
+end
 
-results = evaluate(tests, objects)
+results = evaluate(tests, objects, parallel=true)
 
 filename = string("results_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")
 results["histories"] = nothing
