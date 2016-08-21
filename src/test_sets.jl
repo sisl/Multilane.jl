@@ -344,17 +344,6 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
     results["tests"] = Dict{UTF8String,Any}([(t.key, t) for t in tests])
     return results
 
-    #=
-    return Dict{UTF8String, Any}(
-        "solvers"=>solvers,
-        "problems"=>problems,
-        "initial_states"=>initial_states,
-        "stats"=>stats,
-        "histories"=>sims,
-        "tests"=>Dict{UTF8String,Any}([(t.key, t) for t in tests])
-        )
-        =#
-
 end
 
 function merge_tests!(t1::Dict, t2::Dict)
