@@ -30,9 +30,9 @@ import MCTS # so that we can define node_tag, etc.
 using RobustMCTS # for RobustMDP
 import POMCP # for particle filter
 
-using Reel
-using AutomotiveDrivingModels
-using AutoViz
+# using Reel
+# using AutomotiveDrivingModels
+# using AutoViz
 
 import Mustache
 import JLD
@@ -77,7 +77,6 @@ export
     BehaviorSolver,
     IDMLaneSeekingSolver
 
-
 export
     SingleBehaviorSolver,
     SingleBehaviorPolicy,
@@ -91,10 +90,8 @@ export
     get_idm_dv,
     get_mobil_lane_change,
     is_crash,
-    visualize,
-    display_sim,
-    write_tmp_gif,
     detect_braking,
+    max_braking,
     braking_ids
 
 export #data structure stuff
@@ -126,6 +123,8 @@ export
     MaxBrakeMetric,
     NumBehaviorBrakesMetric
 
+export
+    include_visualization
 
 include("physical.jl")
 include("MDP_types.jl")
@@ -135,7 +134,6 @@ include("MOBIL.jl")
 include("behavior.jl")
 include("behavior_gen.jl")
 include("no_crash_model.jl")
-include("visualization.jl")
 include("metrics.jl")
 include("evaluation.jl")
 include("test_sets.jl")
@@ -146,5 +144,8 @@ include("heuristics.jl")
 include("beliefs.jl")
 include("tree_vis.jl")
 include("sherlock.jl")
+
+include_visualization() = include(joinpath(Pkg.dir("Multilane"),"src","visualization.jl"))
+
 
 end # module

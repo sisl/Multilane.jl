@@ -2,8 +2,6 @@ julia 0.4
 StatsBase
 Iterators
 POMDPs
-Interact
-PyPlot
 DataFrames
 DataFramesMeta
 ProgressMeter
@@ -11,5 +9,4 @@ ArgParse
 Plots
 UnicodePlots
 Mustache
-Reel
 JLD

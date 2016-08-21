@@ -70,11 +70,11 @@ end #MLState
 
 function MLState(pos::Real, vel::Real, cars::Array{CarState,1}, x::Real=50.)
   #x = mdp.phys_param.lane_length/2.
-  insert!(cars,1,CarState(x, pos, vel, 0, Nullable{BehaviorModel}(), 0))
+  insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
   return MLState(false,cars)
 end
 function MLState(crashed::Bool,pos::Real,vel::Real,cars::Array{CarState,1},x::Real=50.)
-  insert!(cars,1,CarState(x, pos, vel, 0, Nullable{BehaviorModel}(), 0))
+  insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
   return MLState(crashed,cars)
 end
 

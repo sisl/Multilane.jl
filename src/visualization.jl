@@ -1,11 +1,20 @@
 # using PyPlot
+#=
+module MLVisualization
+
+export
+    visualize,
+    display_sim,
+    write_tmp_gif
+=#
 using Reel
+using AutomotiveDrivingModels
+using AutoViz
+using Multilane
+using Interact
+using POMDPToolbox
 
 BEHAVIOR_COLORS = Dict{Float64,AbstractString}(0.5=>"#0101DF",0.25=>"#D7DF01",0.0=>"#FF0000")
-
-draw_box(x::Union{Float64,Int},y::Union{Float64,Int},w::Union{Float64,Int},h::Union{Float64,Int})=fill([x;x+w;x+w;x],[y;y;y+h;y+h])
-draw_box(x::Union{Float64,Int},y::Union{Float64,Int},w::Union{Float64,Int},h::Union{Float64,Int},color::AbstractString)=fill([x;x+w;x+w;x],[y;y;y+h;y+h],color=color)
-
 
 function display_sim(mdp, S::Array{MLState,1}, A::Array{MLAction,1})
     warn("This should be run in a Jupyter Notebook")
@@ -250,3 +259,5 @@ function draw_sedan(pp::PhysicalParam, s::CarState, v_nom::Float64, frame::Float
     annotate(string(s.id), xy=(x_ctr, y_ctr-2))
 end
 =#
+
+# end # module Visualization
