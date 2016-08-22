@@ -7,7 +7,7 @@ function state_fixture()
     # XXX are we going to git rid of v_min, etc?
     lane_length=100.0
     pp = PhysicalParam(3, lane_length=lane_length)
-    return MLState(false, CarState[CarState(lane_length/2.0, 2.0, pp.v_med, 0.0, Nullable{BehaviorModel}(),0),
+    return MLState(false, CarState[CarState(lane_length/2.0, 2.0, pp.v_med, 0.0, Multilane.NORMAL,0),
                                 CarState(lane_length*3/4, 1.0, pp.v_min, 0.0,
                                          IDMMOBILBehavior("normal", pp.v_min, 0.0, 1),0),
                                 CarState(lane_length*1/4, 3.0, pp.v_max, 0.0,
@@ -49,7 +49,7 @@ end
 """
 Return a CarState for the ego vehicle with the specified y.
 """
-ego_state_spec_y(y) = CarState(0.0, y, 30.0, 0.0, Nullable{BehaviorModel}(),1)
+ego_state_spec_y(y) = CarState(0.0, y, 30.0, 0.0, Multilane.NORMAL,1)
 
 function test_snapback()
     println("\t\tTesting snapping back after lane change too far")
