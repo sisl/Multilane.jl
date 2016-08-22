@@ -26,7 +26,7 @@ s = initial_state(mdp::NoCrashMDP, rng)
 # @show s.env_cars[1]
 #visualize(mdp,s,MLAction(0,0))
 
-policy = Multilane.BehaviorPolicy(mdp, Multilane.NORMAL, rng)
+policy = Multilane.BehaviorPolicy(mdp, Multilane.NORMAL, false, rng)
 
 sim = HistoryRecorder(rng=rng, max_steps=100) # initialize a random number generator
 
