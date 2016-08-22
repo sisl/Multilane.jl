@@ -19,9 +19,6 @@ import Base: ==, hash, length, vec
 
 # import POMDPToolbox: Particle, ParticleBelief
 
-# for visualization
-using Interact
-
 using DataFrames
 using ProgressMeter
 using PmapProgressMeter

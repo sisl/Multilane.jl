@@ -55,19 +55,25 @@ end
 
 type BehaviorSolver <: Solver
     b::BehaviorModel
+    keep_lane::Bool
     rng::AbstractRNG
 end
 type BehaviorPolicy <: Policy
     problem::NoCrashProblem
     b::BehaviorModel
+    keep_lane::Bool
     rng::AbstractRNG
 end
-solve(s::BehaviorSolver, p::NoCrashProblem) = BehaviorPolicy(p, s.b, s.rng)
+solve(s::BehaviorSolver, p::NoCrashProblem) = BehaviorPolicy(p, s.b, s.keep_lane, s.rng)
 
 function action(p::BehaviorPolicy, s::MLState, a::MLAction=MLAction(0.0,0.0))
     nbhd = get_neighborhood(p.problem.dmodel.phys_param, s, 1)
     acc = generate_accel(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
-    lc = generate_lane_change(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
+    if p.keep_lane
+        lc = 0.0
+    else
+        lc = generate_lane_change(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
+    end
     return MLAction(acc, lc)
 end
 
