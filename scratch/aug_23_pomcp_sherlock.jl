@@ -45,8 +45,8 @@ objects["solvers"] = solvers
 files = sbatch_spawn(tests, objects,
                      batch_size=1,
                      time_per_batch="10:00",
-                     submit_command="bash",
-                     template_name="theresa.sh")
+                     submit_command="sbatch",
+                     template_name="sherlock")
 
 # results = evaluate(tests, objects, parallel=true)
 
