@@ -4,31 +4,6 @@ using MCTS
 using JLD
 
 
-# from "Agents" paper
-# bsafe = b
-# a_thr = 0.1 # from the "General Lane-Changing" paper
-# p in [0.2, 1] from Agents Paper, set to 0.5 for all
-normal_idm = IDMParam(1.4, 2.0, 1.5, 120/3.6, 2.0, 4.0) 
-timid_idm = IDMParam(1.0, 1.0, 1.8, 100/3.6, 4.0, 4.0)
-aggressive_idm = IDMParam(2.0, 3.0, 1.0, 140/3.6, 1.0, 4.0)
-agents_behavior(idm, idx) = IDMMOBILBehavior(idm, MOBILParam(0.5, idm.b, 0.1), idx)
-
-normal = agents_behavior(normal_idm, 1)
-timid = agents_behavior(timid_idm, 2)
-aggressive = agents_behavior(aggressive_idm, 3)
-
-behaviors = Dict{UTF8String, Any}(
-    "all_normal" => DiscreteBehaviorSet([normal], WeightVec([1])),
-)
-
-for p in linspace(0., 1., 5)
-    behaviors[@sprintf("agents_%03d", 100*p)] =
-            DiscreteBehaviorSet([normal, timid, aggressive],
-                                WeightVec([p, (1-p)/2, (1-p)/2]))
-end
-
-# @show behaviors
-
 dpws = DPWSolver(depth=20,
                  n_iterations=500,
                  exploration_constant=50.0,

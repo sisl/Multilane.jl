@@ -5,15 +5,12 @@
 #set a job name  
 #SBATCH --job-name={{{:job_name}}}
 #################  
-#a file for job output, you can check job progress
-#SBATCH --output={{{:outpath}}}
-#################
-# a file for errors from the job
-#SBATCH --error={{{:errpath}}}
-#################
 #time you think you need; default is one hour
 #in minutes in this case, hh:mm:ss
 #SBATCH --time={{{:time}}}
+#################
+#number of jobs in array
+#SBATCH --array=1-{{{:nb_batches}}}
 #################
 #quality of service; think of it as job priority
 #SBATCH --qos=normal
