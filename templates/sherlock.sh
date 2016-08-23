@@ -3,17 +3,17 @@
 #all commands that start with SBATCH contain commands that are just used by SLURM for scheduling  
 #################
 #set a job name  
-#SBATCH --job-name={{:job_name}}
+#SBATCH --job-name={{{:job_name}}}
 #################  
 #a file for job output, you can check job progress
-#SBATCH --output={{:outpath}}
+#SBATCH --output={{{:outpath}}}
 #################
 # a file for errors from the job
-#SBATCH --error={{:errpath}}
+#SBATCH --error={{{:errpath}}}
 #################
 #time you think you need; default is one hour
 #in minutes in this case, hh:mm:ss
-#SBATCH --time={{:time}}
+#SBATCH --time={{{:time}}}
 #################
 #quality of service; think of it as job priority
 #SBATCH --qos=normal
@@ -26,4 +26,4 @@
 #SBATCH --ntasks-per-node=1
 #################
 
-~/bin/julia ~/.julia/v0.4/Multilane/scripts/runsims.jl {{:object_file_path}} {{:list_file_path}}
+~/bin/julia ~/.julia/v0.4/Multilane/scripts/runsims.jl {{{:object_file_path}}} {{{:list_file_path}}}

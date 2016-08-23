@@ -24,7 +24,10 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
     @assert rem(nb_sims, batch_size) == 0
     results_file_list = []
 
+    tpl = Mustache.parse(readall(joinpath(Pkg.dir("Multilane"), "templates", template_name)))
+
     for i in 1:nb_batches
+        tic()
         jobname = "$(i)_of_$nb_batches"
         println("preparing job $jobname")
 
@@ -33,8 +36,7 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
         listname = joinpath(data_dir, string("list_", jobname, ".jld"))
         JLD.save(listname, Dict("stats"=>these_stats))
 
-        tpl = readall(joinpath(Pkg.dir("Multilane"), "templates", template_name))
-        sbatch = Mustache.render(tpl,
+        sbatch = @time Mustache.render(tpl,
                         job_name=jobname,
                         outpath=joinpath(data_dir, string(jobname, ".out")),
                         errpath=joinpath(data_dir, string(jobname, ".err")),
@@ -49,9 +51,10 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
         
         cmd = `$submit_command $sbatchname` 
         println("running $cmd ...")
-        run(cmd)
+        @time run(cmd)
         println("done")
         push!(results_file_list, joinpath(data_dir, string("results_", jobname, ".jld")))
+        toc()
     end
 
     return results_file_list

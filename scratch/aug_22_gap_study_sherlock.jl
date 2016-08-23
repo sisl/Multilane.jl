@@ -41,7 +41,7 @@ solvers = Dict{UTF8String, Any}(
 )
 
 # curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 50.,], N=1)
-curve = TestSet(lambda=[50.,], N=1)
+curve = TestSet(lambda=[50.], N=1)
 
 tests = []
 for p in linspace(0., 1., 5)
