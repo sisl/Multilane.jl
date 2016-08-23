@@ -2,6 +2,7 @@ using Multilane
 using StatsBase
 using MCTS
 using JLD
+using POMCP
 
 dpws = DPWSolver(depth=20,
                  n_iterations=500,
@@ -23,7 +24,7 @@ pomcps = POMCPDPWSolver(
 
 solvers = Dict{UTF8String, Any}(
     "dpw"=>dpws,
-    "assume_normal"=>SingleBehaviorSolver(dpws, normal),
+    "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "pomcp"=>MLPOMDPSolver(pomcps, BehaviorRootUpdaterStub(0.05))
 )
 
@@ -31,12 +32,12 @@ solvers = Dict{UTF8String, Any}(
 curve = TestSet(lambda=[46.4], N=1)
 
 tests = [
-    TestSet(curve, solver_key="dpw"),
-    TestSet(curve, solver_key="assume_normal"),
-    TestSet(curve, solver_key="pomcp")
+    TestSet(curve, solver_key="dpw", behaviors="agents"),
+    TestSet(curve, solver_key="assume_normal", behaviors="agents"),
+    TestSet(curve, solver_key="pomcp", behaviors="agents")
 ]
 
-objects = gen_initials(tests, behaviors=behaviors, generate_physical=true)
+objects = gen_initials(tests, generate_physical=true)
 
 @show objects["param_table"] 
 objects["solvers"] = solvers
