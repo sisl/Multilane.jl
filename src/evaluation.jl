@@ -249,9 +249,10 @@ function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any
     merge!(r1["behaviors"], r2["behaviors"])
     r1["param_table"] = join(r1["param_table"], r2["param_table"], on=names(r1["param_table"]), kind=:outer)
     if haskey(r1, "stats")
-        len = nrow(r1["stats"])
+        # len = nrow(r1["stats"])
         append!(r1["stats"], r2["stats"])
-        r1["stats"][:id][end-len+1:end] += len
+        # r1["stats"][:id][end-len+1:end] += len
+        r1["stats"][:id]=1:nrow(r1["stats"])
     else
         r1["stats"] = r2["stats"]
     end

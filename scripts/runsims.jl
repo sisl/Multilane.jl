@@ -1,5 +1,7 @@
 #!/usr/bin/julia
 
+tic()
+
 using ArgParse
 
 using JLD
@@ -46,4 +48,7 @@ else
     b = string("results_", b)
 end
 resultsfile = joinpath(dir, b)
+objects["histories"]=nothing
 save(resultsfile, objects)
+println("Done running $(nrow(stats)) tests.")
+toc()

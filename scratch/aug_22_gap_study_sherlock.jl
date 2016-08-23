@@ -40,7 +40,8 @@ solvers = Dict{UTF8String, Any}(
     "assume_normal"=>SingleBehaviorSolver(dpws, normal)
 )
 
-curve = TestSet(lambda=[1.0, 2.15, 4.64, 10., 21.5, 46.4, 100.,], N=1)
+# curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 50.,], N=1)
+curve = TestSet(lambda=[50.,], N=1)
 
 tests = []
 for p in linspace(0., 1., 5)
@@ -60,9 +61,19 @@ for is in values(objects["initial_states"])
     @assert !isnull(is.env_cars[1].behavior)
 end
 
-results = evaluate(tests, objects, parallel=true)
+files = sbatch_spawn(tests, objects,
+                     batch_size=1,
+                     time_per_batch="10:00",
+                     submit_command="sbatch",
+                     template_name="sherlock.sh")
 
-filename = string("results_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")
-results["histories"] = nothing
-save(filename, results)
-println("results saved to $filename")
+for f in files
+    println(f)
+end
+
+# results = evaluate(tests, objects, parallel=true)
+
+# filename = string("results_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")
+# results["histories"] = nothing
+# save(filename, results)
+# println("results saved to $filename")

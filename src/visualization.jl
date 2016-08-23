@@ -13,6 +13,7 @@ using AutoViz
 using Multilane
 using Interact
 using POMDPToolbox
+using Cairo
 
 BEHAVIOR_COLORS = Dict{Float64,AbstractString}(0.5=>"#0101DF",0.25=>"#D7DF01",0.0=>"#FF0000")
 
@@ -22,6 +23,13 @@ function display_sim(mdp, S::Array{MLState,1}, A::Array{MLAction,1})
     @manipulate for i = 1:length(A)
         visualize(mdp,S[i],A[i],S[i+1])
     end
+end
+
+function show_state(mdp, s)
+    c = visualize(mdp, s)
+    tn = string(tempname(), ".png")
+    write_to_png(c, tn)
+    run(`xdg-open $tn`)
 end
 
 function display_sim(mdp, sim::HistoryRecorder)

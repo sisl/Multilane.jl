@@ -121,10 +121,11 @@ end
 
 function gen_initials(tests::AbstractVector, initials::Dict=Dict{UTF8String,Any}();
                       behaviors::Dict{UTF8String,Any}=get(initials, "behaviors", DEFAULT_BEHAVIORS),
+                      generate_physical=false,
                       rng::AbstractRNG=MersenneTwister(rand(UInt32)))
     initials=Dict{UTF8String,Any}([k=>v for (k,v) in initials])
     for t in tests
-        add_initials!(initials, t, behaviors=behaviors, rng=rng)
+        add_initials!(initials, t, behaviors=behaviors, rng=rng, generate_physical=generate_physical)
     end
     return initials
 end
@@ -156,15 +157,16 @@ function gen_problem(row, behaviors::Dict{UTF8String,Any}, rng::AbstractRNG)
     return problem
 end
 
-function gen_initial_physical(N; rng::AbstractRNG=MersenneTwister(rand(UInt32)))
-    base_problem = gen_base_problem()
-    return [MLPhysicalState(initial_state(base_problem, rng)) for i in 1:N]
+function gen_initial_physical(base_problem, N; rng::AbstractRNG=MersenneTwister(rand(UInt32)))
+    # return [MLPhysicalState(initial_state(base_problem, rng)) for i in 1:N]
+    return [MLPhysicalState(relaxed_initial_state(base_problem, 200, rng)) for i in 1:N]
 end
 
 function add_initials!(objects::Dict{UTF8String, Any},
                        ts::TestSet;
                        behaviors::Dict{UTF8String,Any}=get(objects, "behaviors"),
-                       rng::AbstractRNG=MersenneTwister(rand(UInt32)))
+                       rng::AbstractRNG=MersenneTwister(rand(UInt32)),
+                       generate_physical=false)
 
     new_table = DataFrame()
 
@@ -201,12 +203,6 @@ function add_initials!(objects::Dict{UTF8String, Any},
     param_list = names(new_table)
 
     problems = get(objects, "problems", Dict{UTF8String,Any}())
-    initial_states = get(objects, "initial_states", Dict{UTF8String,Any}())
-    state_lists = get(objects, "state_lists", Dict{UTF8String,Any}())
-    initial_physical_states = get(objects,
-                                  "initial_physical_states",
-                                  gen_initial_physical(ts.N, rng=rng))
-
     if haskey(objects, "param_table")
         param_table = objects["param_table"]
         for p in param_list
@@ -230,6 +226,21 @@ function add_initials!(objects::Dict{UTF8String, Any},
             problems[key] = gen_problem(row, behaviors, rng)
             row[:problem_key] = key
         end
+    end
+
+    initial_states = get(objects, "initial_states", Dict{UTF8String,Any}())
+    state_lists = get(objects, "state_lists", Dict{UTF8String,Any}())
+
+    if haskey(objects, "initial_physical_states")
+        initial_physical_states = objects["initial_physical_states"]
+    elseif generate_physical
+        initial_physical_states = gen_initial_physical(gen_base_problem(), ts.N, rng=rng)
+    elseif isinteractive()
+        println("\n\nNo initial physical states found! Press Enter to generate them, Ctrl-C to cancel.")
+        readline(STDIN)
+        initial_physical_states = gen_initial_physical(gen_base_problem(), ts.N, rng=rng)
+    else
+        error("""No initial physical states found!""")
     end
 
     for g in groupby(param_table, INITIAL_RELEVANT)

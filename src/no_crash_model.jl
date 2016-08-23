@@ -369,8 +369,13 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
             end
         end
 
-        # enforce max/min y position constraints
-        # yp = min(max(yp,1.), pp.nb_lanes) # this should never be violated because of the check above
+        # if yp < 1.0 || yp > pp.nb_lanes
+        #     @show i
+        #     @show yp
+        #     println("mdp = $mdp")
+        #     println("s = $s")
+        #     println("a = $a")
+        # end
         @assert yp >= 1.0 && yp <= pp.nb_lanes
 
         if xp < 0.0 || xp >= pp.lane_length

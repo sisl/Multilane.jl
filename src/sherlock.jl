@@ -63,7 +63,7 @@ function gather_results(results_file_list; save_file::Nullable=Nullable())
         results = merge_results!(results, JLD.load(f))
     end
     if !isnull(save_file)
-        JLD.save(save_file, results)
+        JLD.save(get(save_file), results)
     end
     return results
 end
