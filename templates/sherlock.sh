@@ -5,6 +5,8 @@
 #set a job name  
 #SBATCH --job-name={{{:job_name}}}
 #################  
+#dir for output
+#SBATCH --workdir={{{:data_dir}}}
 #time you think you need; default is one hour
 #in minutes in this case, hh:mm:ss
 #SBATCH --time={{{:time}}}

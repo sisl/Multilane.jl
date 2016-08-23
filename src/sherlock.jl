@@ -35,7 +35,8 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
                     time=time_per_batch,
                     object_file_path=objectname,
                     list_file_path=listname,
-                    nb_batches=nb_batches)
+                    nb_batches=nb_batches,
+                    data_dir=data_dir)
 
     sbatchname = joinpath(data_dir, "$job_name.sbatch")
     open(sbatchname, "w") do f
