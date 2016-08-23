@@ -9,6 +9,8 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
                       )
 
     stats = setup_stats(tests, objects)
+    # shuffle so that batches take approximately the same amount of time
+    sort!(stats, cols=:uuid)
     objects["tests"] = Dict([t.key=>t for t in tests])
 
     try
@@ -25,7 +27,7 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
     @assert rem(nb_sims, batch_size) == 0
     results_file_list = []
 
-    listname = joinpath(data_dir, string("list_\$(SLURM_ARRAY_TASK_ID)_of_$(nb_batches).jld"))
+    listname = joinpath(data_dir, string("list_\${SLURM_ARRAY_TASK_ID}_of_$(nb_batches).jld"))
 
     tpl = Mustache.parse(readall(joinpath(Pkg.dir("Multilane"), "templates", template_name)))
     sbatch = Mustache.render(tpl,
@@ -41,11 +43,11 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
     end
 
     for i in 1:nb_batches
-        println("preparing job $i")
+        println("preparing job $i of $nb_batches")
 
         these_stats = stats[(i-1)*batch_size+1:i*batch_size, :]
         
-        this_listname = replace(listname, "\$(SLURM_ARRAY_TASK_ID)", i)
+        this_listname = replace(listname, "\${SLURM_ARRAY_TASK_ID}", i)
         JLD.save(this_listname, Dict("stats"=>these_stats))
         
         push!(results_file_list, joinpath(data_dir, string("results_$(i)_of_$(nb_batches).jld")))

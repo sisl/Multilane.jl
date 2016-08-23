@@ -89,13 +89,13 @@ function update(up::BehaviorRootUpdater,
         end
     end
     
-    for i in 1:length(b_new.B.weights)
-        @assert sum(b_new.B.weights[i]) > 0.0
-    end
-
     # smoothing
-    for i in 1:length(o.env_cars)
-        b_new.B.weights[i] .+= up.smoothing * sum(b_new.B.weights[i])
+    for i in 1:length(b_new.B.weights)
+        if sum(b_new.B.weights[i]) > 0.0
+            b_new.B.weights[i] .+= up.smoothing * sum(b_new.B.weights[i])
+        else
+            b_new.B.weights[i] .+= up.smoothing
+        end
     end
 
     return b_new

@@ -4,6 +4,7 @@ type MLPOMDPSolver <: Solver
     solver
     updater_stub::Nullable{Any}
 end
+set_rng!(s::MLPOMDPSolver, rng::AbstractRNG) = set_rng!(s.solver, rng)
 
 type MLPOMDPAgent <: Policy
     updater::Updater
