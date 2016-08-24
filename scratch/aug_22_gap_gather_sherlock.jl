@@ -3,11 +3,11 @@ using MCTS
 using POMCP
 
 # dir = "/tmp/sim_data_Aug_22_19_22"
-dir = "/scratch/users/zsunberg/sim_data_Aug_22_19_51/"
+dir = "/scratch/users/zsunberg/sim_data_Aug_23_16_02/"
 
 files = []
 
-N = 10
+N = 3
 for i in 1:N
     push!(files, joinpath(dir, "results_$(i)_of_$(N).jld"))
 end

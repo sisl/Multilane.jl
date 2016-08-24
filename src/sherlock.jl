@@ -62,9 +62,9 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
     results_list_file = joinpath(data_dir, "results_list.txt")
     println("saving results file list to")
     println(results_list_file)
-    open(results_list_file, "w") do f
+    open(results_list_file, "w") do opened
         for f in results_file_list
-            write("$f\n")
+            write(opened, "$f\n")
         end
     end
 
@@ -73,9 +73,13 @@ end
 
 function gather_results(results_file_list; save_file::Nullable=Nullable())
     results = JLD.load(first(results_file_list))
+    # stats = results["stats"]
     for f in results_file_list[2:end]
         results = merge_results!(results, JLD.load(f))
+        # new_stats = JLD.load(f,"stats")
+        # stats = append!(stats, new_stats)
     end
+    # results["stats"] = stats
     if !isnull(save_file)
         JLD.save(get(save_file), results)
     end
