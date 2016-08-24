@@ -44,7 +44,7 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
     end
 
     for i in 1:nb_batches
-        println("preparing job $i of $nb_batches")
+        println("\rpreparing job $i of $nb_batches")
 
         these_stats = stats[(i-1)*batch_size+1:i*batch_size, :]
         

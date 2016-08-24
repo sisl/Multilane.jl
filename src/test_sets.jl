@@ -28,7 +28,7 @@ const DEFAULT_BEHAVIORS = Dict{UTF8String, Any}(
 )
 
 const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS like in linked
-    :behaviors => "9_even",
+    :behaviors => "agents",
     :lambda => 1.0,
     :brake_threshold => 2.5
     # :behavior_probabilities => 1
