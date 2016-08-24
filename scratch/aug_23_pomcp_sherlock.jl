@@ -28,13 +28,13 @@ solvers = Dict{UTF8String, Any}(
     "pomcp"=>MLPOMDPSolver(pomcps, BehaviorRootUpdaterStub(0.05))
 )
 
-# curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 21.5, 46.4], N=1)
-curve = TestSet(lambda=[46.4], N=1)
+curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 21.5, 46.4], N=500)
+# curve = TestSet(lambda=[46.4], N=1)
 
 tests = [
-    TestSet(curve, solver_key="dpw", behaviors="agents"),
-    TestSet(curve, solver_key="assume_normal", behaviors="agents"),
-    TestSet(curve, solver_key="pomcp", behaviors="agents")
+    TestSet(curve, solver_key="dpw", behaviors="agents", key="dpw"),
+    TestSet(curve, solver_key="assume_normal", behaviors="agents", key="assume_normal"),
+    TestSet(curve, solver_key="pomcp", behaviors="agents", key="pomcp")
 ]
 
 objects = gen_initials(tests, generate_physical=true)
@@ -43,10 +43,10 @@ objects = gen_initials(tests, generate_physical=true)
 objects["solvers"] = solvers
 
 files = sbatch_spawn(tests, objects,
-                     batch_size=1,
-                     time_per_batch="10:00",
+                     batch_size=30,
+                     time_per_batch="1:00:00",
                      submit_command="sbatch",
-                     template_name="sherlock")
+                     template_name="sherlock.sh")
 
 # results = evaluate(tests, objects, parallel=true)
 
