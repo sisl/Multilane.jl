@@ -32,6 +32,11 @@ function show_state(mdp, s)
     run(`xdg-open $tn`)
 end
 
+function show_sim(mdp, sim::HistoryRecorder)
+    f = write_tmp_gif(mdp, sim)
+    run(`gifview $f`)
+end
+
 function display_sim(mdp, sim::HistoryRecorder)
     display_sim(mdp, sim.state_hist, sim.action_hist)
 end
