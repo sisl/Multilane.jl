@@ -1,34 +1,49 @@
 const PP = PhysicalParam(4)
 
-const NORMAL_BEHAVIOR = IDMMOBILBehavior("normal", PP.v_med, PP.l_car, 1)
-const THREE_BEHAVIORS = IDMMOBILBehavior[
-                    NORMAL_BEHAVIOR,
-                    IDMMOBILBehavior("cautious", PP.v_slow+0.5, PP.l_car, 2),
-                    IDMMOBILBehavior("aggressive", PP.v_fast, PP.l_car, 3)
-                    ]
+# const NORMAL_BEHAVIOR = IDMMOBILBehavior("normal", PP.v_med, PP.l_car, 1)
+# const THREE_BEHAVIORS = IDMMOBILBehavior[
+#                     NORMAL_BEHAVIOR,
+#                     IDMMOBILBehavior("cautious", PP.v_slow+0.5, PP.l_car, 2),
+#                     IDMMOBILBehavior("aggressive", PP.v_fast, PP.l_car, 3)
+#                     ]
+# 
+# const NINE_BEHAVIORS = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
+#                                                  enumerate(Iterators.product(["cautious","normal","aggressive"],
+#                                                         [PP.v_slow+0.5;PP.v_med;PP.v_fast],
+#                                                         [PP.l_car]))]
 
-const NINE_BEHAVIORS = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
-                                                 enumerate(Iterators.product(["cautious","normal","aggressive"],
-                                                        [PP.v_slow+0.5;PP.v_med;PP.v_fast],
-                                                        [PP.l_car]))]
-
-const NORMAL_IDM = IDMParam(1.4, 2.0, 1.5, 120/3.6, 2.0, 4.0) 
-const TIMID_IDM = IDMParam(1.0, 1.0, 1.8, 100/3.6, 4.0, 4.0)
-const AGGRESSIVE_IDM = IDMParam(2.0, 3.0, 1.0, 140/3.6, 1.0, 4.0)
+const NORMAL_IDM = IDMParam(1.4, 2.0, 1.5, 120/3.6, 2.0, 4.0) # 33.3
+const TIMID_IDM = IDMParam(1.0, 1.0, 1.8, 100/3.6, 4.0, 4.0) # 27.7
+const AGGRESSIVE_IDM = IDMParam(2.0, 3.0, 1.0, 140/3.6, 1.0, 4.0) # 38.9
 agents_behavior(idm, idx) = IDMMOBILBehavior(idm, MOBILParam(0.6, idm.b, 0.1), idx)
 
 const NORMAL = agents_behavior(NORMAL_IDM, 1)
 const TIMID = agents_behavior(TIMID_IDM, 2)
 const AGGRESSIVE = agents_behavior(AGGRESSIVE_IDM, 3)
 
+
+function generate_nine_behaviors()
+    bs = IDMMOBILBehavior[]
+    velocities = [120/3.6, 100/3.6, 140/3.6]
+    for (i,v) in enumerate(velocities) 
+        push!(bs, agents_behavior(IDMParam(1.4, 2.0, 1.5, v, 2.0, 4.0), 1+(i-1)*3))
+        push!(bs, agents_behavior(IDMParam(1.0, 1.0, 1.8, v, 4.0, 4.0), 2+(i-1)*3))
+        push!(bs, agents_behavior(IDMParam(2.0, 3.0, 1.0, v, 1.0, 4.0), 3+(i-1)*3))
+    end
+    return bs
+end
+
+const NINE_BEHAVIORS = generate_nine_behaviors()
+
 const DEFAULT_BEHAVIORS = Dict{UTF8String, Any}(
-    "3_even" => DiscreteBehaviorSet(THREE_BEHAVIORS, WeightVec(ones(3))),
-    "9_even" => DiscreteBehaviorSet(NINE_BEHAVIORS, WeightVec(ones(9))),
-    "agents" => DiscreteBehaviorSet([NORMAL, TIMID, AGGRESSIVE], WeightVec(ones(3)))
+    # "3_even" => DiscreteBehaviorSet(THREE_BEHAVIORS, WeightVec(ones(3))),
+    # "9_even" => DiscreteBehaviorSet(NINE_BEHAVIORS, WeightVec(ones(9))),
+    "agents" => DiscreteBehaviorSet([NORMAL, TIMID, AGGRESSIVE], WeightVec(ones(3))),
+    "9_agents" => DiscreteBehaviorSet(NINE_BEHAVIORS, WeightVec(ones(3)))
 )
 
 const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS like in linked
-    :behaviors => "9_even",
+    :behaviors => "agents",
     :lambda => 1.0,
     :brake_threshold => 2.5
     # :behavior_probabilities => 1

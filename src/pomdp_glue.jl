@@ -4,6 +4,7 @@ type MLPOMDPSolver <: Solver
     solver
     updater_stub::Nullable{Any}
 end
+set_rng!(s::MLPOMDPSolver, rng::AbstractRNG) = set_rng!(s.solver, rng)
 
 type MLPOMDPAgent <: Policy
     updater::Updater
@@ -40,6 +41,7 @@ function action(agent::MLPOMDPAgent, state::MLState)
     return a
 end
 
+#=
 type ParticleGenerator
     physical_state::MLPhysicalState
     behaviors::BehaviorGenerator
@@ -58,6 +60,8 @@ function rand(rng::AbstractRNG, gen::ParticleGenerator)
     end
     return full_s
 end
+=#
+
 
 #=
 type BasicMLReinvigorator <: POMCP.ParticleReinvigorator

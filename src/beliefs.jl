@@ -15,9 +15,58 @@ function rand(rng::AbstractRNG,
     return s
 end
 
-#=
+function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProblem, o::MLPhysicalState, particles, smoothing=0.0)
+    b.ps = o
+    resize!(b.weights, length(o.env_cars))
+    for i in 1:length(o.env_cars)
+        b.weights[i] = zeros(length(b.models)) #XXX lots of allocation
+    end
+    for sp in particles
+        isp = 1
+        io = 1
+        while io <= length(o.env_cars) && isp <= length(sp.env_cars)
+            co = o.env_cars[io]
+            csp = sp.env_cars[isp]
+            if co.id == csp.id
+                # sigma_acc = dmodel.vel_sigma/dt
+                # dv = acc*dt
+                # sigma_v = sigma_dv = dmodel.vel_sigma
+                if co.y == csp.y && abs(co.x-csp.x) < 0.2*problem.dmodel.phys_param.lane_length
+                    proportional_likelihood = proportional_normal_pdf(csp.vel,
+                                                                      co.vel,
+                                                                      problem.dmodel.vel_sigma)
+                    b.weights[io][get(csp.behavior).idx] += proportional_likelihood
+                end
+                io += 1
+                isp += 1
+            elseif co.id < csp.id
+                io += 1
+            else 
+                @assert co.id > csp.id
+                isp += 1
+            end
+        end
+    end
+    
+    # smoothing
+    for i in 1:length(b.weights)
+        if sum(b.weights[i]) > 0.0
+            b.weights[i] .+= smoothing * sum(b.weights[i])
+        else
+            b.weights[i] .+= 1.0
+        end
+    end
+
+    return b
+end
+
+type BehaviorBeliefUpdaterStub <: Updater{DiscreteBehaviorBelief}
+    smoothing::Float64
+end
+
 type BehaviorBeliefUpdater <: Updater{DiscreteBehaviorBelief}
     problem::NoCrashProblem
+    smoothing::Float64
 end
 
 function update(up::BehaviorBeliefUpdater,
@@ -27,17 +76,11 @@ function update(up::BehaviorBeliefUpdater,
                 b_new::DiscreteBehaviorBelief=DiscreteBehaviorBelief(o,
                                                        up.problem.dmodel.behaviors,
                                                        Array(Vector{Float64}, 0)))
-    # resize
-    # zeros
-    # for
-        # generate s by sampling from 
-        # generate sp
-        # add to weights proportional to likelihood of o
 
-# smoothing??
+    # run simulations
 
+    weights_from_particles!(b_new, )
 end
-=#
 
 type BehaviorRootUpdaterStub <: Updater
     smoothing::Float64
@@ -55,49 +98,12 @@ function update(up::BehaviorRootUpdater,
                 a::MLAction,
                 o::MLPhysicalState,
                 b_new::POMCP.RootNode=POMCP.RootNode(DiscreteBehaviorBelief(o, up.problem.dmodel.behaviors.models)))
-    b_new.B.ps = o
+
     b_new.B.models = up.problem.dmodel.behaviors.models
-    resize!(b_new.B.weights, length(o.env_cars))
-    for i in 1:length(o.env_cars)
-        b_new.B.weights[i] = zeros(length(up.problem.dmodel.behaviors.models)) #XXX lots of allocation
-    end
-    # ASSUMING IDs are monotonically increasing (is this true?)
-    for child_node in values(b_old.children[a].children)
-        for sp in child_node.B.particles
-            isp = 1
-            io = 1
-            while io <= length(o.env_cars) && isp <= length(sp.env_cars)
-                co = o.env_cars[io]
-                csp = sp.env_cars[isp]
-                if co.id == csp.id
-                    # sigma_acc = dmodel.vel_sigma/dt
-                    # dv = acc*dt
-                    # sigma_v = sigma_dv = dmodel.vel_sigma
-                    proportional_likelihood = proportional_normal_pdf(csp.vel,
-                                                                      co.vel,
-                                                                      up.problem.dmodel.vel_sigma)
-                    b_new.B.weights[io][get(csp.behavior).idx] += proportional_likelihood
-                    io += 1
-                    isp += 1
-                elseif co.id < csp.id
-                    io += 1
-                else 
-                    @assert co.id > csp.id
-                    isp += 1
-                end
-            end
-        end
-    end
-    
-    for i in 1:length(b_new.B.weights)
-        @assert sum(b_new.B.weights[i]) > 0.0
-    end
+    #XXX hack
+    particles = Iterators.chain([child.B.particles for child in values(b_old.children[a].children)]...)
 
-    # smoothing
-    for i in 1:length(o.env_cars)
-        b_new.B.weights[i] .+= up.smoothing * sum(b_new.B.weights[i])
-    end
-
+    weights_from_particles!(b_new.B, up.problem, o, particles, up.smoothing)
     return b_new
 end
 
