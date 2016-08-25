@@ -42,10 +42,6 @@ files = sbatch_spawn(tests, objects,
                      submit_command="sbatch",
                      template_name="sherlock.sh")
 
-for f in files
-    println(f)
-end
-
 # results = evaluate(tests, objects, parallel=true)
 
 # filename = string("results_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")

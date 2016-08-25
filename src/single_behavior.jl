@@ -12,7 +12,7 @@ end
 
 set_rng!(solver::SingleBehaviorSolver, rng::AbstractRNG) = set_rng!(solver.inner_solver, rng)
 
-function solve(solver::SingleBehaviorSolver, mdp::NoCrashMDP)
+function solve(solver::SingleBehaviorSolver, mdp::NoCrashProblem)
     single_behavior_mdp = deepcopy(mdp)
     single_behavior_mdp.dmodel.behaviors = DiscreteBehaviorSet(BehaviorModel[solver.behavior], WeightVec([1.0]))
 
@@ -23,7 +23,7 @@ end
 function action(p::SingleBehaviorPolicy, s::MLState, a::MLAction=MLAction())
     as = actions(p.inner_policy.mdp, s, actions(p.inner_policy.mdp))
     if length(as) == 1
-        return collect(as)[1]
+        return first(as)
     end
     return action(p.inner_policy, single_behavior_state(s, p.behavior))
 end
@@ -31,11 +31,7 @@ end
 function single_behavior_state(s::MLState, behavior)
     new_cars = Array(CarState, length(s.env_cars))
     for (i,c) in enumerate(s.env_cars)
-        if i == 1 # ego
-            new_cars[i] = CarState(c.x, c.y, c.vel, c.lane_change, behavior, c.id)
-        else
-            new_cars[i] = CarState(c.x, c.y, c.vel, c.lane_change, behavior, c.id)
-        end
+        new_cars[i] = CarState(c.x, c.y, c.vel, c.lane_change, behavior, c.id)
     end
     return MLState(s.crashed, new_cars)
 end

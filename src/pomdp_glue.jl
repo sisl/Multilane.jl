@@ -41,6 +41,7 @@ function action(agent::MLPOMDPAgent, state::MLState)
     return a
 end
 
+#=
 type ParticleGenerator
     physical_state::MLPhysicalState
     behaviors::BehaviorGenerator
@@ -59,6 +60,8 @@ function rand(rng::AbstractRNG, gen::ParticleGenerator)
     end
     return full_s
 end
+=#
+
 
 #=
 type BasicMLReinvigorator <: POMCP.ParticleReinvigorator
