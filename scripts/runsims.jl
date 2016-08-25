@@ -10,8 +10,6 @@ using POMDPs
 using MCTS
 using DataFrames
 using DataFramesMeta
-using Plots
-using StatPlots
 
 s = ArgParseSettings()
 
