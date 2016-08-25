@@ -28,7 +28,7 @@ solvers = Dict{UTF8String, Any}(
     "pomcp"=>MLPOMDPSolver(pomcps, BehaviorRootUpdaterStub(0.05))
 )
 
-curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 21.5, 46.4], N=500)
+curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 21.5, 46.4], brake_threshold=4.0, N=500)
 # curve = TestSet(lambda=[46.4], N=1)
 
 tests = [
@@ -43,7 +43,7 @@ objects = gen_initials(tests, generate_physical=true)
 objects["solvers"] = solvers
 
 files = sbatch_spawn(tests, objects,
-                     batch_size=30,
+                     batch_size=50,
                      time_per_batch="1:00:00",
                      submit_command="sbatch",
                      template_name="sherlock.sh")
