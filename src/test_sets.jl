@@ -155,7 +155,7 @@ function gen_base_problem()
     _discount = 1.0
     nb_cars = 10
     dmodel = NoCrashIDMMOBILModel(nb_cars, pp,
-                              behaviors=DEFAULT_BEHAVIORS["9_even"],
+                              behaviors=DEFAULT_BEHAVIORS["agents"],
                               lane_terminate=false)
 
     base_problem = NoCrashMDP(dmodel, rmodel, _discount)
@@ -358,6 +358,7 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
                   max_steps=10000)
 
     stats = setup_stats(tests, objects)
+    sort!(stats, cols=:uuid) # so that they are randomly distributed so that the time estimate will be better
 
     sims = run_simulations(stats, objects,
                            parallel=parallel,
