@@ -22,7 +22,7 @@ solvers = Dict{UTF8String, Any}(
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL)
 )
 
-curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 50.,], N=1, p_appear=1.0)
+curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 50.,], N=500, p_appear=1.0)
 
 tests = []
 for p in linspace(0., 3/4, 4)
