@@ -22,7 +22,7 @@ solvers = Dict{UTF8String, Any}(
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL)
 )
 
-curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 50.,], N=1)
+curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 50.,], N=500)
 
 tests = []
 for p in linspace(0., 3/4, 4)
@@ -43,10 +43,10 @@ for is in values(objects["initial_states"])
 end
 
 sbatch_spawn(tests, objects,
-             batch_size=6,
+             batch_size=50,
              time_per_batch="1:00:00",
-             submit_command="bash",
-             template_name="theresa.sh")
+             submit_command="sbatch",
+             template_name="sherlock.sh")
 
 # results = evaluate(tests, objects, parallel=true)
 # 

@@ -8,7 +8,7 @@ s = ArgParseSettings()
 
 @add_arg_table s begin
     "dir"
-        help = "dir"
+        help = "data directory - will look here for results_list.txt"
         nargs = 1
 end
 
