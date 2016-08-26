@@ -45,7 +45,8 @@ const DEFAULT_BEHAVIORS = Dict{UTF8String, Any}(
 const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS like in linked
     :behaviors => "agents",
     :lambda => 1.0,
-    :brake_threshold => 2.5
+    :brake_threshold => 2.5,
+    :p_appear => 1.0
     # :behavior_probabilities => 1
 )
 
@@ -169,6 +170,8 @@ function gen_problem(row, behaviors::Dict{UTF8String,Any}, rng::AbstractRNG)
     problem.dmodel.behaviors = behaviors[row[:behaviors]]
     # brake_threshold
     problem.rmodel.dangerous_brake_threshold = row[:brake_threshold]
+    # p_appear
+    problem.dmodel.p_appear = row[:p_appear]
     return problem
 end
 

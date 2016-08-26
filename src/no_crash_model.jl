@@ -35,6 +35,7 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
                               pp::PhysicalParam;
                               vel_sigma = 0.5,
                               lane_terminate=false,
+                              p_appear=0.5,
                               behaviors=DiscreteBehaviorSet(IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
                                                  enumerate(Iterators.product(["cautious","normal","aggressive"],
                                                         [pp.v_slow+0.5;pp.v_med;pp.v_fast],
@@ -46,7 +47,7 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
         behaviors,
         1., # adjustment accel
         1.0/(2.0*pp.dt), # lane change rate
-        0.5, # p_appear
+        p_appear, # p_appear
         35.0, # appear_clearance
         vel_sigma, # vel_sigma
         ones(pp.nb_lanes), # lane weights
@@ -317,7 +318,6 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                 # make sure there is a conflict longitudinally
                 # if car_i.x - car_j.x <= pp.l_car || car_i.x + dxs[i] - car_j.x + dxs[j] <= pp.l_car
                 # if car_i.x - car_j.x <= mdp.dmodel.appear_clearance # made more conservative on 8/19
-                try
                 if car_i.x - car_j.x <= get_idm_s_star(get(car_j.behavior).p_idm, car_j.vel, car_j.vel-car_i.vel) # upgraded to sstar on 8/19
 
                     # check if they are near each other lanewise
@@ -325,18 +325,13 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
 
                         # check if they are moving towards each other
                         # if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[i] - car_j.y+dys[j]) < 2.0
-                        if true # prevent lockstepping 8/19
+                        if true # prevent lockstepping 8/19 (doesn't prevent it that well)
 
                             # make j stay in his lane
                             dys[j] = 0.0
                             lcs[j] = 0.0
                         end
                     end
-                end
-                catch ex
-                    @show i, j
-                    @show car_j
-                    rethrow(ex)
                 end
             end
         end
