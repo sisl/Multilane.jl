@@ -1,0 +1,38 @@
+using Multilane
+using JLD
+using Multilane
+using POMDPs
+using MCTS
+using DataFrames
+using DataFramesMeta
+using Plots
+using StatPlots
+
+
+results = load("results_Aug_22_23_26.jld")
+
+stats = results["stats"]
+tests = results["tests"]
+
+mean_performance = by(stats, [:lambda, :test_key]) do df
+    DataFrame(steps_in_lane=mean(df[:steps_in_lane]),
+              nb_brakes=mean(df[:nb_brakes]),
+              time_to_lane=mean(df[:time_to_lane]),
+              steps=mean(df[:steps]),
+              test_key=first(df[:test_key])
+              )
+end
+mean_performance[:brakes_per_sec] = mean_performance[:nb_brakes]./mean_performance[:time_to_lane]
+
+plts = []
+for p in linspace(0., 1., 5)
+    ubg = @where(mean_performance, :test_key.==@sprintf("upper_bound_%03d", 100*p))
+    plot(ubg, :time_to_lane, :nb_brakes, group=:test_key)
+    ang = @where(mean_performance, :test_key.==@sprintf("assume_normal_%03d", 100*p))
+    # push!(plts, plot!(ang, :time_to_lane, :brakes_per_sec, group=:test_key, title="Fraction normal = $p", xlim=(0,40), ylim=(0,.45)))
+    # push!(plts, plot!(ang, :time_to_lane, :brakes_per_sec, group=:test_key, title="Fraction normal = $p"))
+    # push!(plts, plot!(ang, :time_to_lane, :nb_brakes, group=:test_key, title="Fraction normal = $p"))
+    push!(plts, plot!(ang, :time_to_lane, :nb_brakes, group=:test_key, title="Fraction normal = $p", xlim=(0,60), ylim=(0,1.5)))
+end
+plot(plts...)
+gui()
