@@ -4,7 +4,7 @@ using MCTS
 using JLD
 
 behaviors=Dict{UTF8String,Any}()
-for p in linspace(0., 3/4, 4)
+for p in linspace(0., 1.25, 6)
     behaviors[@sprintf("uniform_%03d", 100*p)] = standard_uniform(p)
 end
 
@@ -22,7 +22,7 @@ solvers = Dict{UTF8String, Any}(
 curve = TestSet(lambda=[0.1, 1.0, 2.15, 4.64, 10., 50.,], N=500, p_appear=1.0)
 
 tests = []
-for p in linspace(0., 3/4, 4)
+for p in linspace(0., 1.25, 6)
     push!(tests, TestSet(curve, solver_key="dpw",
                          behaviors=@sprintf("uniform_%03d", p*100),
                          key=@sprintf("upper_bound_%03d", p*100))) 

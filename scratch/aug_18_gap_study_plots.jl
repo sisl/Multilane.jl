@@ -11,7 +11,8 @@ using StatPlots
 
 # results = load("results_Aug_22_23_26.jld")
 # results = load("combined_results_Aug_25_10_10.jld")
-results = load("combined_results_Aug_26_19_53.jld")
+# results = load("combined_results_Aug_26_19_53.jld")
+results = load("combined_results_Aug_27_14_05.jld")
 
 stats = results["stats"]
 tests = results["tests"]
