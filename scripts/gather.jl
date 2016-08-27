@@ -9,7 +9,8 @@ s = ArgParseSettings()
 @add_arg_table s begin
     "dir"
         help = "data directory - will look here for results_list.txt"
-        nargs = '?'
+        nargs = 1
+        required = false
 end
 
 args = parse_args(ARGS, s)
@@ -25,7 +26,7 @@ else
         abspath = joinpath(parent, d)
         if ctime(abspath) > latest
             latest = ctime(abspath)
-            latest_dir = d
+            latest_dir = abspath
         end
     end
     dir = latest_dir

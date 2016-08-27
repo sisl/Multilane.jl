@@ -76,7 +76,7 @@ function gather_results(results_file_list; save_file::Nullable=Nullable())
     # stats = results["stats"]
     for (i,f) in enumerate(results_file_list[2:end])
         print("\rmerging file $(i+1) of $(length(results_file_list))")
-        results = merge_results!(results, JLD.load(f))
+        results = merge_results!(results, JLD.load(f), careful=false)
         # new_stats = JLD.load(f,"stats")
         # stats = append!(stats, new_stats)
     end
