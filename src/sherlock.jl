@@ -85,7 +85,7 @@ function gather_results(results_file_list; save_file::Nullable=Nullable())
         t_append = toq()
         print(@sprintf("\rappended states %d of %d. t_load=%4.2f, t_append=%4.2f",
                        i+1,
-                       length(result_file_list)
+                       length(results_file_list),
                        t_load,
                        t_append))
     end
