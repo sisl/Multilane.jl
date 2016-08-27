@@ -242,10 +242,14 @@ function careful_merge!(d1::Dict, d2::Dict)
     return d1
 end
 
-function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any}, r2::Dict{S2, Any})
+function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any}, r2::Dict{S2, Any}; careful=true)
     merge!(r1["solvers"], r2["solvers"])
     merge!(r1["problems"], r2["problems"])
-    careful_merge!(r1["initial_states"], r2["initial_states"])
+    if careful
+        careful_merge!(r1["initial_states"], r2["initial_states"])
+    else
+        merge!(r1["initial_states"], r2["initial_states"])
+    end
     merge!(r1["behaviors"], r2["behaviors"])
     r1["param_table"] = join(r1["param_table"], r2["param_table"], on=names(r1["param_table"]), kind=:outer)
     if haskey(r1, "stats")
