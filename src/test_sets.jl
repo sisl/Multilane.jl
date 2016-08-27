@@ -12,6 +12,8 @@ const PP = PhysicalParam(4)
 #                                                         [PP.v_slow+0.5;PP.v_med;PP.v_fast],
 #                                                         [PP.l_car]))]
 
+const UNIFORM_MEAN = IDMMOBILBehavior(IDMParam(1.4, 2.0, 1.5, 33.3, 2.0, 4.0), MOBILParam(0.5, 2.0, 0.1), 1)
+
 const NORMAL_IDM = IDMParam(1.4, 2.0, 1.5, 120/3.6, 2.0, 4.0) # 33.3
 const TIMID_IDM = IDMParam(1.0, 1.0, 1.8, 100/3.6, 4.0, 4.0) # 27.7
 const AGGRESSIVE_IDM = IDMParam(2.0, 3.0, 1.0, 140/3.6, 1.0, 4.0) # 38.9

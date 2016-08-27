@@ -15,7 +15,12 @@ function rand(rng::AbstractRNG,
     return s
 end
 
-function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProblem, o::MLPhysicalState, particles, smoothing=0.0)
+@with_kw type WeightUpdateParams
+    smoothing::Float64 = 0.02 # value between 0 and 1, adds this fraction of the max to each entry in the vecot
+    wrong_lane_factor::Float64 = 0.1
+end
+
+function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProblem, o::MLPhysicalState, particles, p::WeightUpdateParams)
     b.ps = o
     resize!(b.weights, length(o.env_cars))
     for i in 1:length(o.env_cars)
@@ -31,11 +36,15 @@ function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProb
                 # sigma_acc = dmodel.vel_sigma/dt
                 # dv = acc*dt
                 # sigma_v = sigma_dv = dmodel.vel_sigma
-                if co.y == csp.y && abs(co.x-csp.x) < 0.2*problem.dmodel.phys_param.lane_length
+                if abs(co.x-csp.x) < 0.2*problem.dmodel.phys_param.lane_length
                     proportional_likelihood = proportional_normal_pdf(csp.vel,
                                                                       co.vel,
                                                                       problem.dmodel.vel_sigma)
-                    b.weights[io][get(csp.behavior).idx] += proportional_likelihood
+                    if co.y == csp.y
+                        b.weights[io][get(csp.behavior).idx] += proportional_likelihood
+                    elseif abs(co.y - csp.y) < 1.0
+                        b.weights[io][get(csp.behavior).idx] += p.wrong_lane_factor*proportional_likelihood
+                    end # if greater than one lane apart, do nothing
                 end
                 io += 1
                 isp += 1
@@ -51,7 +60,7 @@ function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProb
     # smoothing
     for i in 1:length(b.weights)
         if sum(b.weights[i]) > 0.0
-            b.weights[i] .+= smoothing * sum(b.weights[i])
+            b.weights[i] .+= p.smoothing * sum(b.weights[i])
         else
             b.weights[i] .+= 1.0
         end
@@ -62,11 +71,13 @@ end
 
 type BehaviorBeliefUpdaterStub <: Updater{DiscreteBehaviorBelief}
     smoothing::Float64
+    nb_particles::Int
 end
 
 type BehaviorBeliefUpdater <: Updater{DiscreteBehaviorBelief}
     problem::NoCrashProblem
     smoothing::Float64
+    nb_particles::Float64
 end
 
 function update(up::BehaviorBeliefUpdater,
@@ -76,19 +87,21 @@ function update(up::BehaviorBeliefUpdater,
                 b_new::DiscreteBehaviorBelief=DiscreteBehaviorBelief(o,
                                                        up.problem.dmodel.behaviors,
                                                        Array(Vector{Float64}, 0)))
+    # particles = SharedArray(MLState, )
+    # @parallel
+    # # run simulations
 
-    # run simulations
-
-    weights_from_particles!(b_new, )
+    # weights_from_particles!(b_new, )
+    error("not implemented")
 end
 
 type BehaviorRootUpdaterStub <: Updater
-    smoothing::Float64
+    params::WeightUpdateParams
 end
  
 type BehaviorRootUpdater <: Updater{POMCP.BeliefNode}
     problem::NoCrashProblem
-    smoothing::Float64 # value between 0 and 1, adds this fraction of the max to each entry in the vecot
+    params::WeightUpdateParams
 end
 
 initialize_belief(up::BehaviorRootUpdater, b) = POMCP.RootNode(b)
@@ -103,102 +116,11 @@ function update(up::BehaviorRootUpdater,
     #XXX hack
     particles = Iterators.chain([child.B.particles for child in values(b_old.children[a].children)]...)
 
-    weights_from_particles!(b_new.B, up.problem, o, particles, up.smoothing)
+    weights_from_particles!(b_new.B, up.problem, o, particles, up.params)
     return b_new
 end
 
 proportional_normal_pdf(x, mu, sigma) = exp(-(x-mu)^2/(2.*sigma^2))
-
-
-#=
-type ParticleUpdater <: POMDPs.Updater{ParticleBelief{MLState}}
-  nb_particles::Int
-  problem::NoCrashPOMDP
-  rng::AbstractRNG
-end
-
-create_belief(u::ParticleUpdater) = ParticleBelief{MLState}(Particle{MLState}[Particle{MLState}(create_state(u.problem),1.) for _ = 1:u.nb_particles], Dict{MLState,Float64}(), Float64[], false)
-
-create_belief(u::ParticleUpdater, s::MLState) = ParticleBelief{MLState}(Particle{MLState}[Particle{MLState}(deepcopy(s),1.) for _ = 1:u.nb_particles], Dict{MLState,Float64}(), Float64[], false)
-
-function obs_to_state(mdp::NoCrashPOMDP,o::MLObs, s::MLState)
-  env_cars = CarState[CarState(c.x,c.y,c.vel,c.lane_change,b.behavior,c.id) for (c,b) in zip(o.env_cars, s.env_cars)]
-  return MLState(false, env_cars)
-  #return MLState(false,CarState[CarState(c.x,c.y,c.vel,c.lane_change,i==1?Nullable{BehaviorModel}():sample(mdp.dmodel.behaviors), c.id) for (i,c) in enumerate(o.env_cars)])
-end
-
-function similarity(pomdp::NoCrashPOMDP, sp::MLState, o::MLObs)
-  # If a car goes out of bounds: no similarity
-
-  if sp.crashed != o.crashed
-    return 0.
-  end
-
-  s_cars = Dict{Int,CarState}([car.id => car for car in sp.env_cars])
-  o_cars = Dict{Int,CarStateObs}([car.id => car for car in o.env_cars])
-
-  if length(intersect(keys(s_cars),keys(o_cars))) != length(s_cars)
-    return 0.
-  end
-
-  dist = 0.
-
-  for id in keys(s_cars)
-    s_car = s_cars[id]
-    o_car = o_cars[id]
-
-    s = [s_car.x; s_car.y; s_car.vel; s_car.lane_change]
-    o = [o_car.x; o_car.y; o_car.vel; o_car.lane_change]
-
-    dist += norm(s-o)
-  end
-
-  return 1./(0.1 + dist) #or something else
-
-end
-
-function POMDPs.update(updater::ParticleUpdater, belief_old::ParticleBelief, a::MLAction, o::MLObs, belief_new::ParticleBelief=create_belief(updater))
-
-  states = [p.state for p in belief_old.particles]
-  wv = WeightVec([p.weight for p in belief_old.particles])
-  for i = 1:updater.nb_particles
-    s = sample(updater.rng,states, wv)
-    sp, r = Multilane.generate_sr(updater.problem, s, a, updater.rng)
-    """
-    alt: set sp to o w/ random behavior models
-    """
-    # check how close the propagated model is to the actual thing
-    w = similarity(updater.problem, sp, o) #p(o | s', a) # TODO how??? ABC?
-    sp = obs_to_state(updater.problem, o, s)
-    belief_new.particles[i] = Particle(sp, w)
-  end
-
-  return belief_new
-end
-
-rand(rng::AbstractRNG, b::ParticleBelief{MLState},s::MLState) = sample([p.state for p in b.particles], WeightVec([p.weight for p in b.particles]))
-rand(rng::AbstractRNG, b::ParticleBelief{MLState}) = sample([p.state for p in b.particles], WeightVec([p.weight for p in b.particles]))
-
-initialize_belief(u::ParticleUpdater, db::AbstractDistribution) = begin db end #do nothing XXX TODO
-
-initialize_belief(u::ParticleUpdater, db::AbstractDistribution, b::ParticleBelief{MLState}) = begin db end #do nothing XXX TODO
-
-
-function actions(pomdp::NoCrashPOMDP, b::ParticleBelief{MLState}, as::NoCrashActionSpace=actions(pomdp))
-  # XXX temp
-  _as = actions(pomdp)
-  as = actions(pomdp) #XXX inefficient? need to reset anyways
-  acceptable = as.acceptable
-  brake = 0.
-  for particle in b.particles
-    _as = actions(pomdp, particle.state, _as)
-    acceptable = intersect(as.acceptable, _as.acceptable)
-    brake = min(_as.brake.acc, brake)
-  end
-  as = NoCrashActionSpace(as.NORMAL_ACTIONS, acceptable, MLAction(min(brake, -pomdp.rmodel.dangerous_brake_threshold/2.0), 0.))
-  return as
-end
-=#
 
 
 # TODO clean up

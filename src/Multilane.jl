@@ -34,6 +34,8 @@ import POMCP # for particle filter
 import Mustache
 import JLD
 
+using Parameters
+
 # package code goes here
 export
     PhysicalParam,
@@ -62,7 +64,10 @@ export
     BehaviorRootUpdater,
     BehaviorRootUpdaterStub,
     DiscreteBehaviorSet,
-    DiscreteBehaviorBelief
+    DiscreteBehaviorBelief,
+    WeightUpdateParams,
+    UniformIDMMOBIL,
+    standard_uniform
 
 export
     NoCrashRewardModel,

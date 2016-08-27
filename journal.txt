@@ -1,3 +1,9 @@
+Fri 26 Aug 2016 08:05:02 PM PDT
+
+[X] Automatic newest filename
+[ ] Continuous behaviors
+[ ] Run gap study
+
 Tue 16 Aug 2016 10:31:52 PM PDT
 
 [ ] do a quick profile with rerun
