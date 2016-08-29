@@ -61,8 +61,6 @@ export
     RobustMLPolicy,
     MLPOMDPSolver,
     MLPOMDPAgent,
-    BehaviorRootUpdater,
-    BehaviorRootUpdaterStub,
     DiscreteBehaviorSet,
     DiscreteBehaviorBelief,
     WeightUpdateParams,
@@ -119,7 +117,14 @@ export # POMDP belief stuff
     update,
     rand,
     sample,
-    initialize_belief
+    initialize_belief,
+    BehaviorRootUpdater,
+    BehaviorRootUpdaterStub,
+    AggressivenessBelief,
+    AggressivenessUpdater,
+    agg_means,
+    agg_stds,
+    aggressiveness
 
 export
     MaxBrakeMetric,
@@ -145,6 +150,7 @@ include("pomdp_glue.jl")
 include("single_behavior.jl")
 include("heuristics.jl")
 include("beliefs.jl")
+include("aggressiveness_particle_filter.jl")
 include("tree_vis.jl")
 include("sherlock.jl")
 

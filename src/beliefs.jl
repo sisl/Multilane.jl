@@ -8,6 +8,7 @@ DiscreteBehaviorBelief(ps::MLPhysicalState, models::AbstractVector) = DiscreteBe
 function rand(rng::AbstractRNG,
               b::DiscreteBehaviorBelief,
               s::MLState=MLState(b.ps.crashed, Array(CarState, length(b.ps.env_cars))))
+    s.crashed = b.ps.crashed
     resize!(s.env_cars, length(b.ps.env_cars))
     for i in 1:length(s.env_cars)
         s.env_cars[i] = CarState(b.ps.env_cars[i], sample(rng, b.models, WeightVec(b.weights[i])))
@@ -36,7 +37,7 @@ function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProb
                 # sigma_acc = dmodel.vel_sigma/dt
                 # dv = acc*dt
                 # sigma_v = sigma_dv = dmodel.vel_sigma
-                if abs(co.x-csp.x) < 0.2*problem.dmodel.phys_param.lane_length
+                if abs(co.x-csp.x) < 0.3*problem.dmodel.phys_param.lane_length
                     proportional_likelihood = proportional_normal_pdf(csp.vel,
                                                                       co.vel,
                                                                       problem.dmodel.vel_sigma)

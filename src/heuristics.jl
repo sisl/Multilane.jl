@@ -77,7 +77,6 @@ function action(p::BehaviorPolicy, s::MLState, a::MLAction=MLAction(0.0,0.0))
     return MLAction(acc, lc)
 end
 
-
 type IDMLaneSeekingSolver <: Solver
     b::BehaviorModel
     rng::AbstractRNG
