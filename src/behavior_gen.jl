@@ -42,7 +42,7 @@ N   T   A
 2.0 1.0 3.0 b   1.0 3.0     2.0     1.0
 =#
 
-function standard_uniform(factor; correlated=false)
+function standard_uniform(factor=1.0; correlated=false)
     ma = 1.4;    da = 0.6
     mb = 2.0;    db = 1.0
     mT = 1.5;    dT = 0.5
