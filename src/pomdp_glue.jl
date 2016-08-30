@@ -2,7 +2,7 @@
 
 type MLPOMDPSolver <: Solver
     solver
-    updater_stub::Nullable{Any}
+    updater::Nullable{Any}
 end
 set_rng!(s::MLPOMDPSolver, rng::AbstractRNG) = set_rng!(s.solver, rng)
 
@@ -13,13 +13,13 @@ type MLPOMDPAgent <: Policy
     previous_action::Nullable{MLAction}
 end
 
-function solve(solver::MLPOMDPSolver, problem::MLMDP, up=get(solver.updater_stub, nothing))
+function solve(solver::MLPOMDPSolver, problem::MLMDP, up=get(solver.updater, nothing))
     internal_problem = NoCrashPOMDP(problem.dmodel, problem.rmodel, problem.discount)
     policy = solve(solver.solver, internal_problem)
     if up == nothing
         up = POMDPs.updater(policy)
-    elseif isa(up, BehaviorRootUpdaterStub)
-        up = BehaviorRootUpdater(internal_problem, up.smoothing)
+    else
+        set_problem!(up, internal_problem)
     end
     return MLPOMDPAgent(up, nothing, policy, nothing)
 end
@@ -27,10 +27,6 @@ end
 function action(agent::MLPOMDPAgent, state::MLState)
     o = MLPhysicalState(state)
     if isnull(agent.previous_belief)
-        # belief = POMCP.ObsNode(o, 0,
-        #     ParticleGenerator(agent.policy.problem, state),
-        #     Dict{MLAction, ActNode{MLAction, MLPhysicalState,
-        #                            ObsNode{MLAction, MLPhysicalState, ParticleCollection{MLState}}}}())
         belief = initialize_belief(agent.updater, ParticleGenerator(agent.policy.problem, state))
     else
         belief = update(agent.updater, get(agent.previous_belief), get(agent.previous_action), o)

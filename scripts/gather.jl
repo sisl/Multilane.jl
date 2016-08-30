@@ -32,7 +32,7 @@ else
     dir = latest_dir
 end
 
-
+println("Looking at $(joinpath(dir, "results_list.txt"))")
 files = []
 open(joinpath(dir, "results_list.txt")) do list
     for f in eachline(list)

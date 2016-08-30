@@ -118,6 +118,9 @@ type AggressivenessUpdater <: Updater{AggressivenessBelief}
     params::WeightUpdateParams
     rng::AbstractRNG
 end
+function set_problem!(u::AggressivenessUpdater, p::Union{POMDP,MDP})
+    u.problem = p
+end
 
 function update(up::AggressivenessUpdater,
                 b_old::AggressivenessBelief,

@@ -1,3 +1,5 @@
+set_problem!(u::Updater, ::Union{POMDP,MDP}) = u
+
 type DiscreteBehaviorBelief <: AbstractDistribution
     ps::MLPhysicalState
     models::AbstractVector
@@ -70,15 +72,13 @@ function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProb
     return b
 end
 
-type BehaviorBeliefUpdaterStub <: Updater{DiscreteBehaviorBelief}
-    smoothing::Float64
-    nb_particles::Int
-end
-
 type BehaviorBeliefUpdater <: Updater{DiscreteBehaviorBelief}
     problem::NoCrashProblem
     smoothing::Float64
     nb_particles::Float64
+end
+function set_problem!(u::BehaviorBeliefUpdater, problem::Union{POMDP,MDP})
+    u.problem = problem
 end
 
 function update(up::BehaviorBeliefUpdater,
@@ -96,13 +96,15 @@ function update(up::BehaviorBeliefUpdater,
     error("not implemented")
 end
 
-type BehaviorRootUpdaterStub <: Updater
-    params::WeightUpdateParams
-end
- 
 type BehaviorRootUpdater <: Updater{POMCP.BeliefNode}
     problem::NoCrashProblem
     params::WeightUpdateParams
+    min_particles::Int
+    rng::AbstractRNG
+end
+BehaviorRootUpdater(p::NoCrashProblem, w::WeightUpdateParams) = BehaviorRootUpdater(p,w,0)
+function set_problem!(u::BehaviorRootUpdater, problem::Union{POMDP,MDP})
+    u.problem = problem
 end
 
 initialize_belief(up::BehaviorRootUpdater, b) = POMCP.RootNode(b)
@@ -116,12 +118,48 @@ function update(up::BehaviorRootUpdater,
     b_new.B.models = up.problem.dmodel.behaviors.models
     #XXX hack
     particles = Iterators.chain([child.B.particles for child in values(b_old.children[a].children)]...)
+    
+    if min_particles > 0
+        particles = collect(particles)
+        sizehint!(particles, up.min_particles)
+        for i in 1:up.min_particles-length(particles)
+            s = rand(up.rng, b_old)
+            push!(particles, generate_s(up.problem, s, a, up.rng))
+        end
+    end
+
+    #=
+    println("Number of Particles: $(length(collect(particles)))")
+    println("Particle histogram for children:")
+    d = Dict{Int, Int}()
+    count_particles!(d, b_old)
+    for (k,v) in d
+        println("\t$k: $v")
+    end
+    println()
+    =#
 
     weights_from_particles!(b_new.B, up.problem, o, particles, up.params)
     return b_new
 end
 
 proportional_normal_pdf(x, mu, sigma) = exp(-(x-mu)^2/(2.*sigma^2))
+
+function count_particles!(d::Dict{Int,Int}, n::POMCP.BeliefNode)
+    for anode in values(n.children)
+        for child in values(anode.children)
+            count_particles!(d, child)
+        end
+    end
+    if isa(n.B, POMCP.ParticleCollection)
+        nb_particles = length(n.B.particles)
+        if haskey(d, nb_particles)
+            d[nb_particles] += 1
+        else
+            d[nb_particles] = 1
+        end
+    end
+end
 
 
 # TODO clean up
