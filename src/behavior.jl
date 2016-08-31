@@ -10,6 +10,7 @@ Base.hash(a::IDMMOBILBehavior,h::UInt64=zero(UInt64)) = hash(a.p_idm,hash(a.p_mo
 -(a::IDMMOBILBehavior, b::IDMMOBILBehavior) = a+(-1.*b)
 *(a::Float64, b::IDMMOBILBehavior) = IDMMOBILBehavior(a*b.p_idm, a*b.p_mobil, 0)
 .*(b::IDMMOBILBehavior, v::Vector{Float64}) = IDMMOBILBehavior(b.p_idm.*v[1:6], b.p_mobil.*v[7:9], 0)
+^(b::IDMMOBILBehavior, p::Real) = IDMMOBILBehavior(b.p_idm.^p, b.p_mobil.^p, 0)
 
 function IDMMOBILBehavior(s::AbstractString,v0::Float64,s0::Float64,idx::Int)
 	return IDMMOBILBehavior(IDMParam(s,v0,s0), MOBILParam(s), idx)

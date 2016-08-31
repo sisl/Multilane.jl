@@ -19,6 +19,7 @@ Base.hash(a::MOBILParam,h::UInt64=zero(UInt64)) = hash(a.p,hash(a.b_safe,hash(a.
 -(a::MOBILParam, b::MOBILParam) = a+(-1.*b)
 *(a::Float64, p::MOBILParam) = MOBILParam(a*p.p, a*p.b_safe, a*p.a_thr)
 .*(p::MOBILParam, v::Vector{Float64}) = MOBILParam(v[1]*p.p, v[2]*p.b_safe, v[3]*p.a_thr)
+.^(p::MOBILParam, n::Real) = MOBILParam(p.p^n, p.b_safe^n, p.a_thr^n)
 
 function MOBILParam(s::AbstractString)
 	#typical politeness range: [0.0,0.5]
@@ -158,11 +159,11 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 
 	dt = pp.dt
 	#TODO generalize to get_dv?
-	if !(typeof(s.env_cars[nbhd[5+dir]].behavior) <: IDMMOBILBehavior)
+	if !(typeof(s.env_cars[nbhd[5+dir]].behavior) <: IDMMOBILBehavior)
 		# assume some default idm model TODO
 		behind_idm = IDMParam("normal",31.,4.)
 	else
-		behind_idm = s.env_cars[nbhd[5+dir]].behavior.p_idm
+		behind_idm = s.env_cars[nbhd[5+dir]].behavior.p_idm
 	end
 	a_follower = get_idm_dv(behind_idm,dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
 	a_follower_ = get_idm_dv(behind_idm,dt,v_behind,dv_behind_,s_behind_)/dt

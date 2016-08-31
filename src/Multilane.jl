@@ -154,6 +154,7 @@ include("single_behavior.jl")
 include("heuristics.jl")
 include("beliefs.jl")
 include("aggressiveness_particle_filter.jl")
+include("uniform_particle_filter.jl")
 include("tree_vis.jl")
 include("sherlock.jl")
 

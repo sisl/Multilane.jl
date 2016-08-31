@@ -93,7 +93,7 @@ function weights_from_particles!(b::BehaviorParticleBelief,
                         push!(b.particles[io], csp.behavior)
                         push!(b.weights[io], proportional_likelihood)
                     elseif abs(co.y - csp.y) < 1.0
-                        push!(b.particles[io], aggressiveness(b.gen, csp.behavior))
+                        push!(b.particles[io], csp.behavior)
                         push!(b.weights[io], p.wrong_lane_factor*proportional_likelihood)
                     end # if greater than one lane apart, do nothing
                 end
@@ -111,21 +111,21 @@ function weights_from_particles!(b::BehaviorParticleBelief,
     return b
 end
 
-type AggressivenessUpdater <: Updater{BehaviorParticleBelief}
+type BehaviorParticleUpdater <: Updater{BehaviorParticleBelief}
     problem::Nullable{NoCrashProblem}
     nb_sims::Int
     resample_noise_factor::Float64 
     params::WeightUpdateParams
     rng::AbstractRNG
 end
-function set_problem!(u::AggressivenessUpdater, p::Union{POMDP,MDP})
+function set_problem!(u::BehaviorParticleUpdater, p::Union{POMDP,MDP})
     u.problem = Nullable{NoCrashProblem}(p)
 end
-function set_rng!(u::AggressivenessUpdater, rng::AbstractRNG)
+function set_rng!(u::BehaviorParticleUpdater, rng::AbstractRNG)
     u.rng = rng
 end
 
-function update(up::AggressivenessUpdater,
+function update(up::BehaviorParticleUpdater,
                 b_old::BehaviorParticleBelief,
                 a::MLAction,
                 o::MLPhysicalState,
@@ -134,7 +134,7 @@ function update(up::AggressivenessUpdater,
                                                     Array(Vector{Float64}, length(o.env_cars))))
 
     particles = Array(MLState, up.nb_sims)
-    stds = agg_stds(b_old)
+    stds = param_stds(b_old)
     for i in 1:up.nb_sims
         s = rand(up.rng, b_old, up.resample_noise_factor*stds)
         particles[i] = generate_s(get(up.problem), s, a, up.rng)
@@ -144,7 +144,7 @@ function update(up::AggressivenessUpdater,
 
     for i in 1:length(o.env_cars)
         if isempty(b_new.weights[i])
-            b_new.particles[i] = rand(up.rng, up.nb_sims)
+            b_new.particles[i] = [rand(up.rng, b_new.gen) for i in 1:up.nb_sims]
             b_new.weights[i] = ones(up.nb_sims)
         end
     end
@@ -152,7 +152,7 @@ function update(up::AggressivenessUpdater,
     return b_new
 end
 
-function initialize_belief(up::AggressivenessUpdater, distribution)
+function initialize_belief(up::BehaviorParticleUpdater, distribution)
     gen = get(up.problem).dmodel.behaviors
     states = [rand(up.rng, distribution) for i in 1:up.nb_sims]
     particles = Array(Array{Float64}, length(first(states).env_cars))
