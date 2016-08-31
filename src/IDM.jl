@@ -22,7 +22,19 @@ Base.hash(a::IDMParam,h::UInt64=zero(UInt64)) = hash(a.a,hash(a.b,hash(a.T,hash(
 # .*(p::IDMParam,a::Float64) = a*p
 .*(p::IDMParam,v::Vector{Float64}) = IDMParam(v[1]*p.a, v[2]*p.b, v[3]*p.T, v[4]*p.v0, v[5]*p.s0, v[6]*p.del)
 
-#=
+function get_idm_s_star(p::IDMParam, v::Float64, dv::Float64)
+    return p.s0 + max(0.,v*p.T+v*dv/(2*sqrt(p.a*p.b)))
+end
+
+# dv is positive if vehicles are closing
+function get_idm_dv(p::IDMParam,dt::Float64,v::Float64,dv::Float64,s::Float64)
+	s_ = get_idm_s_star(p, v, dv)
+    dvdt = p.a*(1.-(v/p.v0)^p.del - (s_/s)^2)
+	#dvdt = min(max(dvdt,-p.b),p.a)
+	return (dvdt*dt)::Float64
+end #get_idm_dv
+
+# these aren't used anymore, but need to be there for the tests
 IDMParam(a::Float64,b::Float64,T::Float64,v0::Float64,s0::Float64;del::Float64=4.) = IDMParam(a,b,T,v0,s0,del)
 function build_cautious_idm(v0::Float64,s0::Float64)
 	T = 2.
@@ -57,16 +69,4 @@ function IDMParam(s::AbstractString,v0::Float64,s0::Float64)
 		error("No such idm phenotype: \"$(s)\"")
 	end
 end
-=#
 
-function get_idm_s_star(p::IDMParam, v::Float64, dv::Float64)
-    return p.s0 + max(0.,v*p.T+v*dv/(2*sqrt(p.a*p.b)))
-end
-
-# dv is positive if vehicles are closing
-function get_idm_dv(p::IDMParam,dt::Float64,v::Float64,dv::Float64,s::Float64)
-	s_ = get_idm_s_star(p, v, dv)
-    dvdt = p.a*(1.-(v/p.v0)^p.del - (s_/s)^2)
-	#dvdt = min(max(dvdt,-p.b),p.a)
-	return (dvdt*dt)::Float64
-end #get_idm_dv
