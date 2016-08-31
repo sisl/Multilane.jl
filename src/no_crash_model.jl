@@ -281,7 +281,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
     for i in 2:nb_cars
         neighborhood = get_neighborhood(pp, s, i)
 
-        behavior = get(s.env_cars[i].behavior)
+        behavior = s.env_cars[i].behavior
 
         acc = generate_accel(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dvs[i] = dt*acc
@@ -318,7 +318,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                 # make sure there is a conflict longitudinally
                 # if car_i.x - car_j.x <= pp.l_car || car_i.x + dxs[i] - car_j.x + dxs[j] <= pp.l_car
                 # if car_i.x - car_j.x <= mdp.dmodel.appear_clearance # made more conservative on 8/19
-                if car_i.x - car_j.x <= get_idm_s_star(get(car_j.behavior).p_idm, car_j.vel, car_j.vel-car_i.vel) # upgraded to sstar on 8/19
+                if car_i.x - car_j.x <= get_idm_s_star(car_j.behavior.p_idm, car_j.vel, car_j.vel-car_i.vel) # upgraded to sstar on 8/19
 
                     # check if they are near each other lanewise
                     if abs(car_i.y - car_j.y) <= 2.0
@@ -439,10 +439,8 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                 other = closest_cars[j]
                 if other == 0
                     sstar = 0
-                elseif isnull(s.env_cars[other].behavior)
-                    sstar = mdp.dmodel.appear_clearance
                 else
-                    sstar = get_idm_s_star(get(s.env_cars[other].behavior).p_idm,
+                    sstar = get_idm_s_star(s.env_cars[other].behavior.p_idm,
                                            s.env_cars[other].vel,
                                            s.env_cars[other].vel-vel)
                 end
@@ -465,8 +463,6 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
     # sp.crashed = is_crash(mdp, s, sp, warning=false)
     sp.crashed = false
 
-    @assert !isnull(s.env_cars[1].behavior)
-    @assert !isnull(sp.env_cars[1].behavior)
     @assert sp.env_cars[1].x == s.env_cars[1].x # ego should not move
 
     return sp
@@ -573,7 +569,6 @@ function initial_state(mdp::NoCrashProblem, ps::MLPhysicalState, rng::AbstractRN
         behavior = rand(rng, mdp.dmodel.behaviors)
         s.env_cars[i] = CarState(ps.env_cars[i], behavior)
     end
-    @assert !isnull(s.env_cars[1].behavior)
     return s
 end
 
@@ -591,7 +586,7 @@ function initial_state(mdp::NoCrashProblem, rng::AbstractRNG, s::MLState=create_
     #ego velocity
     vel = max(min(randn(rng)*mdp.dmodel.vel_sigma + pp.v_med, pp.v_max), pp.v_min)
   
-    s.env_cars[1] = CarState(pos_x, pos_y, vel, 0, Nullable{BehaviorModel}(NORMAL), 1)
+    s.env_cars[1] = CarState(pos_x, pos_y, vel, 0, NORMAL, 1)
     # XXX dirichlet and exponential are from distributions--does not accept rng!!!
     dir_distr = Dirichlet(mdp.dmodel.lane_weights)
     cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
@@ -663,10 +658,7 @@ function initial_state(mdp::NoCrashProblem, rng::AbstractRNG, s::MLState=create_
 
     resize!(s.env_cars,idx-1)
 
-    @assert !isnull(s.env_cars[1].behavior)
-  
     return s
-
 end
 
 function sample_distance(dmodel::NoCrashIDMMOBILModel, behavior::IDMMOBILBehavior, v_front::Float64, rng::AbstractRNG)
@@ -683,10 +675,7 @@ end
 
 
 function generate_o(mdp::NoCrashProblem, s::MLState, a::MLAction, sp::MLState, o::MLObs=create_observation(mdp))
-  #TODO add noise? no?
-
-  return MLObs(sp)
-
+    return MLObs(sp)
 end
 
 function generate_sor(pomdp::NoCrashPOMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState, o::MLObs)

@@ -44,9 +44,9 @@ function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProb
                                                                       co.vel,
                                                                       problem.dmodel.vel_sigma)
                     if co.y == csp.y
-                        b.weights[io][get(csp.behavior).idx] += proportional_likelihood
+                        b.weights[io][csp.behavior.idx] += proportional_likelihood
                     elseif abs(co.y - csp.y) < 1.0
-                        b.weights[io][get(csp.behavior).idx] += p.wrong_lane_factor*proportional_likelihood
+                        b.weights[io][csp.behavior.idx] += p.wrong_lane_factor*proportional_likelihood
                     end # if greater than one lane apart, do nothing
                 end
                 io += 1

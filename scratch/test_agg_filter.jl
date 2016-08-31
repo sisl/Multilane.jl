@@ -89,7 +89,7 @@ for i in 1:T
     ids = [c.id for c in s.env_cars[2:end]]
     stds[i,ids.-1] = agg_stds(b)[2:end]
     for j in 2:length(s.env_cars)
-        true_agg = aggressiveness(b.gen, get(s.env_cars[j].behavior))
+        true_agg = aggressiveness(b.gen, s.env_cars[j].behavior)
         err = abs(true_agg-mean_aggs[j])
         errors[i,s.env_cars[j].id-1] = err
         total_error += err

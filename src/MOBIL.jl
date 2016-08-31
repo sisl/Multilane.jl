@@ -146,14 +146,6 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 
 	v = s.env_cars[idx].vel
 
-	if isnull(s.env_cars[nbhd[5+dir]].behavior)
-        # calculate the braking they will have to do for safety
-        gap = s.env_cars[idx].x - s.env_cars[nbhd[5+dir]].x - pp.l_car
-        n_braking_acc = nullable_max_safe_acc(gap, s.env_cars[nbhd[5+dir]].vel, v, pp.brake_limit, pp.dt)
-        braking_acc = get(n_braking_acc, -pp.brake_limit)
-		return min(braking_acc, 0.0)::Float64, 0.0::Float64
-	end
-
 	#behind - me
 	dv_behind, s_behind = get_dv_ds(pp,s,nbhd,idx,5+dir)
 	v_behind = v - dv_behind
@@ -166,11 +158,11 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 
 	dt = pp.dt
 	#TODO generalize to get_dv?
-	if !(typeof(get(s.env_cars[nbhd[5+dir]].behavior)) <: IDMMOBILBehavior)
+	if !(typeof(s.env_cars[nbhd[5+dir]].behavior) <: IDMMOBILBehavior)
 		# assume some default idm model TODO
 		behind_idm = IDMParam("normal",31.,4.)
 	else
-		behind_idm = get(s.env_cars[nbhd[5+dir]].behavior).p_idm
+		behind_idm = s.env_cars[nbhd[5+dir]].behavior.p_idm
 	end
 	a_follower = get_idm_dv(behind_idm,dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
 	a_follower_ = get_idm_dv(behind_idm,dt,v_behind,dv_behind_,s_behind_)/dt

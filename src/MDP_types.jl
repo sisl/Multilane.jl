@@ -45,23 +45,16 @@ immutable CarState
     y::Float64
 	vel::Float64 #v_x
 	lane_change::Float64 # ydot # in units of LANES PER SECOND
-	behavior::Nullable{BehaviorModel}
+	behavior::BehaviorModel
     id::Int # car id to track from state to state - ego is ALWAYS 1
 end
 
 function ==(a::CarState,b::CarState)
-    return a.x==b.x && a.y==b.y && a.vel==b.vel && a.lane_change == b.lane_change && a.id == b.id && ((isnull(a.behavior) && isnull(b.behavior)) || (get(a.behavior)==get(b.behavior)))
+    return a.x==b.x && a.y==b.y && a.vel==b.vel && a.lane_change == b.lane_change && a.id == b.id && a.behavior==b.behavior
 end
 Base.hash(a::CarState, h::UInt64=zero(UInt64)) = hash(a.vel, hash(a.x, hash(a.y, hash(a.lane_change, hash(a.behavior, hash(a.id, h))))))
 "Return a representation that will produce a valid object if executed"
-function Base.repr(c::CarState)
-    if isnull(c.behavior)
-        bstring = "Nullable{BehaviorModel}()"
-    else
-        bstring = "$(get(c.behavior))"
-    end
-    return "CarState($(c.x),$(c.y),$(c.vel),$(c.lane_change),$bstring,$(c.id))"
-end
+Base.repr(c::CarState) = "CarState($(c.x),$(c.y),$(c.vel),$(c.lane_change),$(c.behavior),$(c.id))"
 
 type MLState
     crashed::Bool # A crash occurs at the state transition. All crashed states are considered equal
@@ -136,7 +129,7 @@ typealias CarStateObs CarPhysicalState
 ==(a::CarPhysicalState, b::CarPhysicalState) = (a.x == b.x) && (a.y == b.y) && (a.vel == b.vel) && (a.lane_change == b.lane_change) && (a.id == b.id)
 Base.hash(a::CarPhysicalState,h::UInt64=zero(UInt64)) = hash(a.x, hash(a.y, hash(a.vel, (hash(a.lane_change, hash(a.id,h))))))
 CarPhysicalState(cs::CarState) = CarPhysicalState(cs.x, cs.y, cs.vel, cs.lane_change, cs.id)
-function CarState(cps::CarPhysicalState, behavior::Union{BehaviorModel, Nullable{BehaviorModel}, Void})
+function CarState(cps::CarPhysicalState, behavior::BehaviorModel)
     return CarState(cps.x, cps.y, cps.vel, cps.lane_change, behavior, cps.id)
 end
 

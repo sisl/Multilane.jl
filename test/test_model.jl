@@ -27,7 +27,7 @@ end
 # function test_e_brake()
 #     mdp = MDP_fixture()
 #     pp = mdp.dmodel.phys_param
-#     s = MLState(false, CarState[CarState(0.0, 2.0, pp.v_med, 0.0, Nullable{BehaviorModel}()),
+#     s = MLState(false, CarState[CarState(0.0, 2.0, pp.v_med, 0.0, Multilane.NORMAL),
 #                                 CarState(pp.l_car+0.1, 2.0, pp.v_min, 0.0,
 #                                          BehaviorModel("normal"), pp.v_min, 0.0, 1)])
 # end

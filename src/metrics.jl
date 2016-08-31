@@ -40,7 +40,7 @@ function calculate(m::NumBehaviorBrakesMetric, problem::NoCrashProblem, sim::His
                 nb_leaving += 1
                 continue
             else
-                if !isnull(c.behavior) && get(c.behavior).idx == m.idx
+                if c.behavior.idx == m.idx
                     acc = (cp.vel-c.vel)/dt
                     if acc < -m.threshold 
                         nb_brakes+=1

@@ -90,10 +90,10 @@ function weights_from_particles!(b::AggressivenessBelief,
                                                                       co.vel,
                                                                       problem.dmodel.vel_sigma*(1+p.smoothing))
                     if co.y == csp.y
-                        push!(b.particles[io], aggressiveness(b.gen, get(csp.behavior)))
+                        push!(b.particles[io], aggressiveness(b.gen, csp.behavior))
                         push!(b.weights[io], proportional_likelihood)
                     elseif abs(co.y - csp.y) < 1.0
-                        push!(b.particles[io], aggressiveness(b.gen, get(csp.behavior)))
+                        push!(b.particles[io], aggressiveness(b.gen, csp.behavior))
                         push!(b.weights[io], p.wrong_lane_factor*proportional_likelihood)
                     end # if greater than one lane apart, do nothing
                 end
@@ -161,7 +161,7 @@ function initialize_belief(up::AggressivenessUpdater, distribution)
         particles[i] = Array(Float64, length(states))
         weights[i] = zeros(length(states))
         for (j,s) in enumerate(states)
-            particles[i][j] = aggressiveness(gen, get(s.env_cars[i].behavior))
+            particles[i][j] = aggressiveness(gen, s.env_cars[i].behavior)
         end
     end
     return AggressivenessBelief(gen, MLPhysicalState(first(states)), particles, weights)

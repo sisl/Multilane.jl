@@ -30,7 +30,7 @@ function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.md
   
     # TODO need an equivalent of is_safe that can operate on observations
     if is_safe(p.mdp, s, MLAction(0.,lc))
-      return MLAction(0.,lc)
+        return MLAction(0.,lc)
     end
     # maintain distance from other cars
   
@@ -38,7 +38,7 @@ function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.md
     nbhd = get_neighborhood(dmodel.phys_param,s,1)
   
     if nbhd[2] == 0 && nbhd[5] == 0
-      return MLAction(0.,0.)
+        return MLAction(0.,0.)
     end
   
     dist_ahead = nbhd[2] != 0 ? s.env_cars[nbhd[2]].x - s.env_cars[1].x : Inf
