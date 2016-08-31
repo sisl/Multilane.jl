@@ -112,21 +112,24 @@ function weights_from_particles!(b::AggressivenessBelief,
 end
 
 type AggressivenessUpdater <: Updater{AggressivenessBelief}
-    problem::NoCrashProblem
+    problem::Nullable{NoCrashProblem}
     nb_sims::Int
     resample_noise_factor::Float64 
     params::WeightUpdateParams
     rng::AbstractRNG
 end
 function set_problem!(u::AggressivenessUpdater, p::Union{POMDP,MDP})
-    u.problem = p
+    u.problem = Nullable{NoCrashProblem}(p)
+end
+function set_rng!(u::AggressivenessUpdater, rng::AbstractRNG)
+    u.rng = rng
 end
 
 function update(up::AggressivenessUpdater,
                 b_old::AggressivenessBelief,
                 a::MLAction,
                 o::MLPhysicalState,
-                b_new::AggressivenessBelief=AggressivenessBelief(up.problem.dmodel.behaviors, o,
+                b_new::AggressivenessBelief=AggressivenessBelief(get(up.problem).dmodel.behaviors, o,
                                                     Array(Vector{Float64}, length(o.env_cars)),
                                                     Array(Vector{Float64}, length(o.env_cars))))
 
@@ -134,10 +137,10 @@ function update(up::AggressivenessUpdater,
     stds = agg_stds(b_old)
     for i in 1:up.nb_sims
         s = rand(up.rng, b_old, up.resample_noise_factor*stds)
-        particles[i] = generate_s(up.problem, s, a, up.rng)
+        particles[i] = generate_s(get(up.problem), s, a, up.rng)
     end
     
-    weights_from_particles!(b_new, up.problem, o, particles, up.params)
+    weights_from_particles!(b_new, get(up.problem), o, particles, up.params)
 
     for i in 1:length(o.env_cars)
         if isempty(b_new.weights[i])
@@ -147,4 +150,19 @@ function update(up::AggressivenessUpdater,
     end
 
     return b_new
+end
+
+function initialize_belief(up::AggressivenessUpdater, distribution)
+    gen = get(up.problem).dmodel.behaviors
+    states = [rand(up.rng, distribution) for i in 1:up.nb_sims]
+    particles = Array(Array{Float64}, length(first(states).env_cars))
+    weights = Array(Array{Float64}, length(first(states).env_cars))
+    for i in 1:length(first(states).env_cars)
+        particles[i] = Array(Float64, length(states))
+        weights[i] = zeros(length(states))
+        for (j,s) in enumerate(states)
+            particles[i][j] = aggressiveness(gen, get(s.env_cars[i].behavior))
+        end
+    end
+    return AggressivenessBelief(gen, MLPhysicalState(first(states)), particles, weights)
 end

@@ -65,7 +65,9 @@ export
     DiscreteBehaviorBelief,
     WeightUpdateParams,
     UniformIDMMOBIL,
-    standard_uniform
+    standard_uniform,
+    MLMPCSolver,
+    MLPOMDPSolver
 
 export
     NoCrashRewardModel,
@@ -147,6 +149,7 @@ include("test_sets.jl")
 include("relax.jl")
 include("robust_mdp.jl")
 include("pomdp_glue.jl")
+include("most_likely_mpc.jl")
 include("single_behavior.jl")
 include("heuristics.jl")
 include("beliefs.jl")
