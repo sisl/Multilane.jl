@@ -5,7 +5,7 @@
 ##IDM Model##
 #############
 
-type IDMParam
+immutable IDMParam
 	a::Float64 #max  comfy acceleration
 	b::Float64 #max comfy brake speed
 	T::Float64 #desired safety time headway
@@ -16,7 +16,13 @@ end #IDMParam
 ==(a::IDMParam,b::IDMParam) = (a.a==b.a) && (a.b==b.b) &&(a.T == b.T)&&(a.v0==b.v0)&&(a.s0==b.s0)&&(a.del==b.del)
 Base.hash(a::IDMParam,h::UInt64=zero(UInt64)) = hash(a.a,hash(a.b,hash(a.T,hash(a.v0,hash(a.s0,hash(a.del,h))))))
 
++(a::IDMParam,b::IDMParam) = IDMParam(a.a+b.a, a.b+b.b, a.T+b.T, a.v0+b.v0, a.s0+b.s0, a.del+b.del)
+-(a::IDMParam,b::IDMParam) = a+(-1.*b)
+*(a::Float64,p::IDMParam) = IDMParam(a*p.a, a*p.b, a*p.T, a*p.v0, a*p.s0, a*p.del)
+# .*(p::IDMParam,a::Float64) = a*p
+.*(p::IDMParam,v::Vector{Float64}) = IDMParam(v[1]*p.a, v[2]*p.b, v[3]*p.T, v[4]*p.v0, v[5]*p.s0, v[6]*p.del)
 
+#=
 IDMParam(a::Float64,b::Float64,T::Float64,v0::Float64,s0::Float64;del::Float64=4.) = IDMParam(a,b,T,v0,s0,del)
 function build_cautious_idm(v0::Float64,s0::Float64)
 	T = 2.
@@ -51,6 +57,7 @@ function IDMParam(s::AbstractString,v0::Float64,s0::Float64)
 		error("No such idm phenotype: \"$(s)\"")
 	end
 end
+=#
 
 function get_idm_s_star(p::IDMParam, v::Float64, dv::Float64)
     return p.s0 + max(0.,v*p.T+v*dv/(2*sqrt(p.a*p.b)))

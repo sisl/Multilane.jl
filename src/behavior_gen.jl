@@ -83,6 +83,31 @@ function standard_uniform(factor=1.0; correlated=false)
     end
 end
 
+function clip(b::IDMMOBILBehavior, gen::UniformIDMMOBIL)
+    bi = b.p_idm
+    bm = b.p_mobil
+    mini = gen.min_idm
+    maxi = gen.max_idm
+    minm = gen.min_mobil
+    maxm = gen.max_mobil
+    return IDMMOBILBehavior(
+        IDMParam(
+            max(min(bi.a, maxi.a), mini.a),
+            max(min(bi.b, maxi.b), mini.b),
+            max(min(bi.T, maxi.T), mini.T),
+            max(min(bi.v0, maxi.v0), mini.v0),
+            max(min(bi.s0, maxi.s0), mini.s0),
+            max(min(bi.del, maxi.del), mini.del)
+        ),
+        MOBILParam(
+            max(min(bm.p, maxm.p), minm.p),
+            max(min(bm.b_safe, maxm.b_safe), minm.b_safe),
+            max(min(bm.a_thr, maxm.a_thr), minm.a_thr)
+        ),
+        b.idx
+    )
+end
+
 type CorrelatedIDMMOBIL <: BehaviorGenerator
     min_idm::IDMParam
     max_idm::IDMParam

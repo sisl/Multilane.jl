@@ -15,6 +15,11 @@ MOBILParam(;p::Float64=0.25,b_safe::Float64=4.,a_thr::Float64=0.2) = MOBILParam(
 ==(a::MOBILParam,b::MOBILParam) = (a.p==b.p) && (a.b_safe==b.b_safe) && (a.a_thr == b.a_thr)
 Base.hash(a::MOBILParam,h::UInt64=zero(UInt64)) = hash(a.p,hash(a.b_safe,hash(a.a_thr,h)))
 
++(a::MOBILParam, b::MOBILParam) = MOBILParam(a.p+b.p, a.b_safe+b.b_safe, a.a_thr+b.a_thr)
+-(a::MOBILParam, b::MOBILParam) = a+(-1.*b)
+*(a::Float64, p::MOBILParam) = MOBILParam(a*p.p, a*p.b_safe, a*p.a_thr)
+.*(p::MOBILParam, v::Vector{Float64}) = MOBILParam(v[1]*p.p, v[2]*p.b_safe, v[3]*p.a_thr)
+
 function MOBILParam(s::AbstractString)
 	#typical politeness range: [0.0,0.5]
 	typedict = Dict{AbstractString,Float64}("cautious"=>0.5,"normal"=>0.25,"aggressive"=>0.0)

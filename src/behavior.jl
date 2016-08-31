@@ -1,4 +1,4 @@
-type IDMMOBILBehavior <: BehaviorModel
+immutable IDMMOBILBehavior <: BehaviorModel
 	p_idm::IDMParam
 	p_mobil::MOBILParam
 	idx::Int
@@ -6,8 +6,13 @@ end
 ==(a::IDMMOBILBehavior,b::IDMMOBILBehavior) = (a.p_idm==b.p_idm) && (a.p_mobil==b.p_mobil)
 Base.hash(a::IDMMOBILBehavior,h::UInt64=zero(UInt64)) = hash(a.p_idm,hash(a.p_mobil,h))
 
++(a::IDMMOBILBehavior, b::IDMMOBILBehavior) = IDMMOBILBehavior(a.p_idm+b.p_idm, a.p_mobil+b.p_mobil, 0)
+-(a::IDMMOBILBehavior, b::IDMMOBILBehavior) = a+(-1.*b)
+*(a::Float64, b::IDMMOBILBehavior) = IDMMOBILBehavior(a*b.p_idm, a*b.p_mobil, 0)
+.*(b::IDMMOBILBehavior, v::Vector{Float64}) = IDMMOBILBehavior(b.p_idm.*v[1:6], b.p_mobil.*v[7:9], 0)
+
 function IDMMOBILBehavior(s::AbstractString,v0::Float64,s0::Float64,idx::Int)
-	return IDMMOBILBehavior(IDMParam(s,v0,s0),MOBILParam(s),idx)
+	return IDMMOBILBehavior(IDMParam(s,v0,s0), MOBILParam(s), idx)
 end
 
 typical_velocity(b::IDMMOBILBehavior) = b.p_idm.v0
