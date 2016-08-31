@@ -102,7 +102,7 @@ type BehaviorRootUpdater <: Updater{POMCP.BeliefNode}
     min_particles::Int
     rng::AbstractRNG
 end
-BehaviorRootUpdater(p::NoCrashProblem, w::WeightUpdateParams) = BehaviorRootUpdater(p,w,0)
+BehaviorRootUpdater(p::NoCrashProblem, w::WeightUpdateParams, rng::AbstractRNG=Base.GLOBAL_RNG) = BehaviorRootUpdater(p,w,0,rng)
 function set_problem!(u::BehaviorRootUpdater, problem::Union{POMDP,MDP})
     u.problem = problem
 end
@@ -119,7 +119,7 @@ function update(up::BehaviorRootUpdater,
     #XXX hack
     particles = Iterators.chain([child.B.particles for child in values(b_old.children[a].children)]...)
     
-    if min_particles > 0
+    if up.min_particles > 0
         particles = collect(particles)
         sizehint!(particles, up.min_particles)
         for i in 1:up.min_particles-length(particles)

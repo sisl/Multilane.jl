@@ -15,7 +15,7 @@ import Distributions: Dirichlet, Exponential, Gamma, rand
 
 import Iterators
 
-import Base: ==, hash, length, vec
+import Base: ==, hash, length, vec, +, -, *, .*
 
 # import POMDPToolbox: Particle, ParticleBelief
 
