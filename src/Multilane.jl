@@ -15,7 +15,7 @@ import Distributions: Dirichlet, Exponential, Gamma, rand
 
 import Iterators
 
-import Base: ==, hash, length, vec, +, -, *, .*
+import Base: ==, hash, length, vec, +, -, *, .*, ^, .^
 
 # import POMDPToolbox: Particle, ParticleBelief
 
@@ -151,10 +151,10 @@ include("robust_mdp.jl")
 include("pomdp_glue.jl")
 include("most_likely_mpc.jl")
 include("single_behavior.jl")
-include("heuristics.jl")
 include("beliefs.jl")
 include("aggressiveness_particle_filter.jl")
 include("uniform_particle_filter.jl")
+include("heuristics.jl")
 include("tree_vis.jl")
 include("sherlock.jl")
 

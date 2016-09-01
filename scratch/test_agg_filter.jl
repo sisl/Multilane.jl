@@ -8,6 +8,8 @@ using GenerativeModels
 using Plots
 
 
+rng = MersenneTwister(58)
+
 # behaviors = DiscreteBehaviorSet([normal, timid, aggressive], WeightVec(ones(3)))
 # behaviors = DiscreteBehaviorSet(Multilane.NINE_BEHAVIORS, WeightVec(ones(9)))
 behaviors = standard_uniform(1.0, correlated=true)
@@ -28,9 +30,10 @@ dmodel = NoCrashIDMMOBILModel(nb_cars, pp,
 
 pomdp = NoCrashPOMDP(dmodel, rmodel, 1.0)
 
-sim = HistoryRecorder(rng=MersenneTwister(789), capture_exception=false, max_steps=100)
+sim = HistoryRecorder(rng=rng, capture_exception=false, max_steps=100)
 # up = BehaviorRootUpdater(pomdp, WeightUpdateParams(smoothing=0.02))
-up = AggressivenessUpdater(pomdp, 100, 0.015, WeightUpdateParams(smoothing=0.0), sim.rng)
+
+up = AggressivenessUpdater(pomdp, 500, 0.05, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), rng)
 
 #=
 solver = POMCPDPWSolver(
@@ -43,15 +46,16 @@ solver = POMCPDPWSolver(
     rollout_solver=SimpleSolver()
 )
 =#
-solver = BehaviorSolver(Multilane.UNIFORM_MEAN, false, sim.rng)
+# solver = BehaviorSolver(Multilane.UNIFORM_MEAN, false, rng)
+solver = SimpleSolver()
 
 policy = solve(solver, pomdp)
 
-ips = MLPhysicalState(relaxed_initial_state(NoCrashMDP(dmodel,rmodel,1.0), 200, sim.rng))
+ips = MLPhysicalState(relaxed_initial_state(NoCrashMDP(dmodel,rmodel,1.0), 200, rng))
 # id = DiscreteBehaviorBelief(ips, behaviors.models, [behaviors.weights.values for i in 1:length(ips.env_cars)])
 
-nb_particles = 100
-particles = [[rand(sim.rng) for k in 1:nb_particles] for i in 1:length(ips.env_cars)]
+nb_particles = 500
+particles = [[rand(rng) for k in 1:nb_particles] for i in 1:length(ips.env_cars)]
 weights = [ones(nb_particles) for i in 1:length(ips.env_cars)]
 id = AggressivenessBelief(behaviors, ips, particles, weights)
 
@@ -97,9 +101,13 @@ for i in 1:T
     average_error[i] = total_error/length(s.env_cars)
 end
 
+@show mean(average_error)
+
 # labels=collect(2:max_id)',
 plot(average_error, linewidth=4, linecolor=:black, title="Aggressiveness Estimate Error", label="")
-plot!(errors, label="")
-plot!(stds, linestyle=:dash, label="")
+for i in 1:size(errors, 2)
+    plot!(errors[:,i], label=(i-1))
+end
+plot!(stds, linestyle=:dash, labels="")
 gui()
 

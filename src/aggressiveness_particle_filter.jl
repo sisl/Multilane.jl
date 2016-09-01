@@ -27,7 +27,6 @@ function rand(rng::AbstractRNG,
 end
 
 # action(p::Policy, b::AggressivenessBelief) = action(p, b.physical)
-action(p::BehaviorPolicy, b::AggressivenessBelief, a::MLAction=MLAction(0.0,0.0)) = action(p, most_likely_state(b))
 
 function most_likely_state(b::AggressivenessBelief)
     s = MLState(b.physical.crashed, Array(CarState, length(b.physical.env_cars)))
@@ -82,9 +81,6 @@ function weights_from_particles!(b::AggressivenessBelief,
             co = o.env_cars[io]
             csp = sp.env_cars[isp]
             if co.id == csp.id
-                # sigma_acc = dmodel.vel_sigma/dt
-                # dv = acc*dt
-                # sigma_v = sigma_dv = dmodel.vel_sigma
                 if abs(co.x-csp.x) < 0.2*problem.dmodel.phys_param.lane_length
                     proportional_likelihood = proportional_normal_pdf(csp.vel,
                                                                       co.vel,
@@ -92,7 +88,7 @@ function weights_from_particles!(b::AggressivenessBelief,
                     if co.y == csp.y
                         push!(b.particles[io], aggressiveness(b.gen, csp.behavior))
                         push!(b.weights[io], proportional_likelihood)
-                    elseif abs(co.y - csp.y) < 1.0
+                    elseif abs(co.y - csp.y) <= 1.1
                         push!(b.particles[io], aggressiveness(b.gen, csp.behavior))
                         push!(b.weights[io], p.wrong_lane_factor*proportional_likelihood)
                     end # if greater than one lane apart, do nothing
@@ -134,7 +130,7 @@ function update(up::AggressivenessUpdater,
                                                     Array(Vector{Float64}, length(o.env_cars))))
 
     particles = Array(MLState, up.nb_sims)
-    stds = agg_stds(b_old)
+    stds = max(agg_stds(b_old), 0.01)
     for i in 1:up.nb_sims
         s = rand(up.rng, b_old, up.resample_noise_factor*stds)
         particles[i] = generate_s(get(up.problem), s, a, up.rng)
@@ -144,6 +140,7 @@ function update(up::AggressivenessUpdater,
 
     for i in 1:length(o.env_cars)
         if isempty(b_new.weights[i])
+            # println("car $i has empty weights")
             b_new.particles[i] = rand(up.rng, up.nb_sims)
             b_new.weights[i] = ones(up.nb_sims)
         end
@@ -159,10 +156,12 @@ function initialize_belief(up::AggressivenessUpdater, distribution)
     weights = Array(Array{Float64}, length(first(states).env_cars))
     for i in 1:length(first(states).env_cars)
         particles[i] = Array(Float64, length(states))
-        weights[i] = zeros(length(states))
+        weights[i] = ones(length(states))
         for (j,s) in enumerate(states)
             particles[i][j] = aggressiveness(gen, s.env_cars[i].behavior)
         end
     end
     return AggressivenessBelief(gen, MLPhysicalState(first(states)), particles, weights)
 end
+
+initialize_belief(up::AggressivenessUpdater, d::AggressivenessBelief) = d

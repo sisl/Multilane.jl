@@ -52,6 +52,7 @@ function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.md
   
     return MLAction(min(accel, max_accel),0.)
 end
+action(p::Simple, b::AggressivenessBelief, a::MLAction=create_action(p.mdp)) = action(p, b.physical, a)
 
 type BehaviorSolver <: Solver
     b::BehaviorModel
@@ -76,6 +77,8 @@ function action(p::BehaviorPolicy, s::MLState, a::MLAction=MLAction(0.0,0.0))
     end
     return MLAction(acc, lc)
 end
+action(p::BehaviorPolicy, b::AggressivenessBelief, a::MLAction=MLAction(0.0,0.0)) = action(p, most_likely_state(b))
+action(p::BehaviorPolicy, b::BehaviorParticleBelief, a::MLAction=MLAction(0.0,0.0)) = action(p, most_likely_state(b))
 
 type IDMLaneSeekingSolver <: Solver
     b::BehaviorModel

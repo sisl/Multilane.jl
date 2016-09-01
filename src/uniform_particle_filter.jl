@@ -1,7 +1,7 @@
 type BehaviorParticleBelief <: AbstractDistribution{MLState}
     gen::UniformIDMMOBIL
     physical::MLPhysicalState
-    particles::Vector{Vector{IDMMOBILBehavior}} # First index is the position in physical.env_cars
+    particles::Vector{Vector{BehaviorModel}} # First index is the position in physical.env_cars
     weights::Vector{Vector{Float64}}   # Second index is the particle number
 end
 
@@ -27,7 +27,6 @@ function rand(rng::AbstractRNG,
 end
 
 # action(p::Policy, b::BehaviorParticleBelief) = action(p, b.physical)
-action(p::BehaviorPolicy, b::BehaviorParticleBelief, a::MLAction=MLAction(0.0,0.0)) = action(p, most_likely_state(b))
 
 function most_likely_state(b::BehaviorParticleBelief)
     s = MLState(b.physical.crashed, Array(CarState, length(b.physical.env_cars)))
