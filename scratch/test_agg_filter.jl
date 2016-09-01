@@ -16,7 +16,7 @@ behaviors = standard_uniform(1.0, correlated=true)
 
 nb_lanes = 4
 desired_lane_reward = 10.
-rmodel = NoCrashRewardModel(desired_lane_reward*10., desired_lane_reward,2.5,nb_lanes)
+rmodel = NoCrashRewardModel(desired_lane_reward*10., desired_lane_reward,4.0,nb_lanes)
 
 pp = PhysicalParam(nb_lanes,lane_length=100.)
 
