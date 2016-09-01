@@ -52,7 +52,7 @@ function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.md
   
     return MLAction(min(accel, max_accel),0.)
 end
-action(p::Simple, b::AggressivenessBelief, a::MLAction=create_action(p.mdp)) = action(p, b.physical, a)
+action(p::Simple, b::BehaviorBelief, a::MLAction=create_action(p.mdp)) = action(p, b.physical, a)
 
 type BehaviorSolver <: Solver
     b::BehaviorModel

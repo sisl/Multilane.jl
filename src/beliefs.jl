@@ -1,7 +1,9 @@
 set_problem!(u::Updater, ::Union{POMDP,MDP}) = u
 
-type DiscreteBehaviorBelief <: AbstractDistribution
-    ps::MLPhysicalState
+abstract BehaviorBelief <: AbstractDistribution{MLState}
+
+type DiscreteBehaviorBelief <: BehaviorBelief
+    physical::MLPhysicalState
     models::AbstractVector
     weights::Vector{Vector{Float64}}
 end
@@ -9,11 +11,11 @@ DiscreteBehaviorBelief(ps::MLPhysicalState, models::AbstractVector) = DiscreteBe
 
 function rand(rng::AbstractRNG,
               b::DiscreteBehaviorBelief,
-              s::MLState=MLState(b.ps.crashed, Array(CarState, length(b.ps.env_cars))))
-    s.crashed = b.ps.crashed
-    resize!(s.env_cars, length(b.ps.env_cars))
+              s::MLState=MLState(b.physical.crashed, Array(CarState, length(b.physical.env_cars))))
+    s.crashed = b.physical.crashed
+    resize!(s.env_cars, length(b.physical.env_cars))
     for i in 1:length(s.env_cars)
-        s.env_cars[i] = CarState(b.ps.env_cars[i], sample(rng, b.models, WeightVec(b.weights[i])))
+        s.env_cars[i] = CarState(b.physical.env_cars[i], sample(rng, b.models, WeightVec(b.weights[i])))
     end
     return s
 end
@@ -24,7 +26,7 @@ end
 end
 
 function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProblem, o::MLPhysicalState, particles, p::WeightUpdateParams)
-    b.ps = o
+    b.physical = o
     resize!(b.weights, length(o.env_cars))
     for i in 1:length(o.env_cars)
         b.weights[i] = zeros(length(b.models)) #XXX lots of allocation

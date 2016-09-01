@@ -1,4 +1,4 @@
-type BehaviorParticleBelief <: AbstractDistribution{MLState}
+type BehaviorParticleBelief <: BehaviorBelief
     gen::UniformIDMMOBIL
     physical::MLPhysicalState
     particles::Vector{Vector{BehaviorModel}} # First index is the position in physical.env_cars
@@ -154,13 +154,13 @@ end
 function initialize_belief(up::BehaviorParticleUpdater, distribution)
     gen = get(up.problem).dmodel.behaviors
     states = [rand(up.rng, distribution) for i in 1:up.nb_sims]
-    particles = Array(Array{Float64}, length(first(states).env_cars))
+    particles = Array(Array{BehaviorModel}, length(first(states).env_cars))
     weights = Array(Array{Float64}, length(first(states).env_cars))
     for i in 1:length(first(states).env_cars)
-        particles[i] = Array(Float64, length(states))
+        particles[i] = Array(BehaviorModel, length(states))
         weights[i] = zeros(length(states))
         for (j,s) in enumerate(states)
-            particles[i][j] = aggressiveness(gen, s.env_cars[i].behavior)
+            particles[i][j] = s.env_cars[i].behavior
         end
     end
     return BehaviorParticleBelief(gen, MLPhysicalState(first(states)), particles, weights)

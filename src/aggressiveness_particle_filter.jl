@@ -1,4 +1,4 @@
-type AggressivenessBelief <: AbstractDistribution{MLState}
+type AggressivenessBelief <: BehaviorBelief
     gen::CorrelatedIDMMOBIL
     physical::MLPhysicalState
     particles::Vector{Vector{Float64}} # First index is the position in physical.env_cars

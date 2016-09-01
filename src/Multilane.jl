@@ -126,7 +126,10 @@ export # POMDP belief stuff
     AggressivenessUpdater,
     agg_means,
     agg_stds,
-    aggressiveness
+    aggressiveness,
+    BehaviorParticleUpdater,
+    BehaviorParticleBelief,
+    ParticleGenerator
 
 export
     MaxBrakeMetric,

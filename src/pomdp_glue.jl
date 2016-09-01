@@ -40,7 +40,7 @@ function action(agent::MLPOMDPAgent, state::MLState)
     return a
 end
 
-type ParticleGenerator
+type ParticleGenerator <: AbstractDistribution{MLState}
     physical_state::MLPhysicalState
     behaviors::BehaviorGenerator
 end
@@ -49,9 +49,11 @@ function ParticleGenerator(problem::NoCrashProblem, state::Union{MLState, MLPhys
                 problem.dmodel.behaviors)
 end
 
-function rand(rng::AbstractRNG, gen::ParticleGenerator)
+function rand(rng::AbstractRNG, gen::ParticleGenerator,
+              full_s::MLState=MLState(gen.physical_state.crashed,
+                                      Array(CarState,
+                                            length(gen.physical_state.env_cars))))
     s = gen.physical_state
-    full_s = MLState(s.crashed, Array(CarState, length(s.env_cars)))
     for i in 1:length(s.env_cars)
         behavior = rand(rng, gen.behaviors)
         full_s.env_cars[i] = CarState(s.env_cars[i], behavior)
