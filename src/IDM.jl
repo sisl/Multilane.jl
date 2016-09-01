@@ -22,6 +22,7 @@ Base.hash(a::IDMParam,h::UInt64=zero(UInt64)) = hash(a.a,hash(a.b,hash(a.T,hash(
 # .*(p::IDMParam,a::Float64) = a*p
 .*(p::IDMParam, v::Vector{Float64}) = IDMParam(v[1]*p.a, v[2]*p.b, v[3]*p.T, v[4]*p.v0, v[5]*p.s0, v[6]*p.del)
 .^(p::IDMParam, n::Real) = IDMParam(p.a^n, p.b^n, p.T^n, p.v0^n, p.s0^n, p.del^n)
+sqrt(p::IDMParam) = IDMParam(sqrt(p.a), sqrt(p.b), sqrt(p.T), sqrt(p.v0), sqrt(p.s0), sqrt(p.del))
 
 function get_idm_s_star(p::IDMParam, v::Float64, dv::Float64)
     return p.s0 + max(0.,v*p.T+v*dv/(2*sqrt(p.a*p.b)))

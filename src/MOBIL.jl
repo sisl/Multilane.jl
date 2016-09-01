@@ -20,6 +20,7 @@ Base.hash(a::MOBILParam,h::UInt64=zero(UInt64)) = hash(a.p,hash(a.b_safe,hash(a.
 *(a::Float64, p::MOBILParam) = MOBILParam(a*p.p, a*p.b_safe, a*p.a_thr)
 .*(p::MOBILParam, v::Vector{Float64}) = MOBILParam(v[1]*p.p, v[2]*p.b_safe, v[3]*p.a_thr)
 .^(p::MOBILParam, n::Real) = MOBILParam(p.p^n, p.b_safe^n, p.a_thr^n)
+sqrt(p::MOBILParam) = MOBILParam(sqrt(p.p), sqrt(p.b_safe), sqrt(p.a_thr))
 
 function MOBILParam(s::AbstractString)
 	#typical politeness range: [0.0,0.5]
