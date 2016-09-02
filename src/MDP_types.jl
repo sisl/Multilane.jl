@@ -153,6 +153,7 @@ function Base.hash(a::MLPhysicalState, h::UInt64=zero(UInt64))
 end
 
 MLState(ps::MLPhysicalState, cars::Vector{CarState}) = MLState(ps.crashed, ps.x, ps.t, cars)
+MLState(s::MLState, cars::Vector{CarState}) = MLState(s.crashed, s.x, s.t, cars)
 
 # below are for tests only
 function MLState(pos::Real, vel::Real, cars::Array{CarState,1}, x::Real=50.)

@@ -5,7 +5,7 @@ using JLD
 using POMCP
 
 behaviors = Dict{UTF8String,Any}(
-    "correlated" => standard_uniform(1.0, correlated=true)
+    "uniform" => standard_uniform(1.0, correlated=false)
 )
 
 dpws = DPWSolver(depth=20,
@@ -25,31 +25,31 @@ pomcps = POMCPDPWSolver(
     rollout_solver=SimpleSolver()
 )
 
-agg_up = AggressivenessUpdater(nothing, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(123))
+# agg_up = AggressivenessUpdater(nothing, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(123))
+up = BehaviorParticleUpdater(nothing, 1000, 0.1, 0.2, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(123))
 
 
 solvers = Dict{UTF8String, Any}(
     "dpw"=>dpws,
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL),
-    "pomcp"=>MLPOMDPSolver(pomcps, agg_up),
-    "mlmpc"=>MLMPCSolver(dpws, agg_up)
+    "pomcp"=>MLPOMDPSolver(pomcps, up),
+    "mlmpc"=>MLMPCSolver(dpws, up)
 )
 
-curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], p_appear=1.0, brake_threshold=4.0, N=1, behaviors="correlated")
-# curve = TestSet(lambda=[46.4], N=1)
+curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], p_appear=1.0, brake_threshold=4.0, N=1, behaviors="uniform")
 
 tests = [
-    TestSet(curve, solver_key="dpw", key="upper_bound"),
-    TestSet(curve, solver_key="assume_normal", key="assume_normal"),
-    TestSet(curve, solver_key="pomcp", key="pomcp"),
-    TestSet(curve, solver_key="mlmpc", key="mlmpc")
+    TestSet(curve, solver_key="dpw", key="upper_bound_unif"),
+    TestSet(curve, solver_key="assume_normal", key="assume_normal_unif"),
+    TestSet(curve, solver_key="pomcp", key="pomcp_unif"),
+    TestSet(curve, solver_key="mlmpc", key="mlmpc_unif")
 ]
 
 objects = gen_initials(tests, behaviors=behaviors, generate_physical=true)
 
 @show objects["param_table"] 
 objects["solvers"] = solvers
-objects["note"] = "pomcp vs mlmpc with a correlated distribution"
+objects["note"] = "pomcp and mlmpc with a "
 
 files = sbatch_spawn(tests, objects,
                      batch_size=50,

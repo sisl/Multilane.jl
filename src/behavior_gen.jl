@@ -125,15 +125,15 @@ function create_model(g::CorrelatedIDMMOBIL, agg::Float64)
     idm = IDMParam(
         g.min_idm.a + agg*(g.max_idm.a - g.min_idm.a),
         g.min_idm.b + agg*(g.max_idm.b - g.min_idm.b),
-        g.min_idm.T + agg*(g.max_idm.T - g.min_idm.T),
+        g.max_idm.T + agg*(g.min_idm.T - g.max_idm.T), # T is lower for more aggressive
         g.min_idm.v0 + agg*(g.max_idm.v0 - g.min_idm.v0),
-        g.min_idm.s0 + agg*(g.max_idm.s0 - g.min_idm.s0),
+        g.max_idm.s0 + agg*(g.min_idm.s0 - g.max_idm.s0), # s0 is lower for more aggressive
         g.min_idm.del
     )
     mobil = MOBILParam(
-        g.min_mobil.p + agg*(g.max_mobil.p - g.min_mobil.p),
+        g.max_mobil.p + agg*(g.min_mobil.p - g.max_mobil.p), # p is lower for more aggressive
         g.min_mobil.b_safe + agg*(g.max_mobil.b_safe - g.min_mobil.b_safe),
-        g.min_mobil.a_thr + agg*(g.max_mobil.a_thr - g.min_mobil.a_thr),
+        g.max_mobil.a_thr + agg*(g.min_mobil.a_thr - g.max_mobil.a_thr), # a_thr is lower for more aggressive
     )
     g.next_idx += 1
     return IDMMOBILBehavior(idm, mobil, g.next_idx-1)
@@ -142,9 +142,3 @@ end
 function aggressiveness(gen::CorrelatedIDMMOBIL, b::IDMMOBILBehavior)
     return (b.p_idm.v0 - gen.min_idm.v0)/(gen.max_idm.v0 - gen.min_idm.v0)
 end
-
-#=
-function aggressiveness(gen::CorrelatedIDMMOBIL, b::IDMMOBILBehavior, tol)
-    for n in fieldnames
-end
-=#
