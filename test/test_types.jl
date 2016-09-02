@@ -66,11 +66,11 @@ function test_MLState_equality()
 	push!(cs,CarState(2.,1,3.,0,bs[1],0))
 
 	ps = MLState[]
-	push!(ps,MLState(false,2,5.,cs[1:1]))
-	push!(ps,MLState(false,3,5.,cs[1:1]))
-	push!(ps,MLState(false,2,4.,cs[1:1]))
-	push!(ps,MLState(false,2,5.,cs[1:2]))
-	push!(ps,MLState(true,2,5.,cs[1:2]))
+	push!(ps,MLState(false,0.0,0.0,2,5.,cs[1:1]))
+	push!(ps,MLState(false,0.0,0.0,3,5.,cs[1:1]))
+	push!(ps,MLState(false,0.0,0.0,2,4.,cs[1:1]))
+	push!(ps,MLState(false,0.0,0.0,2,5.,cs[1:2]))
+	push!(ps,MLState(true,0.0,0.0,2,5.,cs[1:2]))
 
 	test_equality("MLState",ps)
 end
@@ -87,16 +87,16 @@ function test_MLState_hashing()
 	push!(cs,CarState(2.,1,3.,0,bs[1],0))
 
 	ps = MLState[]
-	push!(ps,MLState(false,2,5.,cs[1:1]))
-	push!(ps,MLState(false,3,5.,cs[1:1]))
-	push!(ps,MLState(false,2,4.,cs[1:1]))
-	push!(ps,MLState(false,2,5.,cs[1:2]))
-	push!(ps,MLState(true,2,5.,cs[1:2]))
+	push!(ps,MLState(false,0.0,0.0,2,5.,cs[1:1]))
+	push!(ps,MLState(false,0.0,0.0,3,5.,cs[1:1]))
+	push!(ps,MLState(false,0.0,0.0,2,4.,cs[1:1]))
+	push!(ps,MLState(false,0.0,0.0,2,5.,cs[1:2]))
+	push!(ps,MLState(true,0.0,0.0,2,5.,cs[1:2]))
 
 	test_hashing("MLState",ps)
 
     # all crashed states should be the same
-    assert(MLState(true,3,5.,cs[1:2]), MLState(true,3,4.,cs[1:2]))
+    assert(MLState(true,0.0,0.0,3,5.,cs[1:2]), MLState(true,0.0,0.0,3,4.,cs[1:2]))
 end
 
 function test_MLAction_creation()

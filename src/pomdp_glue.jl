@@ -50,7 +50,7 @@ function ParticleGenerator(problem::NoCrashProblem, state::Union{MLState, MLPhys
 end
 
 function rand(rng::AbstractRNG, gen::ParticleGenerator,
-              full_s::MLState=MLState(gen.physical.crashed,
+              full_s::MLState=MLState(gen.physical,
                                       Array(CarState,
                                             length(gen.physical.cars))))
     s = gen.physical

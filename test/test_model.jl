@@ -7,7 +7,7 @@ function state_fixture()
     # XXX are we going to git rid of v_min, etc?
     lane_length=100.0
     pp = PhysicalParam(3, lane_length=lane_length)
-    return MLState(false, CarState[CarState(lane_length/2.0, 2.0, pp.v_med, 0.0, Multilane.NORMAL,0),
+    return MLState(false,0.0,0.0, CarState[CarState(lane_length/2.0, 2.0, pp.v_med, 0.0, Multilane.NORMAL,0),
                                 CarState(lane_length*3/4, 1.0, pp.v_min, 0.0,
                                          IDMMOBILBehavior("normal", pp.v_min, 0.0, 1),0),
                                 CarState(lane_length*1/4, 3.0, pp.v_max, 0.0,
@@ -27,7 +27,7 @@ end
 # function test_e_brake()
 #     mdp = MDP_fixture()
 #     pp = mdp.dmodel.phys_param
-#     s = MLState(false, CarState[CarState(0.0, 2.0, pp.v_med, 0.0, Multilane.NORMAL),
+#     s = MLState(false,0.0,0.0, CarState[CarState(0.0, 2.0, pp.v_med, 0.0, Multilane.NORMAL),
 #                                 CarState(pp.l_car+0.1, 2.0, pp.v_min, 0.0,
 #                                          BehaviorModel("normal"), pp.v_min, 0.0, 1)])
 # end

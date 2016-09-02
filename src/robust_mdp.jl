@@ -17,7 +17,7 @@ abstract EmbeddedBehaviorMDP <: MDP{MLPhysicalState, MLAction}
 actions(p::EmbeddedBehaviorMDP) = actions(p.base)
 actions(p::EmbeddedBehaviorMDP, s::MLPhysicalState, as::NoCrashActionSpace) = actions(p.base, s, as)
 create_action(p::EmbeddedBehaviorMDP) = create_action(p.base)
-create_state(p::EmbeddedBehaviorMDP) = MLPhysicalState(false, [])
+create_state(p::EmbeddedBehaviorMDP) = MLPhysicalState(false, 0.0, 0.0, [])
 discount(p::EmbeddedBehaviorMDP) = discount(p.base)
 # reward(p::EmbeddedBehaviorMDP, s::MLPhysicalState, a::MLAction, sp::MLPhysicalState)
 
@@ -27,7 +27,7 @@ type FixedBehaviorNoCrashMDP <: EmbeddedBehaviorMDP
 end
 
 function generate_sr(mdp::FixedBehaviorNoCrashMDP, s::MLPhysicalState, a::MLAction, rng::AbstractRNG, sp::MLPhysicalState=create_state(mdp))
-    full_s = MLState(s.crashed, Array(CarState, length(s.cars)))
+    full_s = MLState(s, Array(CarState, length(s.cars)))
     for (i,c) in enumerate(s.cars) 
         full_s.cars[i] = CarState(c, mdp.behaviors[c.id])
     end
@@ -45,7 +45,7 @@ type StochasticBehaviorNoCrashMDP <: EmbeddedBehaviorMDP
 end
 
 function generate_sr(mdp::StochasticBehaviorNoCrashMDP, s::MLPhysicalState, a::MLAction, rng::AbstractRNG, sp::MLPhysicalState=create_state(mdp))
-    full_s = MLState(s.crashed, Array(CarState, length(s.cars)))
+    full_s = MLState(s, Array(CarState, length(s.cars)))
     for i in 1:length(s.cars) 
         full_s.cars[i] = CarState(s.cars[i], rand(rng, mdp.base.dmodel.behaviors))
     end

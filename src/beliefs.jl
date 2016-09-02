@@ -11,7 +11,7 @@ DiscreteBehaviorBelief(ps::MLPhysicalState, models::AbstractVector) = DiscreteBe
 
 function rand(rng::AbstractRNG,
               b::DiscreteBehaviorBelief,
-              s::MLState=MLState(b.physical.crashed, Array(CarState, length(b.physical.cars))))
+              s::MLState=MLState(b.physical, Array(CarState, length(b.physical.cars))))
     s.crashed = b.physical.crashed
     resize!(s.cars, length(b.physical.cars))
     for i in 1:length(s.cars)

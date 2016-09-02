@@ -7,7 +7,7 @@ end
 
 function rand(rng::AbstractRNG,
                 b::BehaviorParticleBelief,
-                s::MLState=MLState(b.physical.crashed, Array(CarState, length(b.physical.cars))))
+                s::MLState=MLState(b.physical, Array(CarState, length(b.physical.cars))))
     s.crashed = b.physical.crashed
     resize!(s.cars, length(b.physical.cars))
     for i in 1:length(s.cars)
@@ -20,7 +20,7 @@ end
 function rand(rng::AbstractRNG,
                 b::BehaviorParticleBelief,
                 sample_noises::Vector,
-                s::MLState=MLState(b.physical.crashed, Array(CarState, length(b.physical.cars))))
+                s::MLState=MLState(b.physical, Array(CarState, length(b.physical.cars))))
 
     s.crashed = b.physical.crashed
     resize!(s.cars, length(b.physical.cars))
@@ -35,7 +35,7 @@ end
 # action(p::Policy, b::BehaviorParticleBelief) = action(p, b.physical)
 
 function most_likely_state(b::BehaviorParticleBelief)
-    s = MLState(b.physical.crashed, Array(CarState, length(b.physical.cars)))
+    s = MLState(b.physical, Array(CarState, length(b.physical.cars)))
     for i in 1:length(s.cars)
         ml_ind = indmax(b.weights[i])
         behavior = b.particles[i][ml_ind]

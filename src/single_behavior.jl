@@ -33,5 +33,5 @@ function single_behavior_state(s::MLState, behavior)
     for (i,c) in enumerate(s.cars)
         new_cars[i] = CarState(c.x, c.y, c.vel, c.lane_change, behavior, c.id)
     end
-    return MLState(s.crashed, new_cars)
+    return MLState(s, new_cars)
 end

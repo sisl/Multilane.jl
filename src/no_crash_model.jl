@@ -254,8 +254,8 @@ function is_safe(mdp::NoCrashProblem, s::Union{MLState,MLObs}, a::MLAction)
 end
 
 #XXX temp
-create_state(p::NoCrashProblem) = MLState(false, Array(CarState, p.dmodel.nb_cars))
-create_observation(pomdp::NoCrashPOMDP) = MLObs(false, Array(CarStateObs, pomdp.dmodel.nb_cars))
+create_state(p::NoCrashProblem) = MLState(false, 0.0, 0.0, Array(CarState, p.dmodel.nb_cars))
+create_observation(pomdp::NoCrashPOMDP) = MLObs(false, 0.0, 0.0, Array(CarStateObs, pomdp.dmodel.nb_cars))
 
 function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
@@ -563,7 +563,7 @@ end
 Assign behaviors to a given physical state.
 """
 function initial_state(mdp::NoCrashProblem, ps::MLPhysicalState, rng::AbstractRNG)
-    s = MLState(ps.crashed, Array(CarState, length(ps.cars)))
+    s = MLState(ps, Array(CarState, length(ps.cars)))
     s.cars[1] = CarState(ps.cars[1], NORMAL)
     for i in 2:length(s.cars)
         behavior = rand(rng, mdp.dmodel.behaviors)

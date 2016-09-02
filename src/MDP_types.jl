@@ -61,17 +61,8 @@ type MLState
     x::Float64 # total distance traveled by the ego
     t::Float64 # total time of the simulation
 	cars::Array{CarState,1} #NOTE ego car is first car
-end #MLState
-
-function MLState(pos::Real, vel::Real, cars::Array{CarState,1}, x::Real=50.)
-  #x = mdp.phys_param.lane_length/2.
-  insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
-  return MLState(false, 0.0, 0.0, cars)
 end
-function MLState(crashed::Bool,pos::Real,vel::Real,cars::Array{CarState,1},x::Real=50.)
-  insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
-  return MLState(crashed, 0.0, 0.0, cars)
-end
+# more constructors at bottom
 
 function ==(a::MLState, b::MLState)
     if a.crashed && b.crashed
@@ -122,26 +113,26 @@ type ActionSpace <: AbstractSpace
 end
 
 immutable CarPhysicalState
-  x::Float64
-  y::Float64
-  vel::Float64
-  lane_change::Float64
-  id::Int
+    x::Float64
+    y::Float64
+    vel::Float64
+    lane_change::Float64
+    id::Int
 end
 typealias CarStateObs CarPhysicalState
 
 ==(a::CarPhysicalState, b::CarPhysicalState) = (a.x == b.x) && (a.y == b.y) && (a.vel == b.vel) && (a.lane_change == b.lane_change) && (a.id == b.id)
-Base.hash(a::CarPhysicalState,h::UInt64=zero(UInt64)) = hash(a.x, hash(a.y, hash(a.vel, (hash(a.lane_change, hash(a.id,h))))))
+Base.hash(a::CarPhysicalState, h::UInt64=zero(UInt64)) = hash(a.x, hash(a.y, hash(a.vel, (hash(a.lane_change, hash(a.id,h))))))
 CarPhysicalState(cs::CarState) = CarPhysicalState(cs.x, cs.y, cs.vel, cs.lane_change, cs.id)
 function CarState(cps::CarPhysicalState, behavior::BehaviorModel)
     return CarState(cps.x, cps.y, cps.vel, cps.lane_change, behavior, cps.id)
 end
 
 immutable MLPhysicalState
-  crashed::Bool
-  x::Float64
-  t::Float64
-  cars::Array{CarPhysicalState,1}
+    crashed::Bool
+    x::Float64
+    t::Float64
+    cars::Array{CarPhysicalState,1}
 end
 typealias MLObs MLPhysicalState
 
@@ -159,4 +150,21 @@ function Base.hash(a::MLPhysicalState, h::UInt64=zero(UInt64))
         return hash(a.crashed, h)
     end
     return hash(a.x, hash(a.t, hash(a.cars,h))) #hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
+end
+
+MLState(ps::MLPhysicalState, cars::Vector{CarState}) = MLState(ps.crashed, ps.x, ps.t, cars)
+
+# below are for tests only
+function MLState(pos::Real, vel::Real, cars::Array{CarState,1}, x::Real=50.)
+    #x = mdp.phys_param.lane_length/2.
+    insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
+    return MLState(false, 0.0, 0.0, cars)
+end
+function MLState(crashed::Bool,pos::Real,vel::Real,cars::Array{CarState,1},x::Real=50.)
+    insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
+    return MLState(crashed, 0.0, 0.0, cars)
+end
+function MLState(crashed::Bool,x::Float64,t::Float64,pos::Real,vel::Real,cars::Array{CarState,1},x_ego::Real=50.)
+    insert!(cars,1,CarState(x_ego, pos, vel, 0, NORMAL, 0))
+    return MLState(crashed, x, t, cars)
 end
