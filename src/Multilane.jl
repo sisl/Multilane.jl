@@ -15,7 +15,7 @@ import Distributions: Dirichlet, Exponential, Gamma, rand
 
 import Iterators
 
-import Base: ==, hash, length, vec, +, -, *, .*, ^, .^, .-, /, sqrt
+import Base: ==, hash, length, vec, +, -, *, .*, ^, .^, .-, /, sqrt, zero, nan, abs, max
 
 # import POMDPToolbox: Particle, ParticleBelief
 
@@ -129,7 +129,9 @@ export # POMDP belief stuff
     aggressiveness,
     BehaviorParticleUpdater,
     BehaviorParticleBelief,
-    ParticleGenerator
+    ParticleGenerator,
+    param_means,
+    param_stds
 
 export
     MaxBrakeMetric,

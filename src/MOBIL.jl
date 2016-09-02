@@ -16,11 +16,15 @@ MOBILParam(;p::Float64=0.25,b_safe::Float64=4.,a_thr::Float64=0.2) = MOBILParam(
 Base.hash(a::MOBILParam,h::UInt64=zero(UInt64)) = hash(a.p,hash(a.b_safe,hash(a.a_thr,h)))
 
 +(a::MOBILParam, b::MOBILParam) = MOBILParam(a.p+b.p, a.b_safe+b.b_safe, a.a_thr+b.a_thr)
--(a::MOBILParam, b::MOBILParam) = a+(-1.*b)
-*(a::Float64, p::MOBILParam) = MOBILParam(a*p.p, a*p.b_safe, a*p.a_thr)
+-(a::MOBILParam, b::MOBILParam) = a+(-1.0*b)
+*(a::Real, p::MOBILParam) = MOBILParam(a*p.p, a*p.b_safe, a*p.a_thr)
 .*(p::MOBILParam, v::Vector{Float64}) = MOBILParam(v[1]*p.p, v[2]*p.b_safe, v[3]*p.a_thr)
 .^(p::MOBILParam, n::Real) = MOBILParam(p.p^n, p.b_safe^n, p.a_thr^n)
 sqrt(p::MOBILParam) = MOBILParam(sqrt(p.p), sqrt(p.b_safe), sqrt(p.a_thr))
+zero(::Type{MOBILParam}) = MOBILParam(0.0, 0.0, 0.0)
+nan(::Type{MOBILParam}) = MOBILParam(NaN, NaN, NaN)
+abs(p::MOBILParam) = MOBILParam(abs(p.p), abs(p.b_safe), abs(p.a_thr))
+max(a::MOBILParam, b::MOBILParam) = MOBILParam(max(a.p,b.p), max(a.b_safe, b.b_safe), max(a.a_thr, b.a_thr))
 
 function MOBILParam(s::AbstractString)
 	#typical politeness range: [0.0,0.5]

@@ -30,7 +30,7 @@ s = ArgParseSettings()
         action = :store_true
     "filename"
         help = "file name"
-        nargs = '+' # will be + at some point
+        nargs = '*'
     "--solvers"
         help = "solvers to be included"
         nargs = '+'
@@ -44,7 +44,22 @@ end
 
 args = parse_args(ARGS, s)
 
-results = load(args["filename"][1])
+if length(args["filename"]) > 0
+    results = load(first(args["filename"]))
+else
+    files = readdir(".")
+    latest = 0.0
+    latest_file = ""
+    for f in files
+        if ctime(f) > latest
+            latest = ctime(f)
+            latest_file = f
+        end
+    end
+    println("loading from most recent file: $latest_file")
+    results = load(latest_file)
+end
+
 
 for f in args["filename"][2:end]
     new_results = load(f)

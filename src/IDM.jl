@@ -17,12 +17,16 @@ end #IDMParam
 Base.hash(a::IDMParam,h::UInt64=zero(UInt64)) = hash(a.a,hash(a.b,hash(a.T,hash(a.v0,hash(a.s0,hash(a.del,h))))))
 
 +(a::IDMParam, b::IDMParam) = IDMParam(a.a+b.a, a.b+b.b, a.T+b.T, a.v0+b.v0, a.s0+b.s0, a.del+b.del)
--(a::IDMParam, b::IDMParam) = a+(-1.*b)
-*(a::Float64, p::IDMParam) = IDMParam(a*p.a, a*p.b, a*p.T, a*p.v0, a*p.s0, a*p.del)
+-(a::IDMParam, b::IDMParam) = a+(-1.0*b)
+*(a::Real, p::IDMParam) = IDMParam(a*p.a, a*p.b, a*p.T, a*p.v0, a*p.s0, a*p.del)
 # .*(p::IDMParam,a::Float64) = a*p
 .*(p::IDMParam, v::Vector{Float64}) = IDMParam(v[1]*p.a, v[2]*p.b, v[3]*p.T, v[4]*p.v0, v[5]*p.s0, v[6]*p.del)
 .^(p::IDMParam, n::Real) = IDMParam(p.a^n, p.b^n, p.T^n, p.v0^n, p.s0^n, p.del^n)
 sqrt(p::IDMParam) = IDMParam(sqrt(p.a), sqrt(p.b), sqrt(p.T), sqrt(p.v0), sqrt(p.s0), sqrt(p.del))
+zero(::Type{IDMParam}) = IDMParam(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+nan(::Type{IDMParam}) = IDMParam(NaN, NaN, NaN, NaN, NaN, NaN)
+abs(p::IDMParam) = IDMParam(abs(p.a), abs(p.b), abs(p.T), abs(p.v0), abs(p.s0), abs(p.del))
+max(a::IDMParam, b::IDMParam) = IDMParam(max(a.a,b.a), max(a.b,b.b), max(a.T,b.T), max(a.v0,b.v0), max(a.s0,b.s0), max(a.del,b.del))
 
 function get_idm_s_star(p::IDMParam, v::Float64, dv::Float64)
     return p.s0 + max(0.,v*p.T+v*dv/(2*sqrt(p.a*p.b)))

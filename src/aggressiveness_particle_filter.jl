@@ -110,6 +110,7 @@ end
 type AggressivenessUpdater <: Updater{AggressivenessBelief}
     problem::Nullable{NoCrashProblem}
     nb_sims::Int
+    p_resample_noise::Float64
     resample_noise_factor::Float64 
     params::WeightUpdateParams
     rng::AbstractRNG
@@ -132,7 +133,11 @@ function update(up::AggressivenessUpdater,
     particles = Array(MLState, up.nb_sims)
     stds = max(agg_stds(b_old), 0.01)
     for i in 1:up.nb_sims
-        s = rand(up.rng, b_old, up.resample_noise_factor*stds)
+        if rand(up.rng) < up.p_resample_noise
+            s = rand(up.rng, b_old, up.resample_noise_factor*stds)
+        else
+            s = rand(up.rng, b_old)
+        end
         particles[i] = generate_s(get(up.problem), s, a, up.rng)
     end
     

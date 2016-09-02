@@ -8,7 +8,13 @@ end
 function rand(rng::AbstractRNG,
                 b::BehaviorParticleBelief,
                 s::MLState=MLState(b.physical.crashed, Array(CarState, length(b.physical.env_cars))))
-    return rand(rng, b, zeros(length(b.physical.env_cars)), s)
+    s.crashed = b.physical.crashed
+    resize!(s.env_cars, length(b.physical.env_cars))
+    for i in 1:length(s.env_cars)
+        particle = sample(rng, b.particles[i], WeightVec(b.weights[i]))
+        s.env_cars[i] = CarState(b.physical.env_cars[i], particle)
+    end
+    return s
 end
 
 function rand(rng::AbstractRNG,
@@ -88,13 +94,15 @@ function weights_from_particles!(b::BehaviorParticleBelief,
                     proportional_likelihood = proportional_normal_pdf(csp.vel,
                                                                       co.vel,
                                                                       problem.dmodel.vel_sigma*(1+p.smoothing))
-                    if co.y == csp.y
-                        push!(b.particles[io], csp.behavior)
-                        push!(b.weights[io], proportional_likelihood)
-                    elseif abs(co.y - csp.y) < 1.0
-                        push!(b.particles[io], csp.behavior)
-                        push!(b.weights[io], p.wrong_lane_factor*proportional_likelihood)
-                    end # if greater than one lane apart, do nothing
+                    if proportional_likelihood > 0.0
+                        if co.y == csp.y
+                            push!(b.particles[io], csp.behavior)
+                            push!(b.weights[io], proportional_likelihood)
+                        elseif abs(co.y - csp.y) < 1.0
+                            push!(b.particles[io], csp.behavior)
+                            push!(b.weights[io], p.wrong_lane_factor*proportional_likelihood)
+                        end # if greater than one lane apart, do nothing
+                    end
                 end
                 io += 1
                 isp += 1
@@ -113,6 +121,7 @@ end
 type BehaviorParticleUpdater <: Updater{BehaviorParticleBelief}
     problem::Nullable{NoCrashProblem}
     nb_sims::Int
+    p_resample_noise::Float64
     resample_noise_factor::Float64 
     params::WeightUpdateParams
     rng::AbstractRNG
@@ -132,10 +141,19 @@ function update(up::BehaviorParticleUpdater,
                                                     Array(Vector{BehaviorModel}, length(o.env_cars)),
                                                     Array(Vector{Float64}, length(o.env_cars))))
 
+    gen = get(up.problem).dmodel.behaviors
     particles = Array(MLState, up.nb_sims)
+    min_std = 0.001*IDMMOBILBehavior(gen.max_idm-gen.min_idm, gen.max_mobil-gen.min_mobil, 0)
     stds = param_stds(b_old)
+    for i in 1:length(stds)
+        stds[i] = max(stds[i], min_std)
+    end
     for i in 1:up.nb_sims
-        s = rand(up.rng, b_old, up.resample_noise_factor.*stds)
+        if rand(up.rng) < up.p_resample_noise
+            s = rand(up.rng, b_old, up.resample_noise_factor.*stds)
+        else
+            s = rand(up.rng, b_old)
+        end
         particles[i] = generate_s(get(up.problem), s, a, up.rng)
     end
     

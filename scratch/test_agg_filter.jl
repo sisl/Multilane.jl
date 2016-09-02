@@ -33,7 +33,7 @@ pomdp = NoCrashPOMDP(dmodel, rmodel, 1.0)
 sim = HistoryRecorder(rng=rng, capture_exception=false, max_steps=100)
 # up = BehaviorRootUpdater(pomdp, WeightUpdateParams(smoothing=0.02))
 
-up = AggressivenessUpdater(pomdp, 500, 0.05, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), rng)
+up = AggressivenessUpdater(pomdp, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), rng)
 
 #=
 solver = POMCPDPWSolver(
