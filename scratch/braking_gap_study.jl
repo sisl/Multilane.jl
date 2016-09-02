@@ -4,7 +4,7 @@ using MCTS
 using JLD
 
 behaviors=Dict{UTF8String,Any}(
-    "uniform" => standard_uniform()
+    "correlated" => standard_uniform(1.0, correlated=true)
 )
 
 dpws = DPWSolver(depth=20,
@@ -19,16 +19,16 @@ solvers = Dict{UTF8String, Any}(
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL)
 )
 
-curve = TestSet(lambda=[1.0, 1.78, 3.16, 5.62, 10., 31.6], N=500, p_appear=1.0)
+curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], N=1, p_appear=1.0)
 
 tests = []
-for b in [2.0, 3.0, 3.5, 4.0]
+for b in [2.5, 3.0, 3.5, 4.0]
     push!(tests, TestSet(curve, solver_key="dpw",
-                         behaviors="uniform",
+                         behaviors="correlated",
                          key=@sprintf("upper_bound_%02d", b*10),
                          brake_threshold=b)) 
     push!(tests, TestSet(curve, solver_key="assume_normal",
-                         behaviors="uniform",
+                         behaviors="correlated",
                          key=@sprintf("assume_normal_%02d", b*10),
                          brake_threshold=b)) 
 end
@@ -37,11 +37,8 @@ objects = gen_initials(tests, behaviors=behaviors, generate_physical=true)
 
 @show objects["param_table"] 
 objects["solvers"] = solvers
-for is in values(objects["initial_states"])
-    @assert !isnull(is.cars[1].behavior)
-end
 
-objects["note"] = "Tests over a range of braking values."
+objects["note"] = "Tests over a range of braking values with correlated behaviors."
 
 sbatch_spawn(tests, objects,
              batch_size=50,
