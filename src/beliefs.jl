@@ -7,15 +7,15 @@ type DiscreteBehaviorBelief <: BehaviorBelief
     models::AbstractVector
     weights::Vector{Vector{Float64}}
 end
-DiscreteBehaviorBelief(ps::MLPhysicalState, models::AbstractVector) = DiscreteBehaviorBelief(ps, models, Array(Vector{Float64}, length(ps.env_cars)))
+DiscreteBehaviorBelief(ps::MLPhysicalState, models::AbstractVector) = DiscreteBehaviorBelief(ps, models, Array(Vector{Float64}, length(ps.cars)))
 
 function rand(rng::AbstractRNG,
               b::DiscreteBehaviorBelief,
-              s::MLState=MLState(b.physical.crashed, Array(CarState, length(b.physical.env_cars))))
+              s::MLState=MLState(b.physical.crashed, Array(CarState, length(b.physical.cars))))
     s.crashed = b.physical.crashed
-    resize!(s.env_cars, length(b.physical.env_cars))
-    for i in 1:length(s.env_cars)
-        s.env_cars[i] = CarState(b.physical.env_cars[i], sample(rng, b.models, WeightVec(b.weights[i])))
+    resize!(s.cars, length(b.physical.cars))
+    for i in 1:length(s.cars)
+        s.cars[i] = CarState(b.physical.cars[i], sample(rng, b.models, WeightVec(b.weights[i])))
     end
     return s
 end
@@ -27,16 +27,16 @@ end
 
 function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProblem, o::MLPhysicalState, particles, p::WeightUpdateParams)
     b.physical = o
-    resize!(b.weights, length(o.env_cars))
-    for i in 1:length(o.env_cars)
+    resize!(b.weights, length(o.cars))
+    for i in 1:length(o.cars)
         b.weights[i] = zeros(length(b.models)) #XXX lots of allocation
     end
     for sp in particles
         isp = 1
         io = 1
-        while io <= length(o.env_cars) && isp <= length(sp.env_cars)
-            co = o.env_cars[io]
-            csp = sp.env_cars[isp]
+        while io <= length(o.cars) && isp <= length(sp.cars)
+            co = o.cars[io]
+            csp = sp.cars[isp]
             if co.id == csp.id
                 # sigma_acc = dmodel.vel_sigma/dt
                 # dv = acc*dt
@@ -177,7 +177,7 @@ function fringe_upper_bound(pomdp::NoCrashPOMDP, s::MLState)
   T = 100 #time horizon
   pp = pomdp.dmodel.phys_param
   nb_lanes = pp.nb_lanes
-  current_lane = s.env_cars[1].y
+  current_lane = s.cars[1].y
   t_single_lane_change = 1.0 / (pp.dt * pomdp.dmodel.lane_change_rate) #nb timesteps
   t_target_lane = (nb_lanes - current_lane) * t_single_lane_change
   return sum([pomdp.rmodel.reward_in_desired_lane * discount(pomdp)^t for t = 0:(T-t_target_lane-1)])

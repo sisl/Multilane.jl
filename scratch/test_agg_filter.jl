@@ -52,11 +52,11 @@ solver = SimpleSolver()
 policy = solve(solver, pomdp)
 
 ips = MLPhysicalState(relaxed_initial_state(NoCrashMDP(dmodel,rmodel,1.0), 200, rng))
-# id = DiscreteBehaviorBelief(ips, behaviors.models, [behaviors.weights.values for i in 1:length(ips.env_cars)])
+# id = DiscreteBehaviorBelief(ips, behaviors.models, [behaviors.weights.values for i in 1:length(ips.cars)])
 
 nb_particles = 500
-particles = [[rand(rng) for k in 1:nb_particles] for i in 1:length(ips.env_cars)]
-weights = [ones(nb_particles) for i in 1:length(ips.env_cars)]
+particles = [[rand(rng) for k in 1:nb_particles] for i in 1:length(ips.cars)]
+weights = [ones(nb_particles) for i in 1:length(ips.cars)]
 id = AggressivenessBelief(behaviors, ips, particles, weights)
 
 println("starting simulation.")
@@ -72,7 +72,7 @@ bh = sim.belief_hist
 # find out how many ids there are
 max_id = 0
 for s in sh
-    max_id = max(max_id, maximum([c.id for c in s.env_cars]))
+    max_id = max(max_id, maximum([c.id for c in s.cars]))
 end
 
 # T = 10
@@ -90,15 +90,15 @@ for i in 1:T
     s = sh[i]
     total_error = 0.0
     mean_aggs = agg_means(b)
-    ids = [c.id for c in s.env_cars[2:end]]
+    ids = [c.id for c in s.cars[2:end]]
     stds[i,ids.-1] = agg_stds(b)[2:end]
-    for j in 2:length(s.env_cars)
-        true_agg = aggressiveness(b.gen, s.env_cars[j].behavior)
+    for j in 2:length(s.cars)
+        true_agg = aggressiveness(b.gen, s.cars[j].behavior)
         err = abs(true_agg-mean_aggs[j])
-        errors[i,s.env_cars[j].id-1] = err
+        errors[i,s.cars[j].id-1] = err
         total_error += err
     end
-    average_error[i] = total_error/length(s.env_cars)
+    average_error[i] = total_error/length(s.cars)
 end
 
 @show mean(average_error)

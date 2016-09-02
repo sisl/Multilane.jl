@@ -23,7 +23,7 @@ function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.md
     goal_lane = p.mdp.rmodel.desired_lane
     y_desired = goal_lane
     dmodel = p.mdp.dmodel
-    lc = sign(y_desired-s.env_cars[1].y) * dmodel.lane_change_rate
+    lc = sign(y_desired-s.cars[1].y) * dmodel.lane_change_rate
     acc = dmodel.adjustment_acceleration
   
     #if can't move towards desired lane sweep through accelerating and decelerating
@@ -41,8 +41,8 @@ function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.md
         return MLAction(0.,0.)
     end
   
-    dist_ahead = nbhd[2] != 0 ? s.env_cars[nbhd[2]].x - s.env_cars[1].x : Inf
-    dist_behind = nbhd[5] != 0 ? s.env_cars[nbhd[5]].x - s.env_cars[1].x : Inf
+    dist_ahead = nbhd[2] != 0 ? s.cars[nbhd[2]].x - s.cars[1].x : Inf
+    dist_behind = nbhd[5] != 0 ? s.cars[nbhd[5]].x - s.cars[1].x : Inf
   
     sgn = abs(dist_ahead) <= abs(dist_behind) ? -1 : 1
   
@@ -128,7 +128,7 @@ Aggressive - move over if it doesn't cause a crash
 #   goal_lane = p.mdp.rmodel.desired_lane
 #   y_desired = goal_lane
 #   dmodel = p.mdp.dmodel
-#   lc = sign(y_desired-s.env_cars[1].y) * dmodel.lane_change_rate
+#   lc = sign(y_desired-s.cars[1].y) * dmodel.lane_change_rate
 #   acc = dmodel.adjustment_acceleration
 # 
 #   #if can't move towards desired lane sweep through accelerating and decelerating
@@ -146,8 +146,8 @@ Aggressive - move over if it doesn't cause a crash
 #     return MLAction(0.,0.)
 #   end
 # 
-#   dist_ahead = nbhd[2] != 0 ? s.env_cars[nbhd[2]].x - s.env_cars[1].x : Inf
-#   dist_behind = nbhd[5] != 0 ? s.env_cars[nbhd[5]].x - s.env_cars[1].x : Inf
+#   dist_ahead = nbhd[2] != 0 ? s.cars[nbhd[2]].x - s.cars[1].x : Inf
+#   dist_behind = nbhd[5] != 0 ? s.cars[nbhd[5]].x - s.cars[1].x : Inf
 # 
 # 	sgn = abs(dist_ahead) <= abs(dist_behind) ? -1 : 1
 # 

@@ -10,7 +10,7 @@ a = Multilane.MLAction(-0.37277643831998186,0.6666666666666666)
 
 sp = generate_s(mdp, s, a, MersenneTwister(1))
 
-@test !(sp.env_cars[1].y > 1 && sp.env_cars[3].y < 3)
+@test !(sp.cars[1].y > 1 && sp.cars[3].y < 3)
 
 #=
 

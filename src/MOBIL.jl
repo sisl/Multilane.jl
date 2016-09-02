@@ -38,7 +38,7 @@ function is_lanechange_dangerous(pp::PhysicalParam, s::MLState, nbhd::Array{Int,
 
 	#check if dir is oob
 	dt = pp.dt
-	lane_ = s.env_cars[idx].y + dir * dt # XXX this line is the issue!!!
+	lane_ = s.cars[idx].y + dir * dt # XXX this line is the issue!!!
 
 	if (lane_ > pp.nb_lanes) || (lane_ < 1.)
 		return true
@@ -76,7 +76,7 @@ function get_neighborhood(pp::PhysicalParam,s::Union{MLState,MLObs},idx::Int)
     Note: The same car can occupy two spots if the vehicle is changing lanes.
 	"""
 
-	x = s.env_cars[idx]
+	x = s.cars[idx]
 	#rightmost lane: no one to the right
 	if x.y <= 1.
 		dists[[1;4]] = [-1.;-1.]
@@ -85,7 +85,7 @@ function get_neighborhood(pp::PhysicalParam,s::Union{MLState,MLObs},idx::Int)
 		dists[[3;6]] = [-1.;-1.]
 	end
 
-	for (i,car) in enumerate(s.env_cars)
+	for (i,car) in enumerate(s.cars)
 		#i am not a neighbor
 		if i == idx
 			continue
@@ -129,11 +129,11 @@ function get_dv_ds(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,idy:
 	idx is the car from whom the perspective is
 	idy is the other car
 	"""
-	car = s.env_cars[idx]
+	car = s.cars[idx]
 	nbr = nbhd[idy]
 	#dv: if ahead: me - him; behind: him - me
-	dv = nbr != 0 ? -1*sign((idy-3.5))*(car.vel - s.env_cars[nbr].vel) : 0. #XXX What is idy doing here??? (Zach, 7/13/16)
-	ds = nbr != 0 ? abs(s.env_cars[nbr].x - car.x) - pp.l_car : 1000.
+	dv = nbr != 0 ? -1*sign((idy-3.5))*(car.vel - s.cars[nbr].vel) : 0. #XXX What is idy doing here??? (Zach, 7/13/16)
+	ds = nbr != 0 ? abs(s.cars[nbr].x - car.x) - pp.l_car : 1000.
 
 	return dv::Float64, ds::Float64
 end
@@ -150,7 +150,7 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 		return 0.::Float64, 0.::Float64
 	end
 
-	v = s.env_cars[idx].vel
+	v = s.cars[idx].vel
 
 	#behind - me
 	dv_behind, s_behind = get_dv_ds(pp,s,nbhd,idx,5+dir)
@@ -164,11 +164,11 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 
 	dt = pp.dt
 	#TODO generalize to get_dv?
-	if !(typeof(s.env_cars[nbhd[5+dir]].behavior) <: IDMMOBILBehavior)
+	if !(typeof(s.cars[nbhd[5+dir]].behavior) <: IDMMOBILBehavior)
 		# assume some default idm model TODO
 		behind_idm = IDMParam("normal",31.,4.)
 	else
-		behind_idm = s.env_cars[nbhd[5+dir]].behavior.p_idm
+		behind_idm = s.cars[nbhd[5+dir]].behavior.p_idm
 	end
 	a_follower = get_idm_dv(behind_idm,dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
 	a_follower_ = get_idm_dv(behind_idm,dt,v_behind,dv_behind_,s_behind_)/dt
@@ -185,7 +185,7 @@ function get_mobil_lane_change(behavior, pp::PhysicalParam,s::MLState,nbhd::Arra
 	#				in other lane(s)
 	#need sets of idm parameters
 	dt = pp.dt
-	state = s.env_cars[idx]
+	state = s.cars[idx]
 	p_idm_self = behavior.p_idm
 	p_mobil = behavior.p_mobil
 	#println(neighborhood)

@@ -38,7 +38,7 @@ objects = gen_initials(tests, behaviors=behaviors, generate_physical=true)
 @show objects["param_table"] 
 objects["solvers"] = solvers
 for is in values(objects["initial_states"])
-    @assert !isnull(is.env_cars[1].behavior)
+    @assert !isnull(is.cars[1].behavior)
 end
 
 objects["note"] = "Tests over a range of braking values."

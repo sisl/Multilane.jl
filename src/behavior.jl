@@ -33,7 +33,7 @@ generate_lane_change(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::
 function generate_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 	pp = dmodel.phys_param
 	dt = pp.dt
-	car = s.env_cars[idx]
+	car = s.cars[idx]
 	vel = car.vel
     
 	dv, ds = get_dv_ds(pp,s,neighborhood,idx,2)
@@ -57,7 +57,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
 
 	pp = dmodel.phys_param
 	dt = pp.dt
-	car = s.env_cars[idx]
+	car = s.cars[idx]
 	lane_change = car.lane_change #this is a velocity in the y direction in LANES PER SECOND
 	#lane_ = round(max(1,min(car.y+lane_change,2*pp.nb_lanes-1)))
 	#if increment y in the same timestep as deciding to lanechange
@@ -81,7 +81,7 @@ function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynami
     # I DONT think this works because lane_change may not be updated
     #=
 	nbr = neighborhood[2]
-	ahead_dy = nbr != 0 ? s.env_cars[nbr].lane_change : 0
+	ahead_dy = nbr != 0 ? s.cars[nbr].lane_change : 0
 	if ahead_dy != 0
 			lanechange_ = 0.
 	end
@@ -107,8 +107,8 @@ JerkModel() = AvoidModel(true)
 Base.hash(a::AvoidModel, h::UInt64=zero(UInt64)) = hash(a.jerk,h)
 
 function closest_car(dmodel::IDMMOBILModel, s::MLState, nbhd::Array{Int,1}, idx::Int, lookahead_only::Bool)
-	x = s.env_cars[idx].x
-    y = s.env_cars[idx].y
+	x = s.cars[idx].x
+    y = s.cars[idx].y
 	dy = dmodel.phys_param.w_lane
 
 	closest = 0
@@ -133,7 +133,7 @@ function closest_car(dmodel::IDMMOBILModel, s::MLState, nbhd::Array{Int,1}, idx:
 		if nbhd[i] == 0
 			continue
 		end
-		car = s.env_cars[nbhd[i]]
+		car = s.cars[nbhd[i]]
 		dists = norm([x - car.x; (y - car.y)*dy])
 		if dist < min_dist
 			min_dist = dist
@@ -151,8 +151,8 @@ function generate_accel(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, n
 		return 0.
 	end
 
-	x = s.env_cars[idx].x
-	cc = s.env_cars[closest_car]
+	x = s.cars[idx].x
+	cc = s.cars[closest_car]
 
 	if p.jerk #TODO fix this so it doesn't always accelerate if there's no space
         accel = cs.x - x > 2*dmodel.phys_param.l_car ? 1 : -3. #slam brakes
@@ -171,8 +171,8 @@ function generate_lane_change(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLSt
 		return 0.
 	end
 
-	pos = s.env_cars[idx].y
-	cc = s.env_cars[closest_car]
+	pos = s.cars[idx].y
+	cc = s.cars[closest_car]
 
 	lanechange = -sign(cc.y - pos)
 	#if same lane, go in direction with more room

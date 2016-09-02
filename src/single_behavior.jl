@@ -29,8 +29,8 @@ function action(p::SingleBehaviorPolicy, s::MLState, a::MLAction=MLAction())
 end
 
 function single_behavior_state(s::MLState, behavior)
-    new_cars = Array(CarState, length(s.env_cars))
-    for (i,c) in enumerate(s.env_cars)
+    new_cars = Array(CarState, length(s.cars))
+    for (i,c) in enumerate(s.cars)
         new_cars[i] = CarState(c.x, c.y, c.vel, c.lane_change, behavior, c.id)
     end
     return MLState(s.crashed, new_cars)

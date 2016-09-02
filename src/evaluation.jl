@@ -179,10 +179,10 @@ function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
 
             nb_brakes += detect_braking(eval_problems[i], s, sp)
 
-            if sp.env_cars[1].y == eval_problems[i].rmodel.desired_lane
+            if sp.cars[1].y == eval_problems[i].rmodel.desired_lane
                 steps_in_lane += 1
             end
-            if s.env_cars[1].y == eval_problems[i].rmodel.desired_lane
+            if s.cars[1].y == eval_problems[i].rmodel.desired_lane
                 if isnull(steps_to_lane)
                     steps_to_lane = Nullable{Int}(k-1)
                 end
@@ -193,7 +193,7 @@ function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
             end
         end
 
-        if sims[i].state_hist[end].env_cars[1].y == eval_problems[i].rmodel.desired_lane
+        if sims[i].state_hist[end].cars[1].y == eval_problems[i].rmodel.desired_lane
             if isnull(steps_to_lane)
                 steps_to_lane = Nullable{Int}(length(sims[i].state_hist)-1)
             end

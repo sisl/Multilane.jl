@@ -234,38 +234,38 @@ function test_get_mobil_lane_change()
 	dmodel = IDMMOBILModel(length(cs),pp)
 	s = MLState(false,cs)
 	nbhd = get_neighborhood(pp,s,3)
-	assert(get_mobil_lane_change(s.env_cars[3].behavior, pp,s,nbhd,3),1)
+	assert(get_mobil_lane_change(s.cars[3].behavior, pp,s,nbhd,3),1)
 	#CASE: it's slower and there is space
 	cs = CarState[CarState(12.,2,31.,0,IDMMOBILBehavior("cautious",31.,4.,1),6),CarState(11.,1,35.,0,IDMMOBILBehavior("cautious",35.,4.,1),5),CarState(6.,1,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),4)]
 	dmodel = IDMMOBILModel(length(cs),pp)
 	s = MLState(false,cs)
 	nbhd = get_neighborhood(pp,s,3)
-	assert(get_mobil_lane_change(s.env_cars[3].behavior, pp,s,nbhd,3),0)
+	assert(get_mobil_lane_change(s.cars[3].behavior, pp,s,nbhd,3),0)
 	#CASE: someone is going fast behind me and i'm slow
 	cs = CarState[CarState(0.,1,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),7),CarState(6.,1,27.,0,IDMMOBILBehavior("cautious",27.,4.,1),8)]
 	dmodel = IDMMOBILModel(length(cs),pp)
 	s = MLState(false,cs)
 	nbhd = get_neighborhood(pp,s,2)
-	assert(get_mobil_lane_change(s.env_cars[2].behavior,pp,s,nbhd,2),1)
+	assert(get_mobil_lane_change(s.cars[2].behavior,pp,s,nbhd,2),1)
 	###repeat for other side
 	#CASE: it's faster and there is space
 	cs = CarState[CarState(12.,1,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),9),CarState(11.,2,27.,0,IDMMOBILBehavior("cautious",27.,4.,1),10),CarState(6.,2,31.,0,IDMMOBILBehavior("aggressive",35.,4.,1),11)]
 	dmodel = IDMMOBILModel(length(cs),pp)
 	s = MLState(false,cs)
 	nbhd = get_neighborhood(pp,s,3)
-	assert(get_mobil_lane_change(s.env_cars[3].behavior,pp,s,nbhd,3),-1)
+	assert(get_mobil_lane_change(s.cars[3].behavior,pp,s,nbhd,3),-1)
 	#CASE: it's slower and there is space
 	cs = CarState[CarState(12.,1,31.,0,IDMMOBILBehavior("cautious",31.,4.,1),0),CarState(11.,2,35.,0,IDMMOBILBehavior("cautious",35.,4.,1),0),CarState(6.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),0)]
 	dmodel = IDMMOBILModel(length(cs),pp)
 	s = MLState(false,cs)
 	nbhd = get_neighborhood(pp,s,3)
-	assert(get_mobil_lane_change(s.env_cars[3].behavior, pp,s,nbhd,3),0)
+	assert(get_mobil_lane_change(s.cars[3].behavior, pp,s,nbhd,3),0)
 	#CASE: someone is going fast behind me and i'm slow
 	cs = CarState[CarState(0.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),0),CarState(6.,2,27.,0,IDMMOBILBehavior("cautious",27.,4.,1),0)]
 	dmodel = IDMMOBILModel(length(cs),pp)
 	s = MLState(false,cs)
 	nbhd = get_neighborhood(pp,s,2)
-	assert(get_mobil_lane_change(s.env_cars[2].behavior,pp,s,nbhd,2),-1)
+	assert(get_mobil_lane_change(s.cars[2].behavior,pp,s,nbhd,2),-1)
 end
 
 function failure_2()
@@ -289,7 +289,7 @@ function failure_3()
     mdp = Multilane.MLMDP{Multilane.MLState,Multilane.MLAction,Multilane.NoCrashIDMMOBILModel,Multilane.NoCrashRewardModel}(Multilane.NoCrashIDMMOBILModel(10,Multilane.PhysicalParam(0.75,2.0,4.0,31.0,4.0,35.0,27.0,31.0,35.0,27.0,20.0,4,100.0),Multilane.BehaviorModel[Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,27.5,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),1),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,27.5,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),2),Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,27.5,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),3),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,31.0,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),4),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,31.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),5),Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,31.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),6),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,35.0,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),7),Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),8),Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,35.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),9)],StatsBase.WeightVec{Float64,Array{Float64,1}}([1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],9.0),1.0,1.3333333333333333,0.5,20.0,0.5,[1.0,1.0,1.0,1.0],2.0,false),Multilane.NoCrashRewardModel(100.0,10.0,1.5,1),1.0)
     s = Multilane.MLState(false,[Multilane.CarState(50.0,2.5,30.75,0.0,Multilane.NORMAL,1),Multilane.CarState(99.56731292388635,3.0,34.36785842369873,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,35.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),9),4),Multilane.CarState(88.9857138446193,4.0,29.878676022074934,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,31.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),5),12),Multilane.CarState(83.55003341854245,1.0,27.45737686175689,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,27.5,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),2),13),Multilane.CarState(5.833404602969644,1.5,31.164522812071382,0.6666666666666666,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,35.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),9),14),Multilane.CarState(6.364105400258811,3.0,30.995876598243825,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,31.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),6),15),Multilane.CarState(95.2814275010719,2.0,27.0,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,31.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),5),17),Multilane.CarState(98.12572985780923,2.0,29.049513872117117,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.0,1.0,2.0,27.5,4.0,4.0),Multilane.MOBILParam(0.5,4.0,0.2),1),18),Multilane.CarState(0.0,4.0,31.09003055824878,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,27.5,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),2),19)])
     sp, r = generate_sr(mdp, s, MLAction(0,0), MersenneTwister(5))
-    @test !Multilane.occupation_overlap(sp.env_cars[4].y, sp.env_cars[5].y)
+    @test !Multilane.occupation_overlap(sp.cars[4].y, sp.cars[5].y)
 end
 
 function test_mobil()

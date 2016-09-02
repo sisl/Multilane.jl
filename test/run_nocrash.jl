@@ -23,7 +23,7 @@ mdp = NoCrashMDP(dmodel, rmodel, _discount);
 rng = MersenneTwister(5)
 
 s = initial_state(mdp::NoCrashMDP, rng)
-# @show s.env_cars[1]
+# @show s.cars[1]
 #visualize(mdp,s,MLAction(0,0))
 
 policy = Multilane.BehaviorPolicy(mdp, Multilane.NORMAL, false, rng)

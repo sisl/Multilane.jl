@@ -68,14 +68,14 @@ function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState, a::MLAction, sp=create
 
     hbol = HardBrakeOverlay(pp, braking_ids(mdp, s, sp))
     iol = InfoOverlay(pp, idx,
-                      s.env_cars[1].vel,
+                      s.cars[1].vel,
                       max_braking(mdp, s, sp),
                       is_crash(mdp, s, sp))
     cidol = CarIDOverlay()
     cvol = CarVelOverlay()
 
     scene = Scene()
-    for cs in s.env_cars
+    for cs in s.cars
         push!(scene, Vehicle(VehicleState(VecSE2(cs.x, (cs.y-1.0)*pp.w_lane, 0.0), roadway, cs.vel), 
                                 VehicleDef(cs.id, AgentClass.CAR, pp.l_car, pp.w_car)))
     end
@@ -88,7 +88,7 @@ function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState)
                                    pp.lane_length,
                                    lane_width=pp.w_lane)
     scene = Scene()
-    for cs in s.env_cars
+    for cs in s.cars
         push!(scene, Vehicle(VehicleState(VecSE2(cs.x, (cs.y-1.0)*pp.w_lane, 0.0), roadway, cs.vel), 
                                 VehicleDef(cs.id, AgentClass.CAR, pp.l_car, pp.w_car)))
     end

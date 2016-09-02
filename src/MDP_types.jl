@@ -58,7 +58,7 @@ Base.repr(c::CarState) = "CarState($(c.x),$(c.y),$(c.vel),$(c.lane_change),$(c.b
 
 type MLState
     crashed::Bool # A crash occurs at the state transition. All crashed states are considered equal
-	env_cars::Array{CarState,1} #NOTE ego car is first car
+	cars::Array{CarState,1} #NOTE ego car is first car
 end #MLState
 
 function MLState(pos::Real, vel::Real, cars::Array{CarState,1}, x::Real=50.)
@@ -77,20 +77,20 @@ function ==(a::MLState, b::MLState)
     elseif a.crashed || b.crashed # only one has crashed
         return false
     end
-    return (a.env_cars == b.env_cars) #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
+    return (a.cars == b.cars) #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
 end
 function Base.hash(a::MLState, h::UInt64=zero(UInt64))
     if a.crashed
         return hash(a.crashed, h)
     end
-    return hash(a.env_cars,h)#hash(a.agent_vel,hash(a.agent_pos,hash(a.env_cars,h)))
+    return hash(a.cars,h)#hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
 end
 
 function Base.repr(s::MLState)
     rstring = "MLState($(s.crashed), CarState["
-    for (i,c) in enumerate(s.env_cars)
+    for (i,c) in enumerate(s.cars)
         rstring = string(rstring, "$(repr(c))")
-        if i < length(s.env_cars)
+        if i < length(s.cars)
             rstring = string(rstring, ",")
         end
     end
@@ -135,22 +135,22 @@ end
 
 immutable MLPhysicalState
   crashed::Bool
-  env_cars::Array{CarPhysicalState,1}
+  cars::Array{CarPhysicalState,1}
 end
 typealias MLObs MLPhysicalState
 
-MLPhysicalState(s::MLState) = MLPhysicalState(s.crashed,CarPhysicalState[CarPhysicalState(cs) for cs in s.env_cars])
+MLPhysicalState(s::MLState) = MLPhysicalState(s.crashed,CarPhysicalState[CarPhysicalState(cs) for cs in s.cars])
 function ==(a::MLPhysicalState, b::MLPhysicalState)
     if a.crashed && b.crashed
         return true
     elseif a.crashed || b.crashed # only one has crashed
         return false
     end
-    return (a.env_cars == b.env_cars) #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
+    return (a.cars == b.cars) #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
 end
 function Base.hash(a::MLPhysicalState, h::UInt64=zero(UInt64))
     if a.crashed
         return hash(a.crashed, h)
     end
-    return hash(a.env_cars,h)#hash(a.agent_vel,hash(a.agent_pos,hash(a.env_cars,h)))
+    return hash(a.cars,h)#hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
 end

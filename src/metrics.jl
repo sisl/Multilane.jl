@@ -30,9 +30,9 @@ function calculate(m::NumBehaviorBrakesMetric, problem::NoCrashProblem, sim::His
         dt = problem.dmodel.phys_param.dt
         s = sh[i]
         sp = sh[i+1]
-        for (i,c) in enumerate(s.env_cars)
-            if length(sp.env_cars) >= i-nb_leaving
-                cp = sp.env_cars[i-nb_leaving]
+        for (i,c) in enumerate(s.cars)
+            if length(sp.cars) >= i-nb_leaving
+                cp = sp.cars[i-nb_leaving]
             else
                 break
             end

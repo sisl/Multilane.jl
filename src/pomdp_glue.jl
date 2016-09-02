@@ -52,12 +52,12 @@ end
 function rand(rng::AbstractRNG, gen::ParticleGenerator,
               full_s::MLState=MLState(gen.physical.crashed,
                                       Array(CarState,
-                                            length(gen.physical.env_cars))))
+                                            length(gen.physical.cars))))
     s = gen.physical
-    resize!(full_s.env_cars, length(s.env_cars))
-    for i in 1:length(s.env_cars)
+    resize!(full_s.cars, length(s.cars))
+    for i in 1:length(s.cars)
         behavior = rand(rng, gen.behaviors)
-        full_s.env_cars[i] = CarState(s.env_cars[i], behavior)
+        full_s.cars[i] = CarState(s.cars[i], behavior)
     end
     return full_s
 end

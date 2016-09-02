@@ -106,9 +106,9 @@ function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}},
 	pp = mdp.dmodel.phys_param
 	dt = pp.dt
   nb_col = 2*pp.nb_lanes-1
-	agent_pos = s.env_cars[1].x#pp.lane_length/2.
-	agent_y = s.env_cars[1].y*pp.w_lane
-	agent_vel = s.env_cars[1].vel
+	agent_pos = s.cars[1].x#pp.lane_length/2.
+	agent_y = s.cars[1].y*pp.w_lane
+	agent_vel = s.cars[1].vel
 
 	#treat agent_pos, agent_y as (0,0)
 	w_car = pp.w_car
@@ -116,7 +116,7 @@ function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}},
 	#TODO: make it so that X takes in to account the fact that the agent car can change lanes
 	w_car_ = w_car
 
-	agent_y_ = sp.env_cars[1].y*pp.w_lane
+	agent_y_ = sp.cars[1].y*pp.w_lane
 	if agent_y_ <= agent_y
 		w_car_ += agent_y - agent_y_
 		agent_y = agent_y_
@@ -128,7 +128,7 @@ function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}},
 
 	#center of the ego car
 	x = [agent_pos; agent_y]
-	x2 = [sp.env_cars[1].x; agent_y_]
+	x2 = [sp.cars[1].x; agent_y_]
 	#corner-corner distance between two sedan
 	d = norm([2*l_car;2*w_car])
 	if debug
@@ -139,15 +139,15 @@ function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}},
 	end
 
 	#another way to ignore ego car
-	id = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(s.env_cars[2:end])])
-	idp = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(sp.env_cars[2:end])])
+	id = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(s.cars[2:end])])
+	idp = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(sp.cars[2:end])])
 	ids = intersect(keys(id), keys(idp))
 	# NOTE: VVV
 	#if its not in both, then its entering or leaving and thus at extremum of track
 	#and most likely not eligible for crash detection
 
-	cars = Tuple{CarState,CarState}[(s.env_cars[id[car_id]],
-                                            sp.env_cars[idp[car_id]],)
+	cars = Tuple{CarState,CarState}[(s.cars[id[car_id]],
+                                            sp.cars[idp[car_id]],)
 										    for car_id in ids] #1 or 2
 
 	for (env_car,env_car_) in cars
