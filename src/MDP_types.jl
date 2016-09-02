@@ -58,17 +58,19 @@ Base.repr(c::CarState) = "CarState($(c.x),$(c.y),$(c.vel),$(c.lane_change),$(c.b
 
 type MLState
     crashed::Bool # A crash occurs at the state transition. All crashed states are considered equal
+    x::Float64 # total distance traveled by the ego
+    t::Float64 # total time of the simulation
 	cars::Array{CarState,1} #NOTE ego car is first car
 end #MLState
 
 function MLState(pos::Real, vel::Real, cars::Array{CarState,1}, x::Real=50.)
   #x = mdp.phys_param.lane_length/2.
   insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
-  return MLState(false,cars)
+  return MLState(false, 0.0, 0.0, cars)
 end
 function MLState(crashed::Bool,pos::Real,vel::Real,cars::Array{CarState,1},x::Real=50.)
   insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
-  return MLState(crashed,cars)
+  return MLState(crashed, 0.0, 0.0, cars)
 end
 
 function ==(a::MLState, b::MLState)
@@ -77,15 +79,16 @@ function ==(a::MLState, b::MLState)
     elseif a.crashed || b.crashed # only one has crashed
         return false
     end
-    return (a.cars == b.cars) #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
+    return a.x == b.x && a.t == b.t && a.cars == b.cars #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
 end
 function Base.hash(a::MLState, h::UInt64=zero(UInt64))
     if a.crashed
         return hash(a.crashed, h)
     end
-    return hash(a.cars,h)#hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
+    return hash(a.x, hash(a.t, hash(a.cars,h)))#hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
 end
 
+#= # don't think we need a special repr anymore since the behaviors are not nullable
 function Base.repr(s::MLState)
     rstring = "MLState($(s.crashed), CarState["
     for (i,c) in enumerate(s.cars)
@@ -96,6 +99,7 @@ function Base.repr(s::MLState)
     end
     return string(rstring, "])")
 end
+=#
 
 immutable MLAction
     acc::Float64
@@ -135,22 +139,24 @@ end
 
 immutable MLPhysicalState
   crashed::Bool
+  x::Float64
+  t::Float64
   cars::Array{CarPhysicalState,1}
 end
 typealias MLObs MLPhysicalState
 
-MLPhysicalState(s::MLState) = MLPhysicalState(s.crashed,CarPhysicalState[CarPhysicalState(cs) for cs in s.cars])
+MLPhysicalState(s::MLState) = MLPhysicalState(s.crashed, s.x, s.t, CarPhysicalState[CarPhysicalState(cs) for cs in s.cars])
 function ==(a::MLPhysicalState, b::MLPhysicalState)
     if a.crashed && b.crashed
         return true
     elseif a.crashed || b.crashed # only one has crashed
         return false
     end
-    return (a.cars == b.cars) #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
+    return a.x == b.x && a.t == b.t && a.cars == b.cars #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
 end
 function Base.hash(a::MLPhysicalState, h::UInt64=zero(UInt64))
     if a.crashed
         return hash(a.crashed, h)
     end
-    return hash(a.cars,h)#hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
+    return hash(a.x, hash(a.t, hash(a.cars,h))) #hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
 end
