@@ -19,7 +19,7 @@ solvers = Dict{UTF8String, Any}(
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL)
 )
 
-curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], N=1, p_appear=1.0)
+curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], N=500, p_appear=1.0)
 
 tests = []
 for b in [2.5, 3.0, 3.5, 4.0]
