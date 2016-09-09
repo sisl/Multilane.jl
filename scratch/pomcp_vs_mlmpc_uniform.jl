@@ -5,7 +5,7 @@ using JLD
 using POMCP
 
 behaviors = Dict{UTF8String,Any}(
-    "uniform" => standard_uniform(1.0, correlated=false)
+    "uniform" => standard_uniform(1.0, correlation=false)
 )
 
 dpws = DPWSolver(depth=20,
