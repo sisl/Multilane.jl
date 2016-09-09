@@ -34,6 +34,9 @@ s = ArgParseSettings()
     "--solvers"
         help = "solvers to be included"
         nargs = '+'
+    "--tests"
+        help = "tests to be included"
+        nargs = '+'
     "--save-combined"
         help = "save results to a new file"
         action = :store_true
@@ -63,17 +66,21 @@ end
 
 for f in args["filename"][2:end]
     new_results = load(f)
-    results = merge_results!(results, new_results)
+    try
+        results = merge_results!(results, new_results)
+    catch ex
+        warn("Careful merge of data failed, there may be inconsistent data")
+        results = merge_results!(results, new_results, careful=false)
+    end
 end
 
 stats = results["stats"]
 
-mean_performance = by(stats, [:solver_key, :lambda, :problem_key, :solver_problem_key]) do df
+mean_performance = by(stats, [:solver_key, :lambda, :problem_key, :solver_problem_key, :test_key]) do df
     DataFrame(steps_in_lane=mean(df[:steps_in_lane]),
               nb_brakes=mean(df[:nb_brakes]),
               time_to_lane=mean(df[:time_to_lane]),
               steps=mean(df[:steps]),
-              test_key=first(df[:test_key])
               )
 end
 
@@ -81,9 +88,18 @@ solvers = args["solvers"]
 if isempty(solvers)
     solvers = unique(mean_performance[:solver_key])
 end
+tests = args["tests"]
+if isempty(tests)
+    tests = unique(mean_performance[:test_key])
+end
+
 
 mean_performance = @where(mean_performance,
                           collect(Bool[s in solvers for s in :solver_key]))
+mean_performance = @where(mean_performance,
+                          collect(Bool[t in tests for t in :test_key]))
+
+@show mean_performance
 
 mean_performance[:brakes_per_sec] = mean_performance[:nb_brakes]./mean_performance[:time_to_lane]
 
@@ -98,7 +114,9 @@ if args["unicode"] || args["plot"]
         if args["unicode"]
             unicodeplots()
         else
-            pyplot()
+            # pyplot()
+            plotlyjs()
+            # pgfplots()
         end
         if haskey(results, "tests")
             for g in groupby(mean_performance, :test_key)

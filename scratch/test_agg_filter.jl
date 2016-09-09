@@ -111,3 +111,10 @@ end
 plot!(stds, linestyle=:dash, labels="")
 gui()
 
+#=
+
+include_visualization()
+
+show_sim(pomdp, sim)
+
+=#

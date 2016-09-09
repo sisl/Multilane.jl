@@ -138,6 +138,9 @@ export
     NumBehaviorBrakesMetric
 
 export
+    GaussianCopula
+
+export
     include_visualization
 
 include("physical.jl")
@@ -146,6 +149,7 @@ include("crash.jl")
 include("IDM.jl")
 include("MOBIL.jl")
 include("behavior.jl")
+include("copula.jl")
 include("behavior_gen.jl")
 include("no_crash_model.jl")
 include("metrics.jl")

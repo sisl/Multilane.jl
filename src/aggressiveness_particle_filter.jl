@@ -126,7 +126,8 @@ function update(up::AggressivenessUpdater,
                 b_old::AggressivenessBelief,
                 a::MLAction,
                 o::MLPhysicalState,
-                b_new::AggressivenessBelief=AggressivenessBelief(get(up.problem).dmodel.behaviors, o,
+                b_new::AggressivenessBelief=AggressivenessBelief(CorrelatedIDMMOBIL(
+                                                    get(up.problem).dmodel.behaviors), o,
                                                     Array(Vector{Float64}, length(o.cars)),
                                                     Array(Vector{Float64}, length(o.cars))))
 
@@ -155,7 +156,7 @@ function update(up::AggressivenessUpdater,
 end
 
 function initialize_belief(up::AggressivenessUpdater, distribution)
-    gen = get(up.problem).dmodel.behaviors
+    gen = CorrelatedIDMMOBIL(get(up.problem).dmodel.behaviors)
     states = [rand(up.rng, distribution) for i in 1:up.nb_sims]
     particles = Array(Array{Float64}, length(first(states).cars))
     weights = Array(Array{Float64}, length(first(states).cars))

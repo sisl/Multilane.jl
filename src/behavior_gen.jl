@@ -36,13 +36,13 @@ end
 #=
 N   T   A
 120 100 140 v0  27.8 38.9   33.3    5.6
-1.5 1.8 1.0 T   1.0 2.0     1.5     0.5
-2.0 4.0 1.0 s0  0.0 4.0     2.0     2.0
-1.4 1.0 2.0 a   0.8 2.0     1.4     0.6
-2.0 1.0 3.0 b   1.0 3.0     2.0     1.0
+1.5 1.8 1.0 T   1.0  2.0     1.5     0.5
+2.0 4.0 1.0 s0  0.0  4.0     2.0     2.0
+1.4 1.0 2.0 a   0.8  2.0     1.4     0.6
+2.0 1.0 3.0 b   1.0  3.0     2.0     1.0
 =#
 
-function standard_uniform(factor=1.0; correlated=false)
+function standard_uniform(factor=1.0; correlation::Union{Bool,Float64}=false)
     ma = 1.4;    da = 0.6
     mb = 2.0;    db = 1.0
     mT = 1.5;    dT = 0.5
@@ -76,10 +76,12 @@ function standard_uniform(factor=1.0; correlated=false)
         mbsafe - factor*dbsafe,
         mathr - factor*dathr
     )
-    if correlated
+    if correlation == true
         return CorrelatedIDMMOBIL(min_idm, max_idm, min_mobil, max_mobil, 2)
-    else
+    elseif correlation == false
         return UniformIDMMOBIL(min_idm, max_idm, min_mobil, max_mobil, 2)
+    else
+        return CopulaIDMMOBIL(min_idm, max_idm, min_mobil, max_mobil, correlation)
     end
 end
 
@@ -142,3 +144,54 @@ end
 function aggressiveness(gen::CorrelatedIDMMOBIL, b::IDMMOBILBehavior)
     return (b.p_idm.v0 - gen.min_idm.v0)/(gen.max_idm.v0 - gen.min_idm.v0)
 end
+
+type CopulaIDMMOBIL <: BehaviorGenerator
+    min_idm::IDMParam
+    max_idm::IDMParam
+    min_mobil::MOBILParam
+    max_mobil::MOBILParam
+    copula::GaussianCopula
+    next_idx::Int
+end
+
+function CopulaIDMMOBIL(min_idm::IDMParam,
+                        max_idm::IDMParam,
+                        min_mobil::MOBILParam,
+                        max_mobil::MOBILParam,
+                        cor::Float64)
+    return CopulaIDMMOBIL(min_idm, max_idm,
+                          min_mobil, max_mobil,
+                          GaussianCopula(8, cor), 2)
+end
+
+function rand(rng::AbstractRNG, g::CopulaIDMMOBIL)
+    agg = rand(rng, g.copula)
+    return create_model(g, agg)
+end
+
+function create_model(g::CopulaIDMMOBIL, agg::Vector{Float64})
+    @assert length(agg) == 8
+    idm = IDMParam(
+        g.min_idm.a + agg[1]*(g.max_idm.a - g.min_idm.a),
+        g.min_idm.b + agg[2]*(g.max_idm.b - g.min_idm.b),
+        g.max_idm.T + agg[3]*(g.min_idm.T - g.max_idm.T), # T is lower for more aggressive
+        g.min_idm.v0 + agg[4]*(g.max_idm.v0 - g.min_idm.v0),
+        g.max_idm.s0 + agg[5]*(g.min_idm.s0 - g.max_idm.s0), # s0 is lower for more aggressive
+        g.min_idm.del
+    )
+    mobil = MOBILParam(
+        g.max_mobil.p + agg[6]*(g.min_mobil.p - g.max_mobil.p), # p is lower for more aggressive
+        g.min_mobil.b_safe + agg[7]*(g.max_mobil.b_safe - g.min_mobil.b_safe),
+        g.max_mobil.a_thr + agg[8]*(g.min_mobil.a_thr - g.max_mobil.a_thr), # a_thr is lower for more aggressive
+    )
+    g.next_idx += 1
+    return IDMMOBILBehavior(idm, mobil, g.next_idx-1)
+end
+
+CorrelatedIDMMOBIL(gen::CopulaIDMMOBIL) = CorrelatedIDMMOBIL(
+    gen.min_idm,
+    gen.max_idm,
+    gen.min_mobil,
+    gen.max_mobil,
+    gen.next_idx
+)

@@ -274,8 +274,10 @@ function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any
     if length(r2["initial_physical_states"]) > length(r1ips)
         r1["initial_physical_states"] = r2["initial_physical_states"]
     end
-    for i in 1:min(length(r1ips), length(r2["initial_physical_states"]))
-        @assert r1ips[i] == r2["initial_physical_states"][i]
+    if careful
+        for i in 1:min(length(r1ips), length(r2["initial_physical_states"]))
+            @assert r1ips[i] == r2["initial_physical_states"][i]
+        end
     end
 
     merge_tests!(r1["tests"], r2["tests"])

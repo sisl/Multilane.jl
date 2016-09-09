@@ -41,6 +41,12 @@ function display_sim(mdp, sim::HistoryRecorder)
     display_sim(mdp, sim.state_hist, sim.action_hist)
 end
 
+function save_frame(mdp, sim, k=1, filename=string(tempname(),".png"))
+    c = visualize(mdp, sim.state_hist[k], sim.action_hist[k], sim.state_hist[k+1])
+    write_to_png(c, filename)
+    println("Saved to $filename")
+end
+
 function write_tmp_gif(mdp, sim::HistoryRecorder)
     dt = mdp.dmodel.phys_param.dt
     S = sim.state_hist
@@ -59,7 +65,7 @@ function write_tmp_gif(mdp, sim::HistoryRecorder)
     return filename
 end
 
-function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState, a::MLAction, sp=create_state(mdp);
+function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState, a::MLAction, sp::MLState;
                    idx::Nullable{Int}=Nullable{Int}())
     pp = mdp.dmodel.phys_param
     roadway = gen_straight_roadway(pp.nb_lanes,

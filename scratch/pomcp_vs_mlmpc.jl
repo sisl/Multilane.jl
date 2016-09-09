@@ -62,7 +62,7 @@ files = sbatch_spawn(tests, objects,
 #                      time_per_batch="1:00:00",
 #                      submit_command="bash",
 #                      template_name="theresa.sh")
-
+#
 # results = evaluate(tests, objects, parallel=true)
 # 
 # filename = string("results_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")
