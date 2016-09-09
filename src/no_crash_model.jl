@@ -360,7 +360,11 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                 # check if they will be in the same lane
                 if occupation_overlap(car_i.y + dys[i], car_j.y + dys[j])
                     # warn and nudge behind
-                    warn("Car nudged because noise would cause a crash.")
+                    if i == 1
+                        warn("Car nudged because noise would cause a crash (ego in front).")
+                    else
+                        warn("Car nudged because noise would cause a crash.")
+                    end
                     dxs[j] = car_i.x + dxs[i] - car_j.x - 1.01*pp.l_car
                     dvs[j] = 2.0*(dxs[j]/dt - car_j.vel)
                 end
