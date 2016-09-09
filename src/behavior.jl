@@ -43,11 +43,8 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsMode
 
     @assert acc <= 1.01*bmodel.p_idm.a
 
-	#add gaussian noise
+	# add gaussian noise
 	acc += randn(rng) * dmodel.vel_sigma/dt
-
-	# dvel = min(max(dvel/dt,-bmodel.p_idm.b),bmodel.p_idm.a)
-    # ^ old: can delete after august
 
     # enforce physical limit (maybe this should not be done right here?)
 	return max(acc, -dmodel.phys_param.brake_limit)

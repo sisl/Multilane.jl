@@ -294,6 +294,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
     ## Consistency checking ##
     #========================#
 
+    # first prevent lane changes into each other
     changers = IntSet()
     for i in 1:nb_cars
         if lcs[i] != 0
@@ -303,7 +304,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
     sorted_changers = sort!(collect(changers), by=i->s.cars[i].x, rev=true) # this might be slow because anonymous functions are slow
 
     if length(sorted_changers) >= 2 #something to compare
-       # iterate through pairs
+        # iterate through pairs
         iter_state = start(sorted_changers)
         j, iter_state = next(sorted_changers, iter_state)
         while !done(sorted_changers, iter_state)
@@ -332,6 +333,36 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                             lcs[j] = 0.0
                         end
                     end
+                end
+            end
+        end
+    end
+
+    # second, prevent cars hitting each other due to noise
+    sorted = sort!(collect(1:length(s.cars)), by=i->s.cars[i].x, rev=true)
+
+    if length(sorted) >= 2 #something to compare
+        # iterate through pairs
+        iter_state = start(sorted)
+        j, iter_state = next(sorted, iter_state)
+        while !done(sorted, iter_state)
+            i = j
+            j, iter_state = next(sorted, iter_state)
+            if j == 1
+                continue # don't check for the ego since the ego does not have noise
+            end
+            car_i = s.cars[i]
+            car_j = s.cars[j]
+
+            # check if they overlap longitudinally
+            if car_j.x + dxs[j] > car_i.x + dxs[i] - pp.l_car
+            
+                # check if they will be in the same lane
+                if occupation_overlap(car_i.y + dys[i], car_j.y + dys[j])
+                    # warn and nudge behind
+                    warn("Car nudged because noise would cause a crash.")
+                    dxs[j] = car_i.x + dxs[i] - car_j.x - 1.01*pp.l_car
+                    dvs[j] = 2.0*(dxs[j]/dt - car_j.vel)
                 end
             end
         end

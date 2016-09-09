@@ -43,12 +43,15 @@ s = ArgParseSettings()
     "--check-crashes"
         help = "print out simulations that have crashes"
         action = :store_true
+    "--list", "-l"
+        help = "list note and test keys"
+        action = :store_true
 end
 
 args = parse_args(ARGS, s)
 
 if length(args["filename"]) > 0
-    results = load(first(args["filename"]))
+    filename = first(args["filename"])
 else
     files = readdir(".")
     latest = 0.0
@@ -60,9 +63,15 @@ else
         end
     end
     println("loading from most recent file: $latest_file")
-    results = load(latest_file)
+    filename = latest_file
 end
 
+results = load(filename)
+
+if args["list"]
+    println("$filename note:")
+    println(get(results, "note", "<none>"))
+end
 
 for f in args["filename"][2:end]
     new_results = load(f)
@@ -71,6 +80,10 @@ for f in args["filename"][2:end]
     catch ex
         warn("Careful merge of data failed, there may be inconsistent data")
         results = merge_results!(results, new_results, careful=false)
+    end
+    if args["list"]
+        println("$filename note:")
+        println(get(results, "note", "<none>"))
     end
 end
 
@@ -93,13 +106,21 @@ if isempty(tests)
     tests = unique(mean_performance[:test_key])
 end
 
+if args["list"]
+    println()
+    println("Avaialable Tests:")
+    for t in unique(mean_performance[:test_key])
+        println(t)
+    end
+    println()
+end
 
 mean_performance = @where(mean_performance,
                           collect(Bool[s in solvers for s in :solver_key]))
 mean_performance = @where(mean_performance,
                           collect(Bool[t in tests for t in :test_key]))
 
-@show mean_performance
+# @show mean_performance
 
 mean_performance[:brakes_per_sec] = mean_performance[:nb_brakes]./mean_performance[:time_to_lane]
 
