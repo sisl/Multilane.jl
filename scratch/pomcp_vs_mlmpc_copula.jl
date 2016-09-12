@@ -4,7 +4,7 @@ using MCTS
 using JLD
 using POMCP
 
-cors = [0.5, 0.75, 0.9]
+cors = [0.75]
 
 behaviors = Dict{UTF8String,Any}()
 for cor in cors
@@ -37,7 +37,7 @@ solvers = Dict{UTF8String, Any}(
     "mlmpc"=>MLMPCSolver(dpws, agg_up)
 )
 
-curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], p_appear=1.0, brake_threshold=4.0, N=500)
+curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], vel_sigma=0.2, p_appear=1.0, brake_threshold=4.0, N=500)
 # curve = TestSet(lambda=[46.4], N=1)
 
 tests = []

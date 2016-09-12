@@ -36,7 +36,7 @@ solvers = Dict{UTF8String, Any}(
     "mlmpc"=>MLMPCSolver(dpws, up)
 )
 
-curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], p_appear=1.0, brake_threshold=4.0, N=500, behaviors="uniform")
+curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], vel_sigma=0.2, p_appear=1.0, brake_threshold=4.0, N=500, behaviors="uniform")
 
 tests = [
     TestSet(curve, solver_key="dpw", key="upper_bound_unif"),

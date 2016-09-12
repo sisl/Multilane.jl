@@ -135,8 +135,8 @@ if args["unicode"] || args["plot"]
         if args["unicode"]
             unicodeplots()
         else
-            # pyplot()
-            plotlyjs()
+            pyplot()
+            # plotlyjs()
             # pgfplots()
         end
         if haskey(results, "tests")
