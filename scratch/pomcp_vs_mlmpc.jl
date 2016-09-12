@@ -5,7 +5,7 @@ using JLD
 using POMCP
 
 behaviors = Dict{UTF8String,Any}(
-    "correlated" => standard_uniform(1.0, correlated=true)
+    "correlated" => standard_uniform(1.0, correlation=true)
 )
 
 dpws = DPWSolver(depth=20,
@@ -35,7 +35,7 @@ solvers = Dict{UTF8String, Any}(
     "mlmpc"=>MLMPCSolver(dpws, agg_up)
 )
 
-curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], p_appear=1.0, brake_threshold=4.0, N=500, behaviors="correlated")
+curve = TestSet(lambda=[1.0, 2.0, 4.0, 8.0, 16.0, 32.0], vel_sigma=0.2, p_appear=1.0, brake_threshold=4.0, N=500, behaviors="correlated")
 # curve = TestSet(lambda=[46.4], N=1)
 
 tests = [
@@ -62,7 +62,7 @@ files = sbatch_spawn(tests, objects,
 #                      time_per_batch="1:00:00",
 #                      submit_command="bash",
 #                      template_name="theresa.sh")
-#
+
 # results = evaluate(tests, objects, parallel=true)
 # 
 # filename = string("results_", Dates.format(Dates.now(),"u_d_HH_MM"), ".jld")

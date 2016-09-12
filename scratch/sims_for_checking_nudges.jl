@@ -49,7 +49,7 @@ objects = gen_initials(tests, behaviors=behaviors, generate_physical=true)
 
 @show objects["param_table"] 
 objects["solvers"] = solvers
-objects["note"] = "pomcp and mlmpc with a "
+# objects["note"] = ""
 
 files = sbatch_spawn(tests, objects,
                      batch_size=50,
