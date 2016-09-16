@@ -1,5 +1,7 @@
 #!/usr/bin/julia --color=yes
 
+# THIS IS OLD - USE COMBINED INSTEAD
+
 using ArgParse
 
 using JLD
@@ -84,14 +86,16 @@ scatter_args = Dict{Symbol, Any}(
     :markSize=>1
 )
 
+pushPGFPlotsPreamble("\\usepackage{siunitx}")
+
 g = GroupPlot(2, 2, groupStyle = "horizontal sep = 0.075\\columnwidth, vertical sep = 0.15\\columnwidth")
 push!(g, Axis(Plots.Scatter(v0s_0, Ts_0; scatter_args...); title="Scenario 1, \$\\rho=0\$", ylabel="\$T\$ (\\si{s})", axis_args...))
 push!(g, Axis(Plots.Scatter(v0s_1, Ts_1; scatter_args...); title="Scenario 2, \$\\rho=1\$", xlabel="\$v_0\$ (\\si{m/s})", axis_args...))
 push!(g, Axis(Plots.Scatter(v0s_75, Ts_75; scatter_args...); title="Scenario 3, \$\\rho=0.75\$", xlabel="\$v_0\$ (\\si{m/s})", ylabel="\$T\$ (\\si{s})", axis_args...))
     
 
-print_tex(g, "SCATTER")
+# print_tex(g, "SCATTER")
 
-# PGFPlots.save("/home/zach/Devel/Behavior-aware_lane_changing/acc_17_paper/fig/scatter.tex", g, include_preamble=false)
+PGFPlots.save("/home/zach/Devel/Behavior-aware_lane_changing/acc_17_paper/fig/scatter.tex", g)
 
 # show_svg(g)

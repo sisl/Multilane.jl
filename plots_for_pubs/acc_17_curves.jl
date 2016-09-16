@@ -1,5 +1,7 @@
 #!/usr/bin/julia --color=yes
 
+# THIS IS OLD USE COMBINED INSTEAD
+
 using ArgParse
 
 using JLD
@@ -105,11 +107,11 @@ end
 
 # uniform with pomdp solutions
 a = Axis([
-    curve_plot(mp, "upper_bound_unif", label="Omniscience bound", style="dashed"),
+    curve_plot(mp, "upper_bound_unif", label="Omniscient", style="dashed"),
     # Plots.Command("\\only<2->{"),
-    curve_plot(mp, "assume_normal_unif", label="Assume all normal"),
+    curve_plot(mp, "assume_normal_unif", label="Single assumed behavior"),
     # Plots.Command("}"),
-    curve_plot(mp, "mlmpc_unif", label="Plan with best estimate"),
+    curve_plot(mp, "mlmpc_unif", label="Most likely behavior"),
     # Plots.Command("\\only<3->{"),
     curve_plot(mp, "pomcp_unif", label="POMCP"),
     # Plots.Command("}")
@@ -119,7 +121,7 @@ ymin=0,
 ymax=1.5,
 xlabel="Time to target lane",
 ylabel="Braking actions per episode",
-style="grid=both",
+style="grid=both, legend cell align=left",
 # title="Scenario 1: \$\\rho = 0\$"
 )
 
@@ -140,11 +142,11 @@ PGFPlots.save("/home/zach/Devel/Behavior-aware_lane_changing/acc_17_paper/fig/un
 
 # correlate with pomdp solutions
 a = Axis([
-    curve_plot(mp, "upper_bound", label="Omniscience bound", style="dashed"),
+    curve_plot(mp, "upper_bound", label="Omniscient", style="dashed"),
     # Plots.Command("\\only<2->{"),
-    curve_plot(mp, "assume_normal", label="Assume all normal"),
+    curve_plot(mp, "assume_normal", label="Single assumed behavior"),
     # Plots.Command("}"),
-    curve_plot(mp, "mlmpc", label="Plan with best estimate"),
+    curve_plot(mp, "mlmpc", label="Most likely behavior"),
     # Plots.Command("\\only<3->{"),
     curve_plot(mp, "pomcp", label="POMCP"),
     # Plots.Command("}")
@@ -154,7 +156,7 @@ ymin=0,
 ymax=1.5,
 xlabel="Time to target lane",
 ylabel="Braking actions per episode",
-style="grid=both", 
+style="grid=both, legend cell align=left", 
 # title="Scenario 2: \$\\rho = 1\$"
 )
 
@@ -172,11 +174,11 @@ PGFPlots.save("/home/zach/Devel/Behavior-aware_lane_changing/acc_17_paper/fig/co
 cors = [0.75]
 for cor in cors
     a = Axis([
-        curve_plot(mp, @sprintf("upper_bound_%03d", 100*cor), label="Omniscience bound", style="dashed"),
+        curve_plot(mp, @sprintf("upper_bound_%03d", 100*cor), label="Omniscient", style="dashed"),
         # Plots.Command("\\only<2->{"),
-        curve_plot(mp, @sprintf("assume_normal_%03d", 100*cor), label="Assume all normal"),
+        curve_plot(mp, @sprintf("assume_normal_%03d", 100*cor), label="Single assumed behavior"),
         # Plots.Command("}"),
-        curve_plot(mp, @sprintf("mlmpc_%03d", 100*cor), label="Plan with best estimate"),
+        curve_plot(mp, @sprintf("mlmpc_%03d", 100*cor), label="Most likely behavior"),
         # Plots.Command("\\only<3->{"),
         curve_plot(mp, @sprintf("pomcp_%03d", 100*cor), label="POMCP"),
         # Plots.Command("}")
@@ -186,7 +188,7 @@ for cor in cors
     ymax=1.5,
     xlabel="Time to target lane",
     ylabel="Braking actions per episode",
-    style="grid=both",
+    style="grid=both, legend cell align=left",
     # title="Scenario 3: \$\\rho = $cor\$"
     )
 
