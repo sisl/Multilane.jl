@@ -73,7 +73,8 @@ function brake_at_ttl(mp, test_key, t)
 end
 
 
-filenames = ["combined_results_Sep_2_11_31.jld", "combined_results_Sep_2_11_52.jld", "combined_results_Sep_8_21_57.jld"]
+# filenames = ["combined_results_Sep_2_11_31.jld", "combined_results_Sep_2_11_52.jld", "combined_results_Sep_8_21_57.jld"]
+filenames = ["combined_results_Sep_12_11_51.jld", "combined_results_Sep_16_16_46.jld", "combined_results_Sep_16_17_51.jld"]
 filenames = [joinpath(Pkg.dir("Multilane"), "data", f) for f in filenames]
 
 if !isdefined(:results)
@@ -155,12 +156,12 @@ PGFPlots.save("/home/zach/Devel/Behavior-aware_lane_changing/acc_17_paper/fig/un
 @show ub = ttl_at_brake(mp, "upper_bound_unif", 0.5)
 @show an = ttl_at_brake(mp, "assume_normal_unif", 0.5)
 @show an - ub
-@show (an - ub)/ub
+@show (an - ub)/an
 
 @show bub = brake_at_ttl(mp, "upper_bound_unif", 10.0)
 @show ban = brake_at_ttl(mp, "assume_normal_unif", 10.0)
 @show ban - bub
-@show (ban - bub)/bub
+@show (ban - bub)/ban
 
 bg = standard_uniform(1.0, correlation=true)
 bs = Array(BehaviorModel, N)
@@ -202,8 +203,8 @@ Ts_75 = Float64[bs[i].p_idm.T for i in 1:N]
 
 a = Axis([
     curve_plot(mp, "upper_bound_075", label="Omniscient", style="dashed"),
-    curve_plot(mp, "assume_normal_075", label="Single assumed behavior"),
-    curve_plot(mp, "mlmpc_075", label="Most likely behavior"),
+    curve_plot(mp, "assume_normal_075", label="SAB"),
+    curve_plot(mp, "mlmpc_075", label="MLMPC"),
     curve_plot(mp, "pomcp_075", label="POMCP")
 ], xmin=0,
 xmax=30,
@@ -211,7 +212,7 @@ ymin=0,
 ymax=1.5,
 xlabel="Time to target lane",
 ylabel="Braking actions per episode",
-style="grid=both, legend style={at={(0.5, -0.2)},anchor=north}",
+style="grid=both, legend columns=2, legend style={at={(0.5, -0.2)},anchor=north}",
 # title="Scenario 3: \$\\rho = 0.75\$"
 )
 
