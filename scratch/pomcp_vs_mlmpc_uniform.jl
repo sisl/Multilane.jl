@@ -26,7 +26,7 @@ pomcps = POMCPDPWSolver(
 )
 
 # agg_up = AggressivenessUpdater(nothing, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(123))
-up = BehaviorParticleUpdater(nothing, 1000, 0.1, 0.2, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(123))
+up = BehaviorParticleUpdater(nothing, 1000, 0.1, 0.25, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(123))
 
 
 solvers = Dict{UTF8String, Any}(
