@@ -83,7 +83,7 @@ function TestSet(ts::TestSet=TestSet(randstring()); kwargs...)
     fn = fieldnames(TestSet)
     for (k,v) in kwargs
         if k in fn
-            ts.(k) = v
+            setfield!(ts, k, v)
         elseif isa(v, AbstractVector)
             if ts.nb_problems == 1
                 ts.nb_problems = length(v)
@@ -142,7 +142,7 @@ function gen_initials(tests::AbstractVector, initials::Dict=Dict{String,Any}();
                       behaviors::Dict{String,Any}=get(initials, "behaviors", DEFAULT_BEHAVIORS),
                       generate_physical=false,
                       rng::AbstractRNG=MersenneTwister(rand(UInt32)))
-    initials=Dict{String,Any}([k=>v for (k,v) in initials])
+    initials=Dict{String,Any}(k=>v for (k,v) in initials)
     for t in tests
         add_initials!(initials, t, behaviors=behaviors, rng=rng, generate_physical=generate_physical)
     end
@@ -212,10 +212,10 @@ function add_initials!(objects::Dict{String, Any},
     end
 
     if different
-        pairs = [k=>typeof(v)[v,ts.solver_problem_params[k]] for (k,v) in ts.problem_params]
-        specific_table = DataFrame(Dict(pairs))
+        dict = Dict(k=>typeof(v)[v,ts.solver_problem_params[k]] for (k,v) in ts.problem_params)
+        specific_table = DataFrame(dict)
     else
-        vectors = Dict([(k, DataArray(typeof(v)[v])) for (k,v) in ts.problem_params])
+        vectors = Dict(k=>DataArray(typeof(v)[v]) for (k,v) in ts.problem_params)
         specific_table = DataFrame(vectors)
     end
 

@@ -11,7 +11,7 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
     stats = setup_stats(tests, objects)
     # shuffle so that batches take approximately the same amount of time
     sort!(stats, cols=:uuid)
-    objects["tests"] = Dict([t.key=>t for t in tests])
+    objects["tests"] = Dict(t.key=>t for t in tests)
 
     try
         mkdir(data_dir)

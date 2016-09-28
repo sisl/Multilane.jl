@@ -217,8 +217,8 @@ function assign_keys(problems::Vector, initial_states::Vector; rng=MersenneTwist
     p_keys = String[randstring(rng) for p in problems]
     is_keys = String[randstring(rng) for is in initial_states]
     return Dict{String, Any}(
-        "eval_problems"=>Dict{String,Any}([(p_keys[i], problems[i]) for i in 1:length(problems)]),
-        "initial_states"=>Dict{String,Any}([(is_keys[i], initial_states[i]) for i in 1:length(initial_states)]),
+        "eval_problems"=>Dict{String,Any}(p_keys[i]=>problems[i] for i in 1:length(problems)),
+        "initial_states"=>Dict{String,Any}(is_keys[i]=>initial_states[i] for i in 1:length(initial_states)),
     )
 end
 

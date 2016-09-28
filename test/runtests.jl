@@ -33,7 +33,7 @@ function test_hashing(s::AbstractString,ps)
 	d1[ps[1]] = 1
 	d1[ps[1]] = 1
 	assert(length(d1),1)
-	d2 = Dict{typeof(ps[1]),Int}([p=>3 for p in [ps[2];ps[2]]])
+	d2 = Dict{typeof(ps[1]),Int}(p=>3 for p in [ps[2];ps[2]])
 	assert(length(d2),1)
 	assert(get(d1,ps[1],0),1)
 end

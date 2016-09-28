@@ -139,8 +139,8 @@ function is_crash(mdp::Union{MLMDP{MLState,MLAction},MLPOMDP{MLState,MLAction}},
 	end
 
 	#another way to ignore ego car
-	id = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(s.cars[2:end])])
-	idp = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(sp.cars[2:end])])
+	id = Dict{Int,Int}(car.id=>i+1 for (i,car) in enumerate(s.cars[2:end]))
+	idp = Dict{Int,Int}(car.id=>i+1 for (i,car) in enumerate(sp.cars[2:end]))
 	ids = intersect(keys(id), keys(idp))
 	# NOTE: VVV
 	#if its not in both, then its entering or leaving and thus at extremum of track

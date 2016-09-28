@@ -731,8 +731,8 @@ function pdf(mdp::NoCrashProblem, sp::MLState, a::MLAction, o::MLObs)
 
   dist = 0.
 
-  id = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(s.cars[2:end])])
-	idp = Dict{Int,Int}([car.id=>i+1 for (i,car) in enumerate(sp.cars[2:end])])
+  id = Dict{Int,Int}(car.id=>i+1 for (i,car) in enumerate(s.cars[2:end]))
+	idp = Dict{Int,Int}(car.id=>i+1 for (i,car) in enumerate(sp.cars[2:end]))
 
   """
   Alternatively: assume x,y,v,lc are correct, uncertainty about behavior model
