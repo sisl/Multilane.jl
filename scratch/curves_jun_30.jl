@@ -18,7 +18,7 @@ problems = initials["problems"]
 initial_states = initials["initial_states"]
 
 # Calculate single points
-point_solvers = Dict{UTF8String, Solver}(
+point_solvers = Dict{String, Solver}(
     "random" => RandomSolver(),
     "heuristic" => SimpleSolver()
 )
@@ -43,7 +43,7 @@ rsolver = RobustMCTSSolver(
     rollout_solver=SimpleSolver(),
     rollout_nature=StochasticBehaviorNoCrashMDP(collect(values(problems))[1]))
 
-curve_solvers = Dict{UTF8String, Solver}(
+curve_solvers = Dict{String, Solver}(
     "dpw_2k" => dpws,
     "robust_10k" => RobustMLSolver(rsolver),
     "single_behavior_2k" => 

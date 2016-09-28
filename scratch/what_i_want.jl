@@ -1,7 +1,7 @@
 using Multilane
 using StatsBase
 
-solvers = Dict{UTF8String, Any}()
+solvers = Dict{String, Any}()
 
 dpws = DPWSolver(depth=20,
                  n_iterations=100,

@@ -214,17 +214,17 @@ function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
 end
 
 function assign_keys(problems::Vector, initial_states::Vector; rng=MersenneTwister(rand(UInt32)))
-    p_keys = UTF8String[randstring(rng) for p in problems]
-    is_keys = UTF8String[randstring(rng) for is in initial_states]
-    return Dict{UTF8String, Any}(
-        "eval_problems"=>Dict{UTF8String,Any}([(p_keys[i], problems[i]) for i in 1:length(problems)]),
-        "initial_states"=>Dict{UTF8String,Any}([(is_keys[i], initial_states[i]) for i in 1:length(initial_states)]),
+    p_keys = String[randstring(rng) for p in problems]
+    is_keys = String[randstring(rng) for is in initial_states]
+    return Dict{String, Any}(
+        "eval_problems"=>Dict{String,Any}([(p_keys[i], problems[i]) for i in 1:length(problems)]),
+        "initial_states"=>Dict{String,Any}([(is_keys[i], initial_states[i]) for i in 1:length(initial_states)]),
     )
 end
 
 function assign_keys(problems::AbstractVector; rng=MersenneTwister(rand(UInt32)))
-    p_keys = UTF8String[randstring(rng) for p in problems]
-    return Dict{UTF8String,Any}([(p_keys[i], problems[i]) for i in 1:length(problems)])
+    p_keys = String[randstring(rng) for p in problems]
+    return Dict{String,Any}([(p_keys[i], problems[i]) for i in 1:length(problems)])
 end
 
 

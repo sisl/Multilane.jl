@@ -1,3 +1,4 @@
+#=
 type RobustNoCrashMDP <: RobustMDP{MLPhysicalState, MLAction}
     base::MLMDP
 end
@@ -11,6 +12,7 @@ function RobustMCTS.next_model(gen::RandomModelGenerator, rmdp::RobustNoCrashMDP
     end
     return FixedBehaviorNoCrashMDP(behaviors, rmdp.base)
 end
+=#
 
 abstract EmbeddedBehaviorMDP <: MDP{MLPhysicalState, MLAction}
 
@@ -58,6 +60,7 @@ function initial_state(mdp::Union{FixedBehaviorNoCrashMDP,StochasticBehaviorNoCr
     return MLPhysicalState(full_state)
 end
 
+#=
 type RobustMLSolver <: Solver
     rsolver
 end
@@ -78,3 +81,4 @@ end
 function solve(s::RobustMLSolver, mdp::MLMDP)
     RobustMLPolicy(solve(s.rsolver, RobustNoCrashMDP(mdp::MLMDP)))
 end
+=#

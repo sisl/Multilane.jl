@@ -22,7 +22,7 @@ pomcps = POMCPDPWSolver(
 )
 
 
-solvers = Dict{UTF8String, Any}(
+solvers = Dict{String, Any}(
     "dpw"=>dpws,
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "pomcp"=>MLPOMDPSolver(pomcps, BehaviorRootUpdaterStub(0.05))

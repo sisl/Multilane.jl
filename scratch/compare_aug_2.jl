@@ -34,13 +34,13 @@ dmodel = NoCrashIDMMOBILModel(nb_cars, pp,
 base_problem = NoCrashMDP(dmodel, rmodel, _discount)
 
 
-problems = Dict{UTF8String, Any}()
+problems = Dict{String, Any}()
 key_rng = MersenneTwister(123)
 
 is_rng = MersenneTwister(123)
 init_phys_states = [MLPhysicalState(initial_state(base_problem, is_rng)) for i in 1:N]
-initial_states = Dict{UTF8String, Any}()
-state_lists = Dict{UTF8String, Any}()
+initial_states = Dict{String, Any}()
+state_lists = Dict{String, Any}()
 
 params = Dict{Symbol, Any}()
 params[:lambda] = Float64[0.1, 1., 10., 17.78, 31.62, 56.23, 100., 1000.]
@@ -58,8 +58,8 @@ for p in params
     end
 end
 
-param_table[:problem_key] = DataArray(UTF8String, nrow(param_table))
-param_table[:state_list_key] = DataArray(UTF8String, nrow(param_table))
+param_table[:problem_key] = DataArray(String, nrow(param_table))
+param_table[:state_list_key] = DataArray(String, nrow(param_table))
 
 for row in eachrow(param_table)
     key = randstring(key_rng)
@@ -86,7 +86,7 @@ for g in groupby(param_table, initial_relevant)
     state_lists[key] = collect(keys(these_states))
 end
 
-objects = Dict{UTF8String, Any}()
+objects = Dict{String, Any}()
 objects["problems"] = problems
 objects["param_table"] = param_table
 objects["initial_states"] = initial_states
@@ -122,7 +122,7 @@ pomcps = POMCPDPWSolver(
     rollout_solver=SimpleSolver())
 
 # for 20% and 100 percent, we need the upper bound, the heuristic and random
-point_solvers = Dict{UTF8String, Solver}(
+point_solvers = Dict{String, Solver}(
     "random" => RandomSolver(),
     "heuristic" => SimpleSolver()
 )
@@ -159,7 +159,7 @@ end
 
 #=
 # Calculate single points
-point_solvers = Dict{UTF8String, Solver}(
+point_solvers = Dict{String, Solver}(
     "random" => RandomSolver(),
     "heuristic" => SimpleSolver()
 )
@@ -194,7 +194,7 @@ pomcps = POMCPDPWSolver(
     rollout_solver=SimpleSolver()
 )
 
-curve_solvers = Dict{UTF8String, Solver}(
+curve_solvers = Dict{String, Solver}(
     "upper_bound" => dpws,
     "robust" => RobustMLSolver(rsolver),
     "single_behavior" => 

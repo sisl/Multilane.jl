@@ -4,7 +4,7 @@ using MCTS
 using JLD
 using POMCP
 
-behaviors = Dict{UTF8String,Any}(
+behaviors = Dict{String,Any}(
     "correlated" => standard_uniform(1.0, correlation=true)
 )
 
@@ -28,7 +28,7 @@ pomcps = POMCPDPWSolver(
 agg_up = AggressivenessUpdater(nothing, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(123))
 
 
-solvers = Dict{UTF8String, Any}(
+solvers = Dict{String, Any}(
     "dpw"=>dpws,
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "pomcp"=>MLPOMDPSolver(pomcps, agg_up),

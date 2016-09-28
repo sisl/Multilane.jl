@@ -17,7 +17,7 @@ normal = agents_behavior(normal_idm, 1)
 timid = agents_behavior(timid_idm, 2)
 aggressive = agents_behavior(aggressive_idm, 3)
 
-behaviors = Dict{UTF8String, Any}(
+behaviors = Dict{String, Any}(
     "all_normal" => DiscreteBehaviorSet([normal], WeightVec([1])),
 )
 
@@ -35,7 +35,7 @@ dpws = DPWSolver(depth=20,
                  k_state=4.0,
                  alpha_state=1/8,
                  rollout_solver=SimpleSolver()) 
-solvers = Dict{UTF8String, Any}(
+solvers = Dict{String, Any}(
     "dpw"=>dpws,
     "assume_normal"=>SingleBehaviorSolver(dpws, normal)
 )

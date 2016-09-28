@@ -6,7 +6,7 @@ using POMCP
 
 cors = [0.75]
 
-behaviors = Dict{UTF8String,Any}()
+behaviors = Dict{String,Any}()
 for cor in cors
     behaviors[@sprintf("cor_%03d", 100*cor)] = standard_uniform(1.0, correlation=cor)
 end
@@ -30,7 +30,7 @@ pomcps = POMCPDPWSolver(
 
 agg_up = AggressivenessUpdater(nothing, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(123))
 
-solvers = Dict{UTF8String, Any}(
+solvers = Dict{String, Any}(
     "dpw"=>dpws,
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "pomcp"=>MLPOMDPSolver(pomcps, agg_up),

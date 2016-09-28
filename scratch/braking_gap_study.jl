@@ -3,7 +3,7 @@ using StatsBase
 using MCTS
 using JLD
 
-behaviors=Dict{UTF8String,Any}(
+behaviors=Dict{String,Any}(
     "correlated" => standard_uniform(1.0, correlated=true)
 )
 
@@ -14,7 +14,7 @@ dpws = DPWSolver(depth=20,
                  alpha_state=1/8,
                  rollout_solver=SimpleSolver()) 
 
-solvers = Dict{UTF8String, Any}(
+solvers = Dict{String, Any}(
     "dpw"=>dpws,
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL)
 )

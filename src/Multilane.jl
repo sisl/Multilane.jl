@@ -15,7 +15,7 @@ import Distributions: Dirichlet, Exponential, Gamma, rand
 
 import Iterators
 
-import Base: ==, hash, length, vec, +, -, *, .*, ^, .^, .-, /, sqrt, zero, nan, abs, max
+import Base: ==, hash, length, vec, +, -, *, .*, ^, .^, .-, /, sqrt, zero, abs, max
 
 # import POMDPToolbox: Particle, ParticleBelief
 
@@ -24,7 +24,7 @@ using ProgressMeter
 using PmapProgressMeter
 using POMDPToolbox
 import MCTS # so that we can define node_tag, etc.
-using RobustMCTS # for RobustMDP
+# using RobustMCTS # for RobustMDP
 import POMCP # for particle filter
 
 # using Reel

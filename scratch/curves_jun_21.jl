@@ -33,7 +33,7 @@ isrng = MersenneTwister(123)
 initial_states = MLState[initial_state(mdp, isrng) for i in 1:N]
 
 # Calculate single points
-point_solvers = Dict{UTF8String, Solver}(
+point_solvers = Dict{String, Solver}(
     "random" => RandomSolver(),
     "heuristic" => SimpleSolver()
 )
@@ -45,7 +45,7 @@ dpws = DPWSolver(depth=10,
                  exploration_constant=100.0,
                  rollout_solver=SimpleSolver()) 
 
-curve_solvers = Dict{UTF8String, Solver}(
+curve_solvers = Dict{String, Solver}(
     "dpw" => dpws,
     # "robust" => 
     #     Robust

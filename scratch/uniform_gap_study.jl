@@ -3,7 +3,7 @@ using StatsBase
 using MCTS
 using JLD
 
-behaviors=Dict{UTF8String,Any}()
+behaviors=Dict{String,Any}()
 for p in linspace(0., 1.25, 6)
     behaviors[@sprintf("uniform_%03d", 100*p)] = standard_uniform(p)
 end
@@ -14,7 +14,7 @@ dpws = DPWSolver(depth=20,
                  k_state=4.0,
                  alpha_state=1/8,
                  rollout_solver=SimpleSolver()) 
-solvers = Dict{UTF8String, Any}(
+solvers = Dict{String, Any}(
     "dpw"=>dpws,
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL)
 )

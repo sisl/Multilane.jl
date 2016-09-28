@@ -37,7 +37,7 @@ end
 
 const NINE_BEHAVIORS = generate_nine_behaviors()
 
-const DEFAULT_BEHAVIORS = Dict{UTF8String, Any}(
+const DEFAULT_BEHAVIORS = Dict{String, Any}(
     # "3_even" => DiscreteBehaviorSet(THREE_BEHAVIORS, WeightVec(ones(3))),
     # "9_even" => DiscreteBehaviorSet(NINE_BEHAVIORS, WeightVec(ones(9))),
     "agents" => DiscreteBehaviorSet([NORMAL, TIMID, AGGRESSIVE], WeightVec(ones(3))),
@@ -56,14 +56,14 @@ const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS l
 const INITIAL_RELEVANT = [:behaviors]
 
 type TestSet
-    solver_key::UTF8String
+    solver_key::String
     problem_params::Dict{Symbol, Any}
     solver_problem_params::Dict{Symbol, Any}
     linked_problem_params::Dict{Symbol, AbstractVector}
     N::Int # number of initial conditions
     nb_problems::Int
     rng_seed::UInt32
-    key::UTF8String
+    key::String
 end
 
 """
@@ -119,7 +119,7 @@ function TestSet(key::AbstractString=randstring())
     return TestSet("",
             deepcopy(DEFAULT_PROBLEM_PARAMS),
             deepcopy(DEFAULT_PROBLEM_PARAMS),
-            Dict{UTF8String, AbstractVector}(),
+            Dict{String, AbstractVector}(),
             500, 1, 1, key)
 end
 
@@ -138,11 +138,11 @@ function TestSet(;kwargs...)
 end
 =#
 
-function gen_initials(tests::AbstractVector, initials::Dict=Dict{UTF8String,Any}();
-                      behaviors::Dict{UTF8String,Any}=get(initials, "behaviors", DEFAULT_BEHAVIORS),
+function gen_initials(tests::AbstractVector, initials::Dict=Dict{String,Any}();
+                      behaviors::Dict{String,Any}=get(initials, "behaviors", DEFAULT_BEHAVIORS),
                       generate_physical=false,
                       rng::AbstractRNG=MersenneTwister(rand(UInt32)))
-    initials=Dict{UTF8String,Any}([k=>v for (k,v) in initials])
+    initials=Dict{String,Any}([k=>v for (k,v) in initials])
     for t in tests
         add_initials!(initials, t, behaviors=behaviors, rng=rng, generate_physical=generate_physical)
     end
@@ -165,7 +165,7 @@ function gen_base_problem()
     base_problem = NoCrashMDP(dmodel, rmodel, _discount)
 end
 
-function gen_problem(row, behaviors::Dict{UTF8String,Any}, rng::AbstractRNG)
+function gen_problem(row, behaviors::Dict{String,Any}, rng::AbstractRNG)
     problem = deepcopy(gen_base_problem())
     # lambda
     problem.rmodel.cost_dangerous_brake = row[:lambda]*problem.rmodel.reward_in_desired_lane
@@ -186,9 +186,9 @@ function gen_initial_physical(base_problem, N; rng::AbstractRNG=MersenneTwister(
     return [MLPhysicalState(relaxed_initial_state(base_problem, 200, rng)) for i in 1:N]
 end
 
-function add_initials!(objects::Dict{UTF8String, Any},
+function add_initials!(objects::Dict{String, Any},
                        ts::TestSet;
-                       behaviors::Dict{UTF8String,Any}=get(objects, "behaviors"),
+                       behaviors::Dict{String,Any}=get(objects, "behaviors"),
                        rng::AbstractRNG=MersenneTwister(rand(UInt32)),
                        generate_physical=false)
 
@@ -226,7 +226,7 @@ function add_initials!(objects::Dict{UTF8String, Any},
     end
     param_list = names(new_table)
 
-    problems = get(objects, "problems", Dict{UTF8String,Any}())
+    problems = get(objects, "problems", Dict{String,Any}())
     if haskey(objects, "param_table")
         param_table = objects["param_table"]
         for p in param_list
@@ -239,8 +239,8 @@ function add_initials!(objects::Dict{UTF8String, Any},
         param_table = join(param_table, new_table, on=param_list, kind=:outer)
     else
         param_table = new_table
-        param_table[:problem_key] = DataArray(UTF8String, nrow(param_table))
-        param_table[:state_list_key] = DataArray(UTF8String, nrow(param_table))
+        param_table[:problem_key] = DataArray(String, nrow(param_table))
+        param_table[:state_list_key] = DataArray(String, nrow(param_table))
     end
 
     # go through and make sure each row has a problem
@@ -252,8 +252,8 @@ function add_initials!(objects::Dict{UTF8String, Any},
         end
     end
 
-    initial_states = get(objects, "initial_states", Dict{UTF8String,Any}())
-    state_lists = get(objects, "state_lists", Dict{UTF8String,Any}())
+    initial_states = get(objects, "initial_states", Dict{String,Any}())
+    state_lists = get(objects, "state_lists", Dict{String,Any}())
 
     if haskey(objects, "initial_physical_states")
         initial_physical_states = objects["initial_physical_states"]
@@ -304,7 +304,7 @@ function find_row(table::DataFrame, vals::Dict{Symbol,Any})
     end
 end
 
-function setup_stats(tests::AbstractVector, objects::Dict{UTF8String,Any})
+function setup_stats(tests::AbstractVector, objects::Dict{String,Any})
     param_table = objects["param_table"]
     state_lists = objects["state_lists"]
 
@@ -313,11 +313,11 @@ function setup_stats(tests::AbstractVector, objects::Dict{UTF8String,Any})
     stats = DataFrame(
         id=1:nb_sims,
         uuid=UInt128[Base.Random.uuid4() for i in 1:nb_sims],
-        solver_key=DataArray(UTF8String,nb_sims),
-        problem_key=DataArray(UTF8String,nb_sims),
-        solver_problem_key=DataArray(UTF8String,nb_sims),
-        test_key=DataArray(UTF8String,nb_sims),
-        initial_key=DataArray(UTF8String,nb_sims),
+        solver_key=DataArray(String,nb_sims),
+        problem_key=DataArray(String,nb_sims),
+        solver_problem_key=DataArray(String,nb_sims),
+        test_key=DataArray(String,nb_sims),
+        initial_key=DataArray(String,nb_sims),
         rng_seed=DataArray(Int,nb_sims),
         time=ones(nb_sims).*time(),
     )
@@ -360,7 +360,7 @@ end
 """
 Run the simulations in tests.
 """
-function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
+function evaluate(tests::AbstractVector, objects::Dict{String,Any};
                   parallel=true,
                   desc="Progress: ",
                   metrics::AbstractVector=[],
@@ -377,7 +377,7 @@ function evaluate(tests::AbstractVector, objects::Dict{UTF8String,Any};
     results = deepcopy(objects)
     results["stats"] = stats
     results["histories"] = sims
-    results["tests"] = Dict{UTF8String,Any}([(t.key, t) for t in tests])
+    results["tests"] = Dict{String,Any}([(t.key, t) for t in tests])
     return results
 
 end

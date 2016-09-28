@@ -5,7 +5,7 @@ using JLD
 # using Plots
 # using StatPlots
 
-solvers = Dict{UTF8String, Any}(
+solvers = Dict{String, Any}(
     "normal" => BehaviorSolver(Multilane.NORMAL, false, MersenneTwister(123)),
     "lane_seeking" => IDMLaneSeekingSolver(Multilane.NORMAL, MersenneTwister(123))
 )

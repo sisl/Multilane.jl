@@ -20,7 +20,7 @@ initial_states = initials["initial_states"]
 representative_problem = Dict(take(problems,1))
 
 # Calculate single points
-point_solvers = Dict{UTF8String, Solver}(
+point_solvers = Dict{String, Solver}(
     "random" => RandomSolver(),
     "heuristic" => SimpleSolver()
 )
@@ -55,7 +55,7 @@ pomcps = POMCPDPWSolver(
     rollout_solver=SimpleSolver()
 )
 
-curve_solvers = Dict{UTF8String, Solver}(
+curve_solvers = Dict{String, Solver}(
     "upper_bound" => dpws,
     "robust" => RobustMLSolver(rsolver),
     "single_behavior" => 

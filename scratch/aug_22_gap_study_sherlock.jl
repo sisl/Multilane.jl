@@ -3,7 +3,7 @@ using StatsBase
 using MCTS
 using JLD
 
-behaviors=Dict{UTF8String,Any}()
+behaviors=Dict{String,Any}()
 for p in linspace(0., 3/4, 4)
     wv = (1-p)/8*ones(9)
     wv[1] = p
@@ -17,7 +17,7 @@ dpws = DPWSolver(depth=20,
                  k_state=4.0,
                  alpha_state=1/8,
                  rollout_solver=SimpleSolver()) 
-solvers = Dict{UTF8String, Any}(
+solvers = Dict{String, Any}(
     "dpw"=>dpws,
     "assume_normal"=>SingleBehaviorSolver(dpws, Multilane.NORMAL)
 )
