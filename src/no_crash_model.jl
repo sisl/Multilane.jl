@@ -28,6 +28,8 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     dist_var::Float64 # variance of distance--can back out rate, shape param from this
 
     lane_terminate::Bool # if true, terminate the simulation when the car has reached the desired lane
+    brake_terminate_thresh::Float64 # terminate simulation if braking is above this (always positive)
+    # max_dist::Float64 # terminate simulation if 
 end
 
 #XXX temporary
@@ -36,6 +38,7 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
                               vel_sigma = 0.5,
                               lane_terminate=false,
                               p_appear=0.5,
+                              brake_terminate_thresh=Inf,
                               behaviors=DiscreteBehaviorSet(IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
                                                  enumerate(Iterators.product(["cautious","normal","aggressive"],
                                                         [pp.v_slow+0.5;pp.v_med;pp.v_fast],
@@ -52,7 +55,8 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
         vel_sigma, # vel_sigma
         ones(pp.nb_lanes), # lane weights
         10.^2,
-        lane_terminate
+        lane_terminate,
+        brake_terminate_thresh
     )
 end
 
@@ -254,8 +258,8 @@ function is_safe(mdp::NoCrashProblem, s::Union{MLState,MLObs}, a::MLAction)
 end
 
 #XXX temp
-create_state(p::NoCrashProblem) = MLState(false, 0.0, 0.0, Array(CarState, p.dmodel.nb_cars))
-create_observation(pomdp::NoCrashPOMDP) = MLObs(false, 0.0, 0.0, Array(CarStateObs, pomdp.dmodel.nb_cars))
+create_state(p::NoCrashProblem) = MLState(false, false, 0.0, 0.0, Array(CarState, p.dmodel.nb_cars))
+create_observation(pomdp::NoCrashPOMDP) = MLObs(false, false, 0.0, 0.0, Array(CarStateObs, pomdp.dmodel.nb_cars))
 
 function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
@@ -263,6 +267,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
     dt = pp.dt
     nb_cars = length(s.cars)
     resize!(sp.cars, nb_cars)
+    sp.terminal = s.terminal
 
     ## Calculate deltas ##
     #====================#
@@ -384,6 +389,10 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         velp = max(car.vel + dvs[i], 0.0) # removed speed limits on 8/13
         # note lane change is updated above
 
+        if dvs[i]/dt < -mdp.dmodel.brake_terminate_thresh
+            sp.terminal = Nullable(:hard_brake)
+        end
+
         # check if a lane was crossed and snap back to it
         if isinteger(car.y)
             # prevent a multi-lane change in a single timestep
@@ -493,6 +502,10 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                 push!(sp.cars, CarState(pp.lane_length, lane, vel, 0.0, behavior, next_id))
             end
         end
+    end
+
+    if mdp.dmodel.lane_terminate && sp.cars[1].y == mdp.rmodel.desired_lane
+        sp.terminal = true
     end
 
     # sp.crashed = is_crash(mdp, s, sp, warning=false)
@@ -719,8 +732,8 @@ function generate_sor(pomdp::NoCrashPOMDP, s::MLState, a::MLAction, rng::Abstrac
     return sp, o, r
 end
 
+#=
 function pdf(mdp::NoCrashProblem, sp::MLState, a::MLAction, o::MLObs)
-
   """
   P(o|s', a) (unweighted)
   The degree of similarity between states?
@@ -728,29 +741,26 @@ function pdf(mdp::NoCrashProblem, sp::MLState, a::MLAction, o::MLObs)
 
   Ignore ego car: presumably will have mostly deterministic dynamics?
   """
-
   dist = 0.
-
   id = Dict{Int,Int}(car.id=>i+1 for (i,car) in enumerate(s.cars[2:end]))
-	idp = Dict{Int,Int}(car.id=>i+1 for (i,car) in enumerate(sp.cars[2:end]))
-
+  idp = Dict{Int,Int}(car.id=>i+1 for (i,car) in enumerate(sp.cars[2:end]))
   """
   Alternatively: assume x,y,v,lc are correct, uncertainty about behavior model
   """
-
-
 end
+=#
 
 discount(mdp::Union{MLMDP,MLPOMDP}) = mdp.discount
-isterminal(mdp::Union{MLMDP,MLPOMDP},s::MLState) = s.crashed
+isterminal(mdp::Union{MLMDP,MLPOMDP},s::MLState) = !isnull(s.terminal)
 
+#=
 function isterminal(mdp::NoCrashProblem, s::MLState)
     if s.crashed
         return true
     elseif mdp.dmodel.lane_terminate && s.cars[1].y == mdp.rmodel.desired_lane
         return true
-        println("lane termination")
     else
         return false
     end
 end
+=#

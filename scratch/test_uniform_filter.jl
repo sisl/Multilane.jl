@@ -10,7 +10,7 @@ using Plots
 
 rng = MersenneTwister(58)
 
-behaviors = standard_uniform(1.0, correlated=false)
+behaviors = standard_uniform(1.0, correlation=false)
 
 nb_lanes = 4
 desired_lane_reward = 10.

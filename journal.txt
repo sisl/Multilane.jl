@@ -1,3 +1,11 @@
+Tue 27 Sep 2016 07:29:58 PM PDT
+
+[ ] Create success/failure problem
+    Ends after T seconds or when lane is reached or when braking more than 4m/s^2
+    +1 reward if transition into target lane
+    
+    
+
 BAD THINGS
 env_cars instead of cars
 

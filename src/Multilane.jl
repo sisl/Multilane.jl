@@ -111,7 +111,8 @@ export #data structure stuff
     fill_stats!,
     sbatch_spawn,
     gather_results,
-    relaxed_initial_state
+    relaxed_initial_state,
+    nan
 
 export # POMDP belief stuff
     ParticleUpdater,

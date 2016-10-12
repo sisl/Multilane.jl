@@ -23,6 +23,21 @@ function assert(expr,val,flag::Bool)
 	end
 end
 
+function Multilane.MLState(pos::Real, vel::Real, cars::Array{CarState,1}, x::Real=50.)
+    #x = mdp.phys_param.lane_length/2.
+    insert!(cars,1,CarState(x, pos, vel, 0, Multilane.NORMAL, 0))
+    return MLState(false, false, 0.0, 0.0, cars)
+end
+# function MLState(crashed::Bool,pos::Real,vel::Real,cars::Array{CarState,1},x::Real=50.)
+#     insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
+#     return MLState(false, crashed, 0.0, 0.0, cars)
+# end
+function Multilane.MLState(crashed::Bool,x::Float64,t::Float64,pos::Real,vel::Real,cars::Array{CarState,1},x_ego::Real=50.)
+    insert!(cars,1,CarState(x_ego, pos, vel, 0, Multilane.NORMAL, 0))
+    return MLState(crashed, crashed, x, t, cars)
+end
+
+
 function test_hashing(s::AbstractString,ps)
 	##TODO: make a more comprehensive test that uses more of the created objects
 	println("\t\tTesting $s Hashing")

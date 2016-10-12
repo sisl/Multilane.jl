@@ -43,7 +43,7 @@ function test_get_neighborhood()
 
 	#just make sure it doesn't explode--this should be handled by get_mobil_lane_change
 	dmodel = IDMMOBILModel(length(cs), pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,1)
 	assert(length(nbhd) == 6)
 	for jdx in nbhd
@@ -53,7 +53,7 @@ function test_get_neighborhood()
 	cs = CarState[CarState(12.,2,31.,0,bs[1],2),CarState(6.,2,31.,0,bs[1],3),CarState(0.,2,31.,0,bs[1],4),CarState(12.,1,31.,0,bs[1],5),CarState(0.,1,31.,0,bs[1],6)]
 
 	dmodel = IDMMOBILModel(length(cs), pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,2)
 	assert(length(nbhd) == 6)
 	for jdx in nbhd[[3;6]]
@@ -67,7 +67,7 @@ function test_get_neighborhood()
 	cs = CarState[CarState(12.,2,31.,0,bs[1],7),CarState(0.,2,31.,0,bs[1],8),CarState(6.,2,31.,0,bs[1],9),CarState(12.,3,31.,0,bs[1],10),CarState(0.,3,31.,0,bs[1],11)]
 
 	dmodel = IDMMOBILModel(length(cs), pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,3)
 	assert(length(nbhd) == 6)
 	for jdx in nbhd[[1;4]]
@@ -81,7 +81,7 @@ function test_get_neighborhood()
 	cs = CarState[CarState(0.,3,31.,0,bs[1],12),CarState(0.,2,31.,0,bs[1],13),CarState(0.,1,31.,0,bs[1],14),CarState(6.,2,31.,0,bs[1],15)]
 
 	dmodel = IDMMOBILModel(length(cs), pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,4)
 	assert(length(nbhd) , 6)
 	for jdx in nbhd[[1;2;3]]
@@ -94,7 +94,7 @@ function test_get_neighborhood()
 	cs = CarState[CarState(12.,3,31.,0,bs[1],16),CarState(12.,2,31.,0,bs[1],17),CarState(12.,1,31.,0,bs[1],18),CarState(6.,2,31.,0,bs[1],19)]
 
 	dmodel = IDMMOBILModel(length(cs), pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,4)
 	assert(length(nbhd) , 6)
 	for jdx in nbhd[[4;5;6]]
@@ -107,7 +107,7 @@ function test_get_neighborhood()
 	cs = CarState[CarState(12.,2,31.,0,bs[1],20),CarState(0.,2,31.,0,bs[1],21),CarState(12.,1,31.,0,bs[1],22),CarState(0.,1,31.,0,bs[1],23),CarState(12.,3,35.,0,bs[1],24),CarState(0.,3,35.,0,bs[1],25),CarState(6.,2,31.,0,bs[1],26)]
 
 	dmodel = IDMMOBILModel(length(cs), pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,7)
 	assert(length(nbhd) , 6)
 	for jdx in nbhd
@@ -132,7 +132,7 @@ function test_is_lanechange_dangerous()
 	#CASE: no one, in the way
 	cs = CarState[CarState(6.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),27)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,1)
 	assert(is_lanechange_dangerous(pp,s,nbhd,1,0),false)
 	assert(is_lanechange_dangerous(pp,s,nbhd,1,1),false)
@@ -141,44 +141,44 @@ function test_is_lanechange_dangerous()
 	#CASE: person close by, same velocity
 	cs = CarState[CarState(6.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),28),CarState(12.,3,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),29)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,1)
 	assert(is_lanechange_dangerous(pp,s,nbhd,1,1),false)
 
 	#slightly behind
 	cs = CarState[CarState(6.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),30),CarState(0.,3,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),31)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,1)
 	assert(is_lanechange_dangerous(pp,s,nbhd,1,1),false)
 	#CASE: person a little behind, slower
 	cs = CarState[CarState(6.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),32),CarState(1.,3,32.,0,IDMMOBILBehavior("aggressive",35.,4.,1),33)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,1)
 	assert(is_lanechange_dangerous(pp,s,nbhd,1,1),false)
 	#CASE: person a little ahead, faster
 	cs = CarState[CarState(6.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),34),CarState(1.,3,32.,0,IDMMOBILBehavior("aggressive",35.,4.,1),35)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,2)
 	assert(is_lanechange_dangerous(pp,s,nbhd,2,-1),false)
 	#CASE: person a little behind, faster
 	cs = CarState[CarState(6.,2,32.,0,IDMMOBILBehavior("aggressive",35.,4.,1),36),CarState(1.,3,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),37)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,1)
 	assert(is_lanechange_dangerous(pp,s,nbhd,1,1),true)
 	#CASE: person a little ahead, slower
 	cs = CarState[CarState(6.,2,32.,0,IDMMOBILBehavior("aggressive",35.,4.,1),38),CarState(1.,3,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),39)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,2)
 	assert(is_lanechange_dangerous(pp,s,nbhd,2,-1),true)
 	#CASE: next to each other
 	cs = CarState[CarState(6.,2,32.,0,IDMMOBILBehavior("aggressive",35.,4.,1),40),CarState(6.,3,33.,0,IDMMOBILBehavior("aggressive",35.,4.,1),41)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,2)
 	assert(is_lanechange_dangerous(pp,s,nbhd,2,-1),true)
 end
@@ -192,7 +192,7 @@ function test_get_rear_accel()
 	#No one in that position
 	cs = CarState[CarState(6.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),42)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,1)
 	a,a_ = get_rear_accel(pp,s,nbhd,1,0)
 	assert(a,0.)
@@ -209,7 +209,7 @@ function test_get_rear_accel()
 								CarState(0.,2,31.,0,IDMMOBILBehavior("aggressive",31.,4.,1),44),
 								CarState(0.,1,27.,0,IDMMOBILBehavior("aggressive",27.,4.,1),45)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,1)
 	a,a_ = get_rear_accel(pp,s,nbhd,1,0)
 	assert(a_,a,>=)
@@ -232,38 +232,38 @@ function test_get_mobil_lane_change()
 								CarState(11.,1,27.,0,IDMMOBILBehavior("cautious",27.,4.,1),2),
 								CarState(6.,1,31.,0,IDMMOBILBehavior("aggressive",35.,4.,1),3)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,3)
 	assert(get_mobil_lane_change(s.cars[3].behavior, pp,s,nbhd,3),1)
 	#CASE: it's slower and there is space
 	cs = CarState[CarState(12.,2,31.,0,IDMMOBILBehavior("cautious",31.,4.,1),6),CarState(11.,1,35.,0,IDMMOBILBehavior("cautious",35.,4.,1),5),CarState(6.,1,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),4)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,3)
 	assert(get_mobil_lane_change(s.cars[3].behavior, pp,s,nbhd,3),0)
 	#CASE: someone is going fast behind me and i'm slow
 	cs = CarState[CarState(0.,1,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),7),CarState(6.,1,27.,0,IDMMOBILBehavior("cautious",27.,4.,1),8)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,2)
 	assert(get_mobil_lane_change(s.cars[2].behavior,pp,s,nbhd,2),1)
 	###repeat for other side
 	#CASE: it's faster and there is space
 	cs = CarState[CarState(12.,1,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),9),CarState(11.,2,27.,0,IDMMOBILBehavior("cautious",27.,4.,1),10),CarState(6.,2,31.,0,IDMMOBILBehavior("aggressive",35.,4.,1),11)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,3)
 	assert(get_mobil_lane_change(s.cars[3].behavior,pp,s,nbhd,3),-1)
 	#CASE: it's slower and there is space
 	cs = CarState[CarState(12.,1,31.,0,IDMMOBILBehavior("cautious",31.,4.,1),0),CarState(11.,2,35.,0,IDMMOBILBehavior("cautious",35.,4.,1),0),CarState(6.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),0)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,3)
 	assert(get_mobil_lane_change(s.cars[3].behavior, pp,s,nbhd,3),0)
 	#CASE: someone is going fast behind me and i'm slow
 	cs = CarState[CarState(0.,2,35.,0,IDMMOBILBehavior("aggressive",35.,4.,1),0),CarState(6.,2,27.,0,IDMMOBILBehavior("cautious",27.,4.,1),0)]
 	dmodel = IDMMOBILModel(length(cs),pp)
-	s = MLState(false,0.0,0.0,cs)
+	s = MLState(false,false,0.0,0.0,cs)
 	nbhd = get_neighborhood(pp,s,2)
 	assert(get_mobil_lane_change(s.cars[2].behavior,pp,s,nbhd,2),-1)
 end
@@ -278,7 +278,7 @@ function failure_2()
     dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
     mdp = NoCrashMDP(dmodel, rmodel, _discount);
     rng = MersenneTwister(2)
-    s = Multilane.MLState(false,0.0,0.0,[Multilane.CarState(50.0,1.0,27.0,0.0,Multilane.NORMAL,0),Multilane.CarState(45.66875308699299,2.0,29.042803490064543,-0.6666666666666666,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,35.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),9),0),Multilane.CarState(85.41074952313767,3.0,29.831781823255017,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,31.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),6),0),Multilane.CarState(13.78112065279241,3.0,27.0,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),8),0),Multilane.CarState(5.897872040018292,1.0,27.39955827605183,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),8),0)])
+    s = Multilane.MLState(false,false,0.0,0.0,[Multilane.CarState(50.0,1.0,27.0,0.0,Multilane.NORMAL,0),Multilane.CarState(45.66875308699299,2.0,29.042803490064543,-0.6666666666666666,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,35.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),9),0),Multilane.CarState(85.41074952313767,3.0,29.831781823255017,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,31.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),6),0),Multilane.CarState(13.78112065279241,3.0,27.0,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),8),0),Multilane.CarState(5.897872040018292,1.0,27.39955827605183,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),8),0)])
     a = MLAction(0.0,0.0)
     sp, r = generate_sr(mdp, s, a, rng)
     @test !is_crash(mdp, s, sp)

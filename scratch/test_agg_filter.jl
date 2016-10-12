@@ -12,7 +12,7 @@ rng = MersenneTwister(58)
 
 # behaviors = DiscreteBehaviorSet([normal, timid, aggressive], WeightVec(ones(3)))
 # behaviors = DiscreteBehaviorSet(Multilane.NINE_BEHAVIORS, WeightVec(ones(9)))
-behaviors = standard_uniform(1.0, correlated=true)
+behaviors = standard_uniform(1.0, correlation=true)
 
 nb_lanes = 4
 desired_lane_reward = 10.
@@ -106,7 +106,7 @@ end
 # labels=collect(2:max_id)',
 plot(average_error, linewidth=4, linecolor=:black, title="Aggressiveness Estimate Error", label="")
 for i in 1:size(errors, 2)
-    plot!(errors[:,i], label=(i-1))
+    plot!(errors[:,i], label="")
 end
 plot!(stds, linestyle=:dash, labels="")
 gui()

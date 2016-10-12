@@ -57,40 +57,34 @@ Base.hash(a::CarState, h::UInt64=zero(UInt64)) = hash(a.vel, hash(a.x, hash(a.y,
 Base.repr(c::CarState) = "CarState($(c.x),$(c.y),$(c.vel),$(c.lane_change),$(c.behavior),$(c.id))"
 
 type MLState
-    crashed::Bool # A crash occurs at the state transition. All crashed states are considered equal
     x::Float64 # total distance traveled by the ego
     t::Float64 # total time of the simulation
 	cars::Array{CarState,1} #NOTE ego car is first car
+    terminal::Nullable{Symbol} # if not null, this is a terminal state, see below
 end
 # more constructors at bottom
 
+#=
+Terminal states: Each terminal state is not considered different, ther terminal states are
+    :crashed
+    :reached_lane
+    :hard_brake
+=#
+
 function ==(a::MLState, b::MLState)
-    if a.crashed && b.crashed
+    if a.terminal && b.terminal
         return true
-    elseif a.crashed || b.crashed # only one has crashed
+    elseif a.terminal || b.terminal # only one has crashed
         return false
     end
     return a.x == b.x && a.t == b.t && a.cars == b.cars #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
 end
 function Base.hash(a::MLState, h::UInt64=zero(UInt64))
-    if a.crashed
-        return hash(a.crashed, h)
+    if a.terminal
+        return hash(a.terminal, h)
     end
     return hash(a.x, hash(a.t, hash(a.cars,h)))#hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
 end
-
-#= # don't think we need a special repr anymore since the behaviors are not nullable
-function Base.repr(s::MLState)
-    rstring = "MLState($(s.crashed), CarState["
-    for (i,c) in enumerate(s.cars)
-        rstring = string(rstring, "$(repr(c))")
-        if i < length(s.cars)
-            rstring = string(rstring, ",")
-        end
-    end
-    return string(rstring, "])")
-end
-=#
 
 immutable MLAction
     acc::Float64
@@ -129,6 +123,7 @@ function CarState(cps::CarPhysicalState, behavior::BehaviorModel)
 end
 
 immutable MLPhysicalState
+    terminal::Bool
     crashed::Bool
     x::Float64
     t::Float64
@@ -136,36 +131,21 @@ immutable MLPhysicalState
 end
 typealias MLObs MLPhysicalState
 
-MLPhysicalState(s::MLState) = MLPhysicalState(s.crashed, s.x, s.t, CarPhysicalState[CarPhysicalState(cs) for cs in s.cars])
+MLPhysicalState(s::MLState) = MLPhysicalState(s.terminal, s.crashed, s.x, s.t, CarPhysicalState[CarPhysicalState(cs) for cs in s.cars])
 function ==(a::MLPhysicalState, b::MLPhysicalState)
-    if a.crashed && b.crashed
+    if a.terminal && b.terminal
         return true
-    elseif a.crashed || b.crashed # only one has crashed
+    elseif a.terminal || b.terminal # only one has crashed
         return false
     end
     return a.x == b.x && a.t == b.t && a.cars == b.cars #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
 end
 function Base.hash(a::MLPhysicalState, h::UInt64=zero(UInt64))
-    if a.crashed
-        return hash(a.crashed, h)
+    if a.terminal
+        return hash(a.terminal, h)
     end
     return hash(a.x, hash(a.t, hash(a.cars,h))) #hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
 end
 
-MLState(ps::MLPhysicalState, cars::Vector{CarState}) = MLState(ps.crashed, ps.x, ps.t, cars)
-MLState(s::MLState, cars::Vector{CarState}) = MLState(s.crashed, s.x, s.t, cars)
-
-# below are for tests only
-function MLState(pos::Real, vel::Real, cars::Array{CarState,1}, x::Real=50.)
-    #x = mdp.phys_param.lane_length/2.
-    insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
-    return MLState(false, 0.0, 0.0, cars)
-end
-function MLState(crashed::Bool,pos::Real,vel::Real,cars::Array{CarState,1},x::Real=50.)
-    insert!(cars,1,CarState(x, pos, vel, 0, NORMAL, 0))
-    return MLState(crashed, 0.0, 0.0, cars)
-end
-function MLState(crashed::Bool,x::Float64,t::Float64,pos::Real,vel::Real,cars::Array{CarState,1},x_ego::Real=50.)
-    insert!(cars,1,CarState(x_ego, pos, vel, 0, NORMAL, 0))
-    return MLState(crashed, x, t, cars)
-end
+MLState(ps::MLPhysicalState, cars::Vector{CarState}) = MLState(ps.terminal, ps.crashed, ps.x, ps.t, cars)
+MLState(s::MLState, cars::Vector{CarState}) = MLState(s.terminal, s.crashed, s.x, s.t, cars)
