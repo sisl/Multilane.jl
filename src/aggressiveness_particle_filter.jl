@@ -16,13 +16,15 @@ function rand(rng::AbstractRNG,
                 sample_noises::Vector{Float64},
                 s::MLState=MLState(b.physical, Array(CarState, length(b.physical.cars))))
 
-    s.crashed = b.physical.crashed
+    s.x = b.physical.x
+    s.t = b.physical.t
     resize!(s.cars, length(b.physical.cars))
     for i in 1:length(s.cars)
         particle = sample(rng, b.particles[i], WeightVec(b.weights[i]))
         nudged = max(min(particle+sample_noises[i]*randn(rng),1.0),0.0)
         s.cars[i] = CarState(b.physical.cars[i], create_model(b.gen, nudged))
     end
+    s.terminal = b.physical.terminal
     return s
 end
 

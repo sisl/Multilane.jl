@@ -1,3 +1,11 @@
+Tue 01 Nov 2016 12:18:57 PM PDT
+
+[ ] get correlation_trend.jl to run and then run it on sherlock
+
+Fri 14 Oct 2016 11:07:04 AM PDT
+
+make an x=correlation y=fraction success graph
+
 Tue 27 Sep 2016 07:29:58 PM PDT
 
 [ ] Create success/failure problem

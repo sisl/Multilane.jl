@@ -27,11 +27,11 @@ end
 
 typical_velocity(b::IDMMOBILBehavior) = b.p_idm.v0
 
-generate_accel(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
+gen_accel(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
 
-generate_lane_change(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
+gen_lane_change(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
 
-function generate_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function gen_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 	pp = dmodel.phys_param
 	dt = pp.dt
 	car = s.cars[idx]
@@ -51,7 +51,7 @@ function generate_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsMode
 	return max(acc, -dmodel.phys_param.brake_limit)
 end
 
-function generate_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function gen_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 
 	pp = dmodel.phys_param
 	dt = pp.dt
@@ -143,7 +143,7 @@ function closest_car(dmodel::IDMMOBILModel, s::MLState, nbhd::Array{Int,1}, idx:
 
 end
 
-function generate_accel(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function gen_accel(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 	closest_car = closest_car(dmodel,s,neighborhood,idx,bmodel.jerk)
 	if closest_car == 0
 		return 0.
@@ -162,7 +162,7 @@ function generate_accel(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, n
 
 end
 
-function generate_lane_change(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+function gen_lane_change(bmodel::AvoidModel, dmodel::IDMMOBILModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 
 	closest_car = closest_car(dmodel,s,neighborhood,idx,bmodel.jerk)
 	if closest_car == 0

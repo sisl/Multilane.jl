@@ -17,7 +17,7 @@ type MLPOMDPAgent <: Policy
 end
 
 function solve(solver::MLPOMDPSolver, problem::MLMDP, up=get(solver.updater, nothing))
-    internal_problem = NoCrashPOMDP(problem.dmodel, problem.rmodel, problem.discount)
+    internal_problem = MLPOMDP{MLState, MLAction, MLPhysicalState, typeof(problem.dmodel), typeof(problem.rmodel)}(problem.dmodel, problem.rmodel, problem.discount)
     policy = solve(solver.solver, internal_problem)
     if up == nothing
         up = POMDPs.updater(policy)

@@ -46,11 +46,16 @@ const DEFAULT_BEHAVIORS = Dict{String, Any}(
 
 const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS like in linked
     :behaviors => "agents",
-    :lambda => 1.0,
-    :brake_threshold => 2.5,
     :p_appear => 1.0,
     :vel_sigma => 0.5,
-    # :behavior_probabilities => 1
+    :brake_terminate_thresh => Inf,
+    :max_dist => Inf,
+    :lane_terminate => false,
+
+    :rmodel_type => :NoCrashRewardModel,
+    :lambda => 1.0,
+    :brake_threshold => 2.5,
+    :target_lane => 4,
 )
 
 const INITIAL_RELEVANT = [:behaviors]
@@ -149,36 +154,45 @@ function gen_initials(tests::AbstractVector, initials::Dict=Dict{String,Any}();
     return initials
 end
 
-function gen_base_problem()
+function gen_dmodel(row, behaviors::BehaviorGenerator) 
     nb_lanes = 4
-    desired_lane_reward = 10.
-    rmodel = NoCrashRewardModel(desired_lane_reward*10., desired_lane_reward,2.5,nb_lanes)
-    
-    pp = PhysicalParam(nb_lanes,lane_length=100.)
-
-    _discount = 1.0
     nb_cars = 10
+    pp = PhysicalParam(nb_lanes,lane_length=100.)
     dmodel = NoCrashIDMMOBILModel(nb_cars, pp,
                               behaviors=DEFAULT_BEHAVIORS["agents"],
                               lane_terminate=false)
 
-    base_problem = NoCrashMDP(dmodel, rmodel, _discount)
+    dmodel.behaviors = behaviors
+    # p_appear
+    dmodel.p_appear = row[:p_appear]
+    # vel_sigma
+    dmodel.vel_sigma = row[:vel_sigma]
+    # max_dist
+    dmodel.max_dist = row[:max_dist]
+    # lane_terminate
+    dmodel.lane_terminate = row[:lane_terminate]
+    # brake_terminate_thresh
+    dmodel.brake_terminate_thresh = row[:brake_terminate_thresh]
+
+    return dmodel 
 end
 
-function gen_problem(row, behaviors::Dict{String,Any}, rng::AbstractRNG)
-    problem = deepcopy(gen_base_problem())
-    # lambda
-    problem.rmodel.cost_dangerous_brake = row[:lambda]*problem.rmodel.reward_in_desired_lane
-    # p_normal
-    problem.dmodel.behaviors = behaviors[row[:behaviors]]
-    # brake_threshold
-    problem.rmodel.dangerous_brake_threshold = row[:brake_threshold]
-    # p_appear
-    problem.dmodel.p_appear = row[:p_appear]
-    # vel_sigma
-    problem.dmodel.vel_sigma = row[:vel_sigma]
+function gen_rmodel(row)
+    if Symbol(row[:rmodel_type]) == :TargetLaneReward
+        return TargetLaneReward(row[:target_lane])
+    elseif Symbol(row[:rmodel_type]) == :NoCrashRewardModel
+        target_lane_reward = 10.
+        rmodel = NoCrashRewardModel(target_lane_reward*10., target_lane_reward,2.5,row[:target_lane])
+        rmodel.cost_dangerous_brake = row[:lambda]*rmodel.reward_in_target_lane
+        rmodel.brake_penalty_thresh = row[:brake_threshold]
+    end
+end
 
-    return problem
+function gen_problem(row, behaviors::Dict{String,Any})
+    _discount = 1.0
+    dmodel = gen_dmodel(row, behaviors[row[:behaviors]])
+    rmodel = gen_rmodel(row)
+    return MLMDP{MLState, MLAction, typeof(dmodel), typeof(rmodel)}(dmodel, rmodel, _discount)
 end
 
 function gen_initial_physical(base_problem, N; rng::AbstractRNG=MersenneTwister(rand(UInt32)))
@@ -247,7 +261,7 @@ function add_initials!(objects::Dict{String, Any},
     for row in eachrow(param_table)
         if first(isna(row[:problem_key]))
             key = randstring(rng)
-            problems[key] = gen_problem(row, behaviors, rng)
+            problems[key] = gen_problem(row, behaviors)
             row[:problem_key] = key
         end
     end
@@ -258,7 +272,7 @@ function add_initials!(objects::Dict{String, Any},
     if haskey(objects, "initial_physical_states")
         initial_physical_states = objects["initial_physical_states"]
     elseif generate_physical
-        initial_physical_states = gen_initial_physical(gen_base_problem(), ts.N, rng=rng)
+        initial_physical_states = gen_initial_physical(first(values(problems)), ts.N, rng=rng)
     elseif isinteractive()
         println("\n\nNo initial physical states found! Press Enter to generate them, Ctrl-C to cancel.")
         readline(STDIN)

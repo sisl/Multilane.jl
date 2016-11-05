@@ -180,7 +180,7 @@ function fringe_upper_bound(pomdp::NoCrashPOMDP, s::MLState)
   current_lane = s.cars[1].y
   t_single_lane_change = 1.0 / (pp.dt * pomdp.dmodel.lane_change_rate) #nb timesteps
   t_target_lane = (nb_lanes - current_lane) * t_single_lane_change
-  return sum([pomdp.rmodel.reward_in_desired_lane * discount(pomdp)^t for t = 0:(T-t_target_lane-1)])
+  return sum([pomdp.rmodel.reward_in_target_lane * discount(pomdp)^t for t = 0:(T-t_target_lane-1)])
 end
 
 type NoCrashLB <: DESPOTLowerBound end

@@ -1,7 +1,8 @@
 immutable GaussianCopula
     cov::Array{Float64, 2}
     _chol::Array{Float64, 2}
-    GaussianCopula(cov::Array{Float64,2}) = new(cov, chol(cov, Val{:L}))
+    # GaussianCopula(cov::Array{Float64,2}) = new(cov, chol(cov, Val{:L}))
+    GaussianCopula(cov::Array{Float64,2}) = new(cov, ctranspose(chol(cov)))
 end
 GaussianCopula(ndim::Int, rho::Float64) = GaussianCopula(rho*ones(ndim, ndim) + (1.0-rho)*diagm(ones(ndim)))
 

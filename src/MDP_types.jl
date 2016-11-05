@@ -60,30 +60,33 @@ type MLState
     x::Float64 # total distance traveled by the ego
     t::Float64 # total time of the simulation
 	cars::Array{CarState,1} #NOTE ego car is first car
-    terminal::Nullable{Symbol} # if not null, this is a terminal state, see below
+    terminal::Nullable{Any} # SHOULD BE Nullable{Symbol} if not null, this is a terminal state, see below
 end
 # more constructors at bottom
 
 #=
 Terminal states: Each terminal state is not considered different, ther terminal states are
-    :crashed
-    :reached_lane
-    :hard_brake
+    :crash
+    :lane
+    :brake
+    :distance
 =#
 
 function ==(a::MLState, b::MLState)
-    if a.terminal && b.terminal
-        return true
-    elseif a.terminal || b.terminal # only one has crashed
+    if isnull(a.terminal) && isnull(b.terminal) # neither terminal
+        return a.x == b.x && a.t == b.t && a.cars == b.cars
+    elseif !isnull(a.terminal) && !isnull(b.terminal) # both terminal
+        return get(a.terminal) == get(b.terminal)
+    else # one is terminal
         return false
     end
-    return a.x == b.x && a.t == b.t && a.cars == b.cars #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
 end
 function Base.hash(a::MLState, h::UInt64=zero(UInt64))
-    if a.terminal
-        return hash(a.terminal, h)
+    if isnull(a.terminal)
+        return hash(a.x, hash(a.t, hash(a.cars,h)))
+    else
+        return hash(get(a.terminal), h)
     end
-    return hash(a.x, hash(a.t, hash(a.cars,h)))#hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
 end
 
 immutable MLAction
@@ -123,29 +126,32 @@ function CarState(cps::CarPhysicalState, behavior::BehaviorModel)
 end
 
 immutable MLPhysicalState
-    terminal::Bool
-    crashed::Bool
     x::Float64
     t::Float64
     cars::Array{CarPhysicalState,1}
+    terminal::Nullable{Any} # Should be Nullable{Symbol}
 end
 typealias MLObs MLPhysicalState
 
-MLPhysicalState(s::MLState) = MLPhysicalState(s.terminal, s.crashed, s.x, s.t, CarPhysicalState[CarPhysicalState(cs) for cs in s.cars])
+MLPhysicalState(s::MLState) = MLPhysicalState(s.x, s.t, CarPhysicalState[CarPhysicalState(cs) for cs in s.cars], s.terminal)
+
 function ==(a::MLPhysicalState, b::MLPhysicalState)
-    if a.terminal && b.terminal
-        return true
-    elseif a.terminal || b.terminal # only one has crashed
+    if isnull(a.terminal) && isnull(b.terminal) # neither terminal
+        return a.x == b.x && a.t == b.t && a.cars == b.cars
+    elseif !isnull(a.terminal) && !isnull(b.terminal) # both terminal
+        return get(a.terminal) == get(b.terminal)
+    else # one is terminal
         return false
     end
-    return a.x == b.x && a.t == b.t && a.cars == b.cars #&& (a.agent_pos==b.agent_pos) && (a.agent_vel==b.agent_vel)
 end
 function Base.hash(a::MLPhysicalState, h::UInt64=zero(UInt64))
-    if a.terminal
-        return hash(a.terminal, h)
+    if isnull(a.terminal)
+        return hash(a.x, hash(a.t, hash(a.cars,h)))
+    else
+        return hash(get(a.terminal), h)
     end
-    return hash(a.x, hash(a.t, hash(a.cars,h))) #hash(a.agent_vel,hash(a.agent_pos,hash(a.cars,h)))
 end
 
-MLState(ps::MLPhysicalState, cars::Vector{CarState}) = MLState(ps.terminal, ps.crashed, ps.x, ps.t, cars)
-MLState(s::MLState, cars::Vector{CarState}) = MLState(s.terminal, s.crashed, s.x, s.t, cars)
+MLState(ps::MLPhysicalState, cars::Vector{CarState}) = MLState(ps.x, ps.t, cars, ps.terminal)
+MLState(s::MLState, cars::Vector{CarState}) = MLState(s.x, s.t, cars, s.terminal)
+MLState(x::Float64, t::Float64, cars::Vector{CarState}) = MLState(x, t, cars, nothing)

@@ -20,7 +20,7 @@ set_rng!(solver::SimpleSolver, rng::AbstractRNG) = nothing
 
 function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.mdp))
 # lane changes if there is an opportunity
-    goal_lane = p.mdp.rmodel.desired_lane
+    goal_lane = p.mdp.rmodel.target_lane
     y_desired = goal_lane
     dmodel = p.mdp.dmodel
     lc = sign(y_desired-s.cars[1].y) * dmodel.lane_change_rate
@@ -69,11 +69,11 @@ solve(s::BehaviorSolver, p::NoCrashProblem) = BehaviorPolicy(p, s.b, s.keep_lane
 
 function action(p::BehaviorPolicy, s::MLState, a::MLAction=MLAction(0.0,0.0))
     nbhd = get_neighborhood(p.problem.dmodel.phys_param, s, 1)
-    acc = generate_accel(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
+    acc = gen_accel(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
     if p.keep_lane
         lc = 0.0
     else
-        lc = generate_lane_change(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
+        lc = gen_lane_change(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
     end
     return MLAction(acc, lc)
 end
@@ -94,7 +94,7 @@ solve(s::IDMLaneSeekingSolver, p::NoCrashProblem) = IDMLaneSeekingPolicy(p, s.b,
 
 function action(p::IDMLaneSeekingPolicy, s::MLState, a::MLAction=MLAction(0.0,0.0))
     nbhd = get_neighborhood(p.problem.dmodel.phys_param, s, 1)
-    acc = generate_accel(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
+    acc = gen_accel(p.b, p.problem.dmodel, s, nbhd, 1, p.rng)
     # try to positive lanechange
     # lc = problem.dmodel.lane_change_rate * !is_lanechange_dangerous(pp,s,nbhd,1,1)
     lc = p.problem.dmodel.lane_change_rate
@@ -125,7 +125,7 @@ Aggressive - move over if it doesn't cause a crash
 # 
 # function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.mdp))
 # # lane changes if there is an opportunity
-#   goal_lane = p.mdp.rmodel.desired_lane
+#   goal_lane = p.mdp.rmodel.target_lane
 #   y_desired = goal_lane
 #   dmodel = p.mdp.dmodel
 #   lc = sign(y_desired-s.cars[1].y) * dmodel.lane_change_rate

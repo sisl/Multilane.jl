@@ -5,7 +5,7 @@ function set_rng!(solver::Solver, rng::AbstractRNG)
     solver.rng = rng
 end
 
-function test_run(eval_problem::NoCrashMDP, initial_state::MLState, solver_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
+function test_run(eval_problem::Union{NoCrashMDP, SuccessMDP}, initial_state::MLState, solver_problem::Union{NoCrashMDP, SuccessMDP}, solver::Solver, rng_seed::Integer, max_steps=10000)
     set_rng!(solver, MersenneTwister(rng_seed))
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps, capture_exception=false)
     terminal_problem = deepcopy(eval_problem)
@@ -14,7 +14,7 @@ function test_run(eval_problem::NoCrashMDP, initial_state::MLState, solver_probl
     return sim
 end
 
-function test_run_return_policy(eval_problem::NoCrashMDP, initial_state::MLState, solver_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
+function test_run_return_policy(eval_problem::Union{NoCrashMDP, SuccessMDP}, initial_state::MLState, solver_problem::Union{NoCrashMDP, SuccessMDP}, solver::Solver, rng_seed::Integer, max_steps=10000)
     set_rng!(solver, MersenneTwister(rng_seed))
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
     policy = solve(solver, solver_problem)
@@ -141,6 +141,9 @@ function run_simulations(eval_problems::AbstractVector,
     return sims
 end
 
+get_brake_terminate_thresh(p::Union{NoCrashMDP, NoCrashPOMDP}) = p.dmodel.brake_terminate_thresh
+get_brake_terminate_thresh(p::Union{SuccessMDP, SuccessPOMDP}) = NA
+
 function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
                      metrics::AbstractVector=get(objects, "metrics", []))
     @assert nrow(stats) == length(sims)
@@ -150,14 +153,16 @@ function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
 
     # add new columns
     stats[:reward] = DataArray(Float64, nb_sims)
-    stats[:brake_thresh] = Float64[p.rmodel.dangerous_brake_threshold for p in eval_problems]
-    stats[:lambda] = Float64[p.rmodel.cost_dangerous_brake/p.rmodel.reward_in_desired_lane for p in eval_problems]
+    stats[:brake_penalty_thresh] = Float64[get_brake_terminate_thresh(p) for p in eval_problems]
+    stats[:brake_terminate_thresh] = [p.dmodel.brake_terminate_thresh for p in eval_problems]
+    stats[:lambda] = Float64[p.rmodel.cost_dangerous_brake/p.rmodel.reward_in_target_lane for p in eval_problems]
     stats[:nb_brakes] = DataArray(Int, nb_sims)
     stats[:steps_to_lane] = DataArray(Int, nb_sims)
     stats[:time_to_lane] = DataArray(Float64, nb_sims)
     stats[:steps_in_lane] = DataArray(Int, nb_sims)
     stats[:steps] = Int[length(s.action_hist) for s in sims]
     stats[:crash] = DataArray(Bool, nb_sims)
+    stats[:term] = DataArray(String, nb_sims)
 
     for m in metrics
         stats[key(m)] = DataArray(datatype(m), nb_sims)
@@ -179,10 +184,10 @@ function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
 
             nb_brakes += detect_braking(eval_problems[i], s, sp)
 
-            if sp.cars[1].y == eval_problems[i].rmodel.desired_lane
+            if sp.cars[1].y == eval_problems[i].rmodel.target_lane
                 steps_in_lane += 1
             end
-            if s.cars[1].y == eval_problems[i].rmodel.desired_lane
+            if s.cars[1].y == eval_problems[i].rmodel.target_lane
                 if isnull(steps_to_lane)
                     steps_to_lane = Nullable{Int}(k-1)
                 end
@@ -193,10 +198,16 @@ function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
             end
         end
 
-        if sims[i].state_hist[end].cars[1].y == eval_problems[i].rmodel.desired_lane
+        if sims[i].state_hist[end].cars[1].y == eval_problems[i].rmodel.target_lane
             if isnull(steps_to_lane)
                 steps_to_lane = Nullable{Int}(length(sims[i].state_hist)-1)
             end
+        end
+
+        if isnull(sims[i].state_hist[end].terminal)
+            stats[:term][i] = ""
+        else
+            stats[:term][i] = string(get(sims[i].state_hist[end].terminal))
         end
 
         stats[:reward][i] = r

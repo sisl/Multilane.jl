@@ -188,7 +188,7 @@ function create_model(g::CopulaIDMMOBIL, agg::Vector{Float64})
     return IDMMOBILBehavior(idm, mobil, g.next_idx-1)
 end
 
-CorrelatedIDMMOBIL(gen::CopulaIDMMOBIL) = CorrelatedIDMMOBIL(
+CorrelatedIDMMOBIL(gen::Union{CopulaIDMMOBIL, UniformIDMMOBIL}) = CorrelatedIDMMOBIL(
     gen.min_idm,
     gen.max_idm,
     gen.min_mobil,

@@ -29,7 +29,7 @@ function sbatch_spawn(tests::AbstractVector, objects::Dict;
 
     listname = joinpath(data_dir, string("list_\${SLURM_ARRAY_TASK_ID}_of_$(nb_batches).jld"))
 
-    tpl = Mustache.parse(readall(joinpath(Pkg.dir("Multilane"), "templates", template_name)))
+    tpl = Mustache.parse(readstring(joinpath(Pkg.dir("Multilane"), "templates", template_name)))
     sbatch = Mustache.render(tpl,
                     job_name=job_name,
                     time=time_per_batch,

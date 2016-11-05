@@ -1,13 +1,14 @@
 type NoCrashRewardModel <: AbstractMLRewardModel
     cost_dangerous_brake::Float64 # POSITIVE NUMBER
-    reward_in_desired_lane::Float64 # POSITIVE NUMBER
+    reward_in_target_lane::Float64 # POSITIVE NUMBER
 
-    dangerous_brake_threshold::Float64 # (POSITIVE NUMBER) if the deceleration is greater than this cost_dangerous_brake will be accured
-    desired_lane::Int
+    brake_penalty_thresh::Float64 # (POSITIVE NUMBER) if the deceleration is greater than this cost_dangerous_brake will be accured
+    target_lane::Int
 end
+
 #XXX temporary
 NoCrashRewardModel() = NoCrashRewardModel(100.,10.,2.5,4)
-lambda(rm::NoCrashRewardModel) = rm.cost_dangerous_brake/rm.reward_in_desired_lane
+lambda(rm::NoCrashRewardModel) = rm.cost_dangerous_brake/rm.reward_in_target_lane
 
 type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     nb_cars::Int
@@ -29,7 +30,7 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
 
     lane_terminate::Bool # if true, terminate the simulation when the car has reached the desired lane
     brake_terminate_thresh::Float64 # terminate simulation if braking is above this (always positive)
-    # max_dist::Float64 # terminate simulation if 
+    max_dist::Float64 # terminate simulation if distance becomes greater than this
 end
 
 #XXX temporary
@@ -39,11 +40,13 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
                               lane_terminate=false,
                               p_appear=0.5,
                               brake_terminate_thresh=Inf,
+                              max_dist=Inf,
                               behaviors=DiscreteBehaviorSet(IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
                                                  enumerate(Iterators.product(["cautious","normal","aggressive"],
                                                         [pp.v_slow+0.5;pp.v_med;pp.v_fast],
                                                         [pp.l_car]))], WeightVec(ones(9)))
                               )
+
     return NoCrashIDMMOBILModel(
         nb_cars,
         pp,
@@ -56,13 +59,15 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
         ones(pp.nb_lanes), # lane weights
         10.^2,
         lane_terminate,
-        brake_terminate_thresh
+        brake_terminate_thresh,
+        max_dist
     )
 end
 
-typealias NoCrashMDP MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
-
-typealias NoCrashPOMDP MLPOMDP{MLState, MLAction, MLObs, NoCrashIDMMOBILModel, NoCrashRewardModel}
+typealias NoCrashMDP{R<:AbstractMLRewardModel} MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, NoCrashRewardModel}
+typealias NoCrashPOMDP{R<:AbstractMLRewardModel} MLPOMDP{MLState, MLAction, MLObs, NoCrashIDMMOBILModel, NoCrashRewardModel}
+typealias SuccessMDP NoCrashMDP{TargetLaneReward}
+typealias SuccessPOMDP NoCrashPOMDP{TargetLaneReward}
 
 typealias NoCrashProblem Union{NoCrashMDP, NoCrashPOMDP}
 
@@ -103,10 +108,13 @@ function actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}, as::No
             push!(acceptable, i)
         end
     end
-    brake_acc = min(max_safe_acc(mdp,s), -mdp.rmodel.dangerous_brake_threshold/2.0)
+    brake_acc = calc_brake_acc(mdp, s)
     brake = MLAction(brake_acc, 0)
     return NoCrashActionSpace(as.NORMAL_ACTIONS, acceptable, brake)
 end
+
+calc_brake_acc(mdp::Union{NoCrashMDP, NoCrashPOMDP}, s::Union{MLState, MLPhysicalState}) = min(max_safe_acc(mdp,s), -mdp.rmodel.brake_penalty_thresh/2.0)
+calc_brake_acc(mdp::Union{SuccessMDP, SuccessPOMDP}, s::Union{MLState, MLPhysicalState}) = min(max_safe_acc(mdp, s), min(-mdp.dmodel.phys_param.brake_limit/2, -mdp.dmodel.brake_terminate_thresh/2))
 
 iterator(as::NoCrashActionSpace) = as
 Base.start(as::NoCrashActionSpace) = 1
@@ -258,8 +266,8 @@ function is_safe(mdp::NoCrashProblem, s::Union{MLState,MLObs}, a::MLAction)
 end
 
 #XXX temp
-create_state(p::NoCrashProblem) = MLState(false, false, 0.0, 0.0, Array(CarState, p.dmodel.nb_cars))
-create_observation(pomdp::NoCrashPOMDP) = MLObs(false, false, 0.0, 0.0, Array(CarStateObs, pomdp.dmodel.nb_cars))
+create_state(p::NoCrashProblem) = MLState(0.0, 0.0, Array(CarState, p.dmodel.nb_cars), nothing)
+create_observation(pomdp::Union{NoCrashPOMDP,SuccessPOMDP}) = MLObs(0.0, 0.0, Array(CarStateObs, pomdp.dmodel.nb_cars), nothing)
 
 function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
 
@@ -288,11 +296,11 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
 
         behavior = s.cars[i].behavior
 
-        acc = generate_accel(behavior, mdp.dmodel, s, neighborhood, i, rng)
+        acc = gen_accel(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dvs[i] = dt*acc
         dxs[i] = (s.cars[i].vel + dvs[i]/2.)*dt
 
-        lcs[i] = generate_lane_change(behavior, mdp.dmodel, s, neighborhood, i, rng)
+        lcs[i] = gen_lane_change(behavior, mdp.dmodel, s, neighborhood, i, rng)
         dys[i] = lcs[i] * dt
     end
 
@@ -390,7 +398,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         # note lane change is updated above
 
         if dvs[i]/dt < -mdp.dmodel.brake_terminate_thresh
-            sp.terminal = Nullable(:hard_brake)
+            sp.terminal = Nullable{Symbol}(:brake)
         end
 
         # check if a lane was crossed and snap back to it
@@ -504,22 +512,24 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         end
     end
 
-    if mdp.dmodel.lane_terminate && sp.cars[1].y == mdp.rmodel.desired_lane
-        sp.terminal = true
+    if mdp.dmodel.lane_terminate && sp.cars[1].y == mdp.rmodel.target_lane
+        sp.terminal = Nullable{Any}(:lane)
+    elseif sp.x > mdp.dmodel.max_dist
+        sp.terminal = Nullable{Any}(:distance)
     end
 
     # sp.crashed = is_crash(mdp, s, sp, warning=false)
-    sp.crashed = false
+    # sp.crashed = false
 
     @assert sp.cars[1].x == s.cars[1].x # ego should not move
 
     return sp
 end
 
-function reward(mdp::NoCrashProblem, s::MLState, ::MLAction, sp::MLState)
+function reward(mdp::Union{NoCrashMDP, NoCrashPOMDP}, s::MLState, ::MLAction, sp::MLState)
     r = 0.0
-    if sp.cars[1].y == mdp.rmodel.desired_lane
-        r += mdp.rmodel.reward_in_desired_lane
+    if sp.cars[1].y == mdp.rmodel.target_lane
+        r += mdp.rmodel.reward_in_target_lane
     end
     nb_brakes = detect_braking(mdp, s, sp)
     r -= mdp.rmodel.cost_dangerous_brake*nb_brakes
@@ -529,7 +539,7 @@ end
 """
 Return the number of braking actions that occured during this state transition
 """
-function detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=mdp.rmodel.dangerous_brake_threshold)
+function detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=mdp.rmodel.brake_penalty_thresh)
     nb_brakes = 0
     nb_leaving = 0 
     dt = mdp.dmodel.phys_param.dt
@@ -556,7 +566,7 @@ end
 """
 Return the ids of cars that brake during this state transition
 """
-function braking_ids(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=mdp.rmodel.dangerous_brake_threshold)
+function braking_ids(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=mdp.rmodel.brake_penalty_thresh)
     braking = Int[]
     nb_leaving = 0 
     dt = mdp.dmodel.phys_param.dt
@@ -726,7 +736,7 @@ function generate_o(mdp::NoCrashProblem, s::MLState, a::MLAction, sp::MLState, o
     return MLObs(sp)
 end
 
-function generate_sor(pomdp::NoCrashPOMDP, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState, o::MLObs)
+function generate_sor(pomdp::Union{NoCrashPOMDP, SuccessPOMDP}, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState, o::MLObs)
     sp, r = generate_sr(pomdp, s, a, rng, sp)
     o = generate_o(pomdp, s, a, sp, o)
     return sp, o, r
@@ -757,7 +767,7 @@ isterminal(mdp::Union{MLMDP,MLPOMDP},s::MLState) = !isnull(s.terminal)
 function isterminal(mdp::NoCrashProblem, s::MLState)
     if s.crashed
         return true
-    elseif mdp.dmodel.lane_terminate && s.cars[1].y == mdp.rmodel.desired_lane
+    elseif mdp.dmodel.lane_terminate && s.cars[1].y == mdp.rmodel.target_lane
         return true
     else
         return false
