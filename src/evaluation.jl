@@ -5,7 +5,7 @@ function set_rng!(solver::Solver, rng::AbstractRNG)
     solver.rng = rng
 end
 
-function test_run(eval_problem::Union{NoCrashMDP, SuccessMDP}, initial_state::MLState, solver_problem::Union{NoCrashMDP, SuccessMDP}, solver::Solver, rng_seed::Integer, max_steps=10000)
+function test_run(eval_problem::NoCrashMDP, initial_state::MLState, solver_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
     set_rng!(solver, MersenneTwister(rng_seed))
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps, capture_exception=false)
     terminal_problem = deepcopy(eval_problem)
@@ -14,7 +14,7 @@ function test_run(eval_problem::Union{NoCrashMDP, SuccessMDP}, initial_state::ML
     return sim
 end
 
-function test_run_return_policy(eval_problem::Union{NoCrashMDP, SuccessMDP}, initial_state::MLState, solver_problem::Union{NoCrashMDP, SuccessMDP}, solver::Solver, rng_seed::Integer, max_steps=10000)
+function test_run_return_policy(eval_problem::NoCrashMDP, initial_state::MLState, solver_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
     set_rng!(solver, MersenneTwister(rng_seed))
     sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps)
     policy = solve(solver, solver_problem)
@@ -141,7 +141,7 @@ function run_simulations(eval_problems::AbstractVector,
     return sims
 end
 
-get_brake_terminate_thresh(p::Union{NoCrashMDP, NoCrashPOMDP}) = p.dmodel.brake_terminate_thresh
+get_brake_terminate_thresh(p::NoCrashMDP) = p.dmodel.brake_terminate_thresh
 get_brake_terminate_thresh(p::Union{SuccessMDP, SuccessPOMDP}) = NA
 
 function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
