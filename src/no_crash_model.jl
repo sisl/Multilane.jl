@@ -25,8 +25,8 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     appear_clearance::Float64 # minimum clearance for a car to appear
 
     vel_sigma::Float64 # std of new car speed about v0
-    lane_weights::Array{Float64,1} # dirichlet alpha values for each lane: first is for rightmost lane
-    dist_var::Float64 # variance of distance--can back out rate, shape param from this
+    lane_weights::Array{Float64,1} # DEP dirichlet alpha values for each lane: first is for rightmost lane
+    dist_var::Float64 # DEP variance of distance--can back out rate, shape param from this
 
     lane_terminate::Bool # if true, terminate the simulation when the car has reached the desired lane
     brake_terminate_thresh::Float64 # terminate simulation if braking is above this (always positive)

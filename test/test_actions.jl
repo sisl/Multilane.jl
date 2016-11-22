@@ -1,7 +1,7 @@
 function actions_mdp_fixture()
     dmodel = NoCrashIDMMOBILModel(3, PhysicalParam(3, lane_length=100.0))
     rmodel = NoCrashRewardModel()
-    return NoCrashMDP(dmodel, rmodel, 1.0)
+    return NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 1.0)
 end
 
 function test_iteration()

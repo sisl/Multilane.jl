@@ -1,7 +1,7 @@
 function MDP_fixture()
     dmodel = NoCrashIDMMOBILModel(3, PhysicalParam(3, lane_length=100.0))
     rmodel = NoCrashRewardModel()
-    return NoCrashMDP(dmodel, rmodel, 1.0)
+    return NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 1.0)
 end
 function state_fixture()
     # XXX are we going to git rid of v_min, etc?

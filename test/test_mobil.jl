@@ -276,7 +276,7 @@ function failure_2()
     nb_cars=10
     rmodel = NoCrashRewardModel()
     dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
-    mdp = NoCrashMDP(dmodel, rmodel, _discount);
+    mdp = NoCrashMDP{NoCrashRewardModel}(dmodel, rmodel, _discount);
     rng = MersenneTwister(2)
     s = Multilane.MLState(0.0,0.0,[Multilane.CarState(50.0,1.0,27.0,0.0,Multilane.NORMAL,0),Multilane.CarState(45.66875308699299,2.0,29.042803490064543,-0.6666666666666666,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,35.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),9),0),Multilane.CarState(85.41074952313767,3.0,29.831781823255017,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(2.0,2.0,0.8,31.0,4.0,4.0),Multilane.MOBILParam(0.0,4.0,0.2),6),0),Multilane.CarState(13.78112065279241,3.0,27.0,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),8),0),Multilane.CarState(5.897872040018292,1.0,27.39955827605183,0.0,Multilane.IDMMOBILBehavior(Multilane.IDMParam(1.5,1.5,1.4,35.0,4.0,4.0),Multilane.MOBILParam(0.25,4.0,0.2),8),0)])
     a = MLAction(0.0,0.0)

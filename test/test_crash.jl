@@ -70,7 +70,7 @@ function test_is_crash()
 	nb_cars=2
 	rmodel = NoCrashRewardModel()
 	dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
-	p = NoCrashMDP(dmodel, rmodel, 1.);
+    p = NoCrashMDP{NoCrashRewardModel}(dmodel, rmodel, 1.);
 
 	bs = IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in enumerate(product(["cautious","normal","aggressive"],[pp.v_slow;pp.v_med;pp.v_fast],[pp.l_car]))]
 
