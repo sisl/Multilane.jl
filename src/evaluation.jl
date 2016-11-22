@@ -141,8 +141,10 @@ function run_simulations(eval_problems::AbstractVector,
     return sims
 end
 
-get_brake_terminate_thresh(p::NoCrashMDP) = p.dmodel.brake_terminate_thresh
+get_brake_terminate_thresh(p::NoCrashProblem) = p.dmodel.brake_terminate_thresh
 get_brake_terminate_thresh(p::Union{SuccessMDP, SuccessPOMDP}) = NA
+get_lambda(p::NoCrashProblem) = p.rmodel.cost_dangerous_brake/p.rmodel.reward_in_target_lane
+get_lambda(p::Union{SuccessMDP, SuccessPOMDP}) = NA
 
 function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
                      metrics::AbstractVector=get(objects, "metrics", []))
@@ -153,9 +155,14 @@ function fill_stats!(stats::DataFrame, objects::Dict, sims::Vector;
 
     # add new columns
     stats[:reward] = DataArray(Float64, nb_sims)
-    stats[:brake_penalty_thresh] = Float64[get_brake_terminate_thresh(p) for p in eval_problems]
+    stats[:brake_penalty_thresh] = DataArray(Float64, length(eval_problems))
+    stats[:lambda] = DataArray(Float64, length(eval_problems))
+    for i in 1:length(eval_problems)
+        p = eval_problems[i]
+        stats[:brake_penalty_thresh][i] = get_brake_terminate_thresh(p)
+        stats[:lambda][i] = get_lambda(p)
+    end
     stats[:brake_terminate_thresh] = [p.dmodel.brake_terminate_thresh for p in eval_problems]
-    stats[:lambda] = Float64[p.rmodel.cost_dangerous_brake/p.rmodel.reward_in_target_lane for p in eval_problems]
     stats[:nb_brakes] = DataArray(Int, nb_sims)
     stats[:steps_to_lane] = DataArray(Int, nb_sims)
     stats[:time_to_lane] = DataArray(Float64, nb_sims)

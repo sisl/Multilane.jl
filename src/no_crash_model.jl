@@ -70,6 +70,7 @@ typealias SuccessMDP NoCrashMDP{TargetLaneReward}
 typealias SuccessPOMDP NoCrashPOMDP{TargetLaneReward}
 
 typealias NoCrashProblem{R<:AbstractMLRewardModel} Union{NoCrashMDP{R}, NoCrashPOMDP{R}}
+typealias SuccessProblem Union{SuccessMDP, SuccessPOMDP}
 
 # TODO issue here VVV need a different way to create observation
 create_action(::NoCrashProblem) = MLAction()
@@ -539,7 +540,7 @@ end
 """
 Return the number of braking actions that occured during this state transition
 """
-function detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=mdp.rmodel.brake_penalty_thresh)
+function detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold::Float64)
     nb_brakes = 0
     nb_leaving = 0 
     dt = mdp.dmodel.phys_param.dt
@@ -562,6 +563,9 @@ function detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold=
     # @assert nb_leaving <= 5 # sanity check - can remove this if it is violated as long as it doesn't happen all the time
     return nb_brakes
 end
+
+detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState) = detect_braking(mdp, s, sp, mdp.rmodel.brake_penalty_thresh)
+detect_braking(mdp::SuccessProblem, s::MLState, sp::MLState) = detect_braking(mdp, s, sp, mdp.dmodel.brake_terminate_thresh)
 
 """
 Return the ids of cars that brake during this state transition

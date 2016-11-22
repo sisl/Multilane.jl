@@ -47,6 +47,7 @@ else
 end
 resultsfile = joinpath(dir, b)
 objects["histories"]=nothing
+
 save(resultsfile, objects)
 println("Done running $(nrow(stats)) tests.")
 toc()
