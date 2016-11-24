@@ -1,3 +1,8 @@
+Wed 23 Nov 2016 03:55:19 PM PST
+
+[ ] run correlation_trend.jl on sherlock
+[ ] fix the noise
+
 Tue 01 Nov 2016 12:18:57 PM PDT
 
 [ ] get correlation_trend.jl to run and then run it on sherlock

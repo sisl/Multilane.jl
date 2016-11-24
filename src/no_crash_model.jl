@@ -25,8 +25,6 @@ type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     appear_clearance::Float64 # minimum clearance for a car to appear
 
     vel_sigma::Float64 # std of new car speed about v0
-    lane_weights::Array{Float64,1} # DEP dirichlet alpha values for each lane: first is for rightmost lane
-    dist_var::Float64 # DEP variance of distance--can back out rate, shape param from this
 
     lane_terminate::Bool # if true, terminate the simulation when the car has reached the desired lane
     brake_terminate_thresh::Float64 # terminate simulation if braking is above this (always positive)
@@ -56,8 +54,8 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
         p_appear, # p_appear
         35.0, # appear_clearance
         vel_sigma, # vel_sigma
-        ones(pp.nb_lanes), # lane weights
-        10.^2,
+        # ones(pp.nb_lanes), # lane weights
+        # 10.^2,
         lane_terminate,
         brake_terminate_thresh,
         max_dist
@@ -634,107 +632,9 @@ function initial_state(mdp::NoCrashProblem, ps::MLPhysicalState, rng::AbstractRN
     return s
 end
 
-function initial_state(mdp::NoCrashProblem, rng::AbstractRNG, s::MLState=create_state(mdp))
-
-    srand(rand(rng, UInt32))
-    pp = mdp.dmodel.phys_param
-    #Unif # cars in initial scene
-    #_nb_cars = rand(rng,floor(Int, mdp.dmodel.nb_cars/2):mdp.dmodel.nb_cars)
-    _nb_cars = mdp.dmodel.nb_cars
-    #place ego car
-  
-    pos_x = pp.lane_length/2. #this is fixed
-    pos_y = 1. #rand(rng,1:(pp.nb_lanes)) # NOTE wlog start in lane 1, goal is leftmost lane
-    #ego velocity
-    vel = max(min(randn(rng)*mdp.dmodel.vel_sigma + pp.v_med, pp.v_max), pp.v_min)
-  
-    s.cars[1] = CarState(pos_x, pos_y, vel, 0, NORMAL, 1)
-    # XXX dirichlet and exponential are from distributions--does not accept rng!!!
-    dir_distr = Dirichlet(mdp.dmodel.lane_weights)
-    cars_per_lane = floor(Int,_nb_cars*rand(dir_distr))
-  
-    dist_distr1 = Exponential(sqrt(mdp.dmodel.dist_var))
-    # dist_distr1 = Exponential(1.0/mdp.dmodel.dist_var)
-  
-    last_front = 1 #last car to be sampled in front of ego car--starts as ego car
-    last_back = 1 #last car to be sampled behind ego car -- starts with ego car
-  
-  
-    idx = 2
-    for (lane,nb_cars) in enumerate(cars_per_lane)
-  
-        if nb_cars == 0
-            continue
-        end
-  
-        # if there's no room to generate the remaining cars
-        break_flag = false
-  
-        #lane = 2*_lane - 1
-        #from front to back
-  
-        for i = 1:nb_cars
-            if break_flag
-                break
-            end
-            #sample Behavior TODO sample(rng,v,wv) in utils?
-            behavior = rand(rng, mdp.dmodel.behaviors)
-            #TODO need generic interface with behavior models for desired speed
-  
-            if lane == pos_y
-                #ego car in this lane: alternate sampling
-                sample_front = rand(rng,Bool)
-                if sample_front
-                  dist = sample_distance(mdp.dmodel, behavior, s.cars[last_front].vel, rng)
-                  x = s.cars[last_front].x + dist
-                  last_front = idx
-                else #sample back
-                  dist = sample_distance(mdp.dmodel, behavior, s.cars[last_back].vel, rng)
-                  x = s.cars[last_back].x - dist
-                  last_back = idx
-                end
-            else
-                #ego car not in this lane: sample from front to back
-                if i == 1
-                  dist = rand(dist_distr1)
-                  x = pp.lane_length - dist
-                else
-                  dist = sample_distance(mdp.dmodel, behavior, s.cars[idx-1].vel, rng)
-                  x = s.cars[idx-1].x-dist
-                end
-            end
-            if x < 0. || x > mdp.dmodel.phys_param.lane_length
-                break_flag = true
-                continue
-            end
-            #sample velocity
-            vel = randn(rng)*mdp.dmodel.vel_sigma + behavior.p_idm.v0
-            vel = max(min(vel,pp.v_max),pp.v_min)
-  
-            car = CarState(x, lane, vel, 0, behavior, idx)
-            s.cars[idx] = car
-            idx += 1
-        end
-  
-    end
-
-    resize!(s.cars,idx-1)
-
-    return s
+function initial_state(mdp::NoCrashProblem, rng::AbstractRNG=Base.GLOBAL_RNG)
+    return relaxed_initial_state(mdp, 200, rng)
 end
-
-function sample_distance(dmodel::NoCrashIDMMOBILModel, behavior::IDMMOBILBehavior, v_front::Float64, rng::AbstractRNG)
-    s_ = get_idm_s_star(behavior.p_idm, behavior.p_idm.v0, behavior.p_idm.v0-v_front)
-    mu = max(0.0, s_ - dmodel.appear_clearance)
-    var = dmodel.dist_var
-    if mu > 0.
-        dist_distr = Gamma((mu^2)/var,var/mu)
-        return rand(dist_distr) + dmodel.appear_clearance + dmodel.phys_param.l_car
-    else
-        return dmodel.appear_clearance + dmodel.phys_param.l_car
-    end
-end
-
 
 function generate_o(mdp::NoCrashProblem, s::MLState, a::MLAction, sp::MLState, o::MLObs=create_observation(mdp))
     return MLObs(sp)
@@ -746,35 +646,5 @@ function generate_sor(pomdp::Union{NoCrashPOMDP, SuccessPOMDP}, s::MLState, a::M
     return sp, o, r
 end
 
-#=
-function pdf(mdp::NoCrashProblem, sp::MLState, a::MLAction, o::MLObs)
-  """
-  P(o|s', a) (unweighted)
-  The degree of similarity between states?
-  say similarity ~ 1/distance between states
-
-  Ignore ego car: presumably will have mostly deterministic dynamics?
-  """
-  dist = 0.
-  id = Dict{Int,Int}(car.id=>i+1 for (i,car) in enumerate(s.cars[2:end]))
-  idp = Dict{Int,Int}(car.id=>i+1 for (i,car) in enumerate(sp.cars[2:end]))
-  """
-  Alternatively: assume x,y,v,lc are correct, uncertainty about behavior model
-  """
-end
-=#
-
 discount(mdp::Union{MLMDP,MLPOMDP}) = mdp.discount
 isterminal(mdp::Union{MLMDP,MLPOMDP},s::MLState) = !isnull(s.terminal)
-
-#=
-function isterminal(mdp::NoCrashProblem, s::MLState)
-    if s.crashed
-        return true
-    elseif mdp.dmodel.lane_terminate && s.cars[1].y == mdp.rmodel.target_lane
-        return true
-    else
-        return false
-    end
-end
-=#
