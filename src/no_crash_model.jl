@@ -35,6 +35,7 @@ end
 function NoCrashIDMMOBILModel(nb_cars::Int,
                               pp::PhysicalParam;
                               vel_sigma = 0.5,
+                              a_sigma = 0.5,
                               lane_terminate=false,
                               p_appear=0.5,
                               brake_terminate_thresh=Inf,
@@ -54,8 +55,7 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
         p_appear, # p_appear
         35.0, # appear_clearance
         vel_sigma, # vel_sigma
-        # ones(pp.nb_lanes), # lane weights
-        # 10.^2,
+        a_sigma,
         lane_terminate,
         brake_terminate_thresh,
         max_dist
@@ -215,24 +215,10 @@ function nullable_max_safe_acc(gap, v_behind, v_ahead, braking_limit, dt)
 end
 
 
-#=
-# I think this is wrong (7/13)
+
 """
-Calculate the maximum distance that the car could achieve if it uses the maximum acceleration
-
-The first argument is a behavior model so that this can be dispatched based on the behavior model
+Test whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
 """
-function max_dx(b::IDMMOBILBehavior, cs::CarState, dt)
-    return cs.x + (cs.vel + b.p_idm.a/2.0)*dt
-end
-
-max_dx(cs::CarStateObs, dt::Float64) = cs.x + (cs.vel + 2.1/2.)*dt # Max accel is 2.0 in aggressive
-=#
-
-# """
-# Test whether, if the ego vehicle takes action a, it will always be able to slow down fast enough if the car in front slams on his brakes and won't pull in front of another car so close they can't stop
-# """
-
 function is_safe(mdp::NoCrashProblem, s::Union{MLState,MLObs}, a::MLAction)
     dt = mdp.dmodel.phys_param.dt
     if a.acc >= max_safe_acc(mdp, s, a.lane_change)

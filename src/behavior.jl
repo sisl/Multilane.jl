@@ -57,37 +57,18 @@ function gen_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsMod
 	dt = pp.dt
 	car = s.cars[idx]
 	lane_change = car.lane_change #this is a velocity in the y direction in LANES PER SECOND
-	#lane_ = round(max(1,min(car.y+lane_change,2*pp.nb_lanes-1)))
-	#if increment y in the same timestep as deciding to lanechange
 	lane_ = car.y
 
 	if mod(lane_-0.5,1) == 0. #in between lanes
         @assert lane_change != 0
 		return lane_change
-
-        #= # cannot abort lane changes
-		if is_lanechange_dangerous(pp, s, neighborhood, idx, lanechange)
-				lanechange *= -1
-		end
-        =#
 	end
 
 	#sample normally
 	lanechange_::Int = get_mobil_lane_change(bmodel, pp, s, neighborhood, idx, rng)
 	#gives +1, -1 or 0
-	#if frnot neighbor is lanechanging, don't lane change
-    # I DONT think this works because lane_change may not be updated
-    #=
-	nbr = neighborhood[2]
-	ahead_dy = nbr != 0 ? s.cars[nbr].lane_change : 0
-	if ahead_dy != 0
-			lanechange_ = 0.
-	end
-    =#
 
     lanechange = lanechange_
-	#NO LANECHANGING
-	#lanechange = 0
 
 	return lanechange * dmodel.lane_change_rate
 end
