@@ -25,8 +25,10 @@ function display_sim(mdp, S::Array{MLState,1}, A::Array{MLAction,1})
     end
 end
 
-function show_state(mdp, s)
-    c = visualize(mdp, s)
+show_state(mdp::Union{MLMDP, MLPOMDP}, s::MLState) = show_state(mdp.dmodel.phys_param, s)
+
+function show_state(pp::PhysicalParam, s::MLState)
+    c = visualize(pp, s)
     tn = string(tempname(), ".png")
     write_to_png(c, tn)
     run(`xdg-open $tn`)
@@ -88,8 +90,9 @@ function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState, a::MLAction, sp::MLSta
     render(scene, roadway, [hbol, iol, cidol, cvol], cam=FitToContentCamera())
 end
 
-function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState)
-    pp = mdp.dmodel.phys_param
+visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState) = visualize(mdp.dmodel.phys_param, s)
+
+function visualize(pp::PhysicalParam, s::MLState)
     roadway = gen_straight_roadway(pp.nb_lanes,
                                    pp.lane_length,
                                    lane_width=pp.w_lane)
@@ -98,7 +101,7 @@ function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState)
         push!(scene, Vehicle(VehicleState(VecSE2(cs.x, (cs.y-1.0)*pp.w_lane, 0.0), roadway, cs.vel), 
                                 VehicleDef(cs.id, AgentClass.CAR, pp.l_car, pp.w_car)))
     end
-    render(scene, roadway, cam=FitToContentCamera())
+    render(scene, roadway, [CarIDOverlay(), CarVelOverlay()], cam=FitToContentCamera())
 end
 
 type HardBrakeOverlay <: SceneOverlay

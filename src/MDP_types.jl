@@ -105,7 +105,7 @@ vec(a::MLAction) = Float64[a.acc;a.lane_change]
 
 typealias OriginalMDP MLMDP{MLState, MLAction, IDMMOBILModel, OriginalRewardModel}
 
-type ActionSpace <: AbstractSpace
+type ActionSpace
 	actions::Vector{MLAction}
 end
 

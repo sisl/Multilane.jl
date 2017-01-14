@@ -7,7 +7,7 @@ end
 
 function test_run(eval_problem::NoCrashMDP, initial_state::MLState, solver_problem::NoCrashMDP, solver::Solver, rng_seed::Integer, max_steps=10000)
     set_rng!(solver, MersenneTwister(rng_seed))
-    sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps, capture_exception=false)
+    sim = POMDPToolbox.HistoryRecorder(rng=MersenneTwister(rng_seed), max_steps=max_steps, capture_exception=true)
     terminal_problem = deepcopy(eval_problem)
     terminal_problem.dmodel.lane_terminate = true
     r = simulate(sim, terminal_problem, solve(solver,solver_problem), initial_state)

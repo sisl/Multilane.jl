@@ -83,7 +83,7 @@ will only be applied to the problem given to the solver, otherwise it will be
 applied to both problems. The arguments will be applied in order, so solver_
 parameter values should come later.
 """
-function TestSet(ts::TestSet=TestSet(randstring()); kwargs...)
+function TestSet(ts::TestSet; kwargs...)
     ts = deepcopy(ts)
     fn = fieldnames(TestSet)
     for (k,v) in kwargs
@@ -120,7 +120,11 @@ function TestSet(ts::TestSet=TestSet(randstring()); kwargs...)
     return ts::TestSet
 end
 
-function TestSet(key::AbstractString=randstring())
+function TestSet(;kwargs...)
+    return TestSet(TestSet(randstring()); kwargs...)
+end
+
+function TestSet(key::AbstractString)
     return TestSet("",
             deepcopy(DEFAULT_PROBLEM_PARAMS),
             deepcopy(DEFAULT_PROBLEM_PARAMS),

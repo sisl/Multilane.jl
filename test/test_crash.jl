@@ -116,16 +116,17 @@ function test_is_crash()
 	assert(!is_crash(p,MLState(1,27.,CarState[cs_oob]),MLAction(0,-1)))
 	=#
 	#Case: cars occupy same space
-	assert(is_crash(p,MLState(1,30.,CarState[cs_rchill],6.),MLAction(0,0)))
-	assert(is_crash(p,MLState(1,30.,CarState[cs_mchill],6.),MLAction(0,0)))
-	assert(is_crash(p,MLState(1,30.,CarState[cs_hchill],6.),MLAction(0,0)))
+	assert(is_crash(p,MLState(1,30.,CarState[cs_rchill],6.),MLState(1,30.,CarState[cs_rchill],6.)))
+	assert(is_crash(p,MLState(1,30.,CarState[cs_mchill],6.),MLState(1,30.,CarState[cs_mchill],6.)))
+	assert(is_crash(p,MLState(1,30.,CarState[cs_hchill],6.),MLState(1,30.,CarState[cs_hchill],6.)))
 	#CASE: cars intersect; vertically (gets railroaded from behind)
 	# removed because of noise crash prevention
     # assert(is_crash(p,MLState(1,27.,CarState[cs_r_fast],6.),MLAction(-1,0)))
-	assert(is_crash(p,MLState(1,35.,CarState[cs_r_slow],6.),MLAction(1,0)))
+	# assert(is_crash(p,MLState(1,35.,CarState[cs_r_slow],6.),MLAction(1,0)))
 	#CASE: cars intersect; horizontally (across lanes)
-	assert(is_crash(p,MLState(1,30.,CarState[cs_rchange],6.),MLAction(0,1)))
-	assert(is_crash(p,MLState(2,30.,CarState[cs_lchange],6.),MLAction(0,-1)))
+    # removed because of noise crash prevention
+	# assert(is_crash(p,MLState(1,30.,CarState[cs_rchange],6.),MLAction(0,1)))
+	# assert(is_crash(p,MLState(2,30.,CarState[cs_lchange],6.),MLAction(0,-1)))
 	#NOTE edge cases:
 	"""
 	If a car is going so fast (or slow) that it just completely blows out of the frame

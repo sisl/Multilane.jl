@@ -35,7 +35,6 @@ end
 function NoCrashIDMMOBILModel(nb_cars::Int,
                               pp::PhysicalParam;
                               vel_sigma = 0.5,
-                              a_sigma = 0.5,
                               lane_terminate=false,
                               p_appear=0.5,
                               brake_terminate_thresh=Inf,
@@ -55,7 +54,6 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
         p_appear, # p_appear
         35.0, # appear_clearance
         vel_sigma, # vel_sigma
-        a_sigma,
         lane_terminate,
         brake_terminate_thresh,
         max_dist
@@ -74,7 +72,7 @@ typealias SuccessProblem Union{SuccessMDP, SuccessPOMDP}
 create_action(::NoCrashProblem) = MLAction()
 
 # action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {brake}
-immutable NoCrashActionSpace <: AbstractSpace{MLAction}
+immutable NoCrashActionSpace
     NORMAL_ACTIONS::Vector{MLAction} # all the actions except brake
     acceptable::IntSet
     brake::MLAction # this action will be EITHER braking at half the dangerous brake threshold OR the braking necessary to prevent a collision at all time in the future
@@ -85,7 +83,7 @@ const NB_NORMAL_ACTIONS = 9
 function NoCrashActionSpace(mdp::NoCrashProblem)
     accels = (-mdp.dmodel.adjustment_acceleration, 0.0, mdp.dmodel.adjustment_acceleration)
     lane_changes = (-mdp.dmodel.lane_change_rate, 0.0, mdp.dmodel.lane_change_rate)
-    NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in Iterators.product(accels, lane_changes)]
+    NORMAL_ACTIONS = MLAction[MLAction(a,l) for (a,l) in Iterators.product(accels, lane_changes)] # this should be in the problem
     return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: brake will be calculated later based on the state
 end
 
@@ -93,7 +91,9 @@ function actions(mdp::NoCrashProblem)
     return NoCrashActionSpace(mdp)
 end
 
-function actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}, as::NoCrashActionSpace) # no implementation without the third arg to enforce efficiency
+actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}) = actions(mdp, s, actions(mdp))
+
+function actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}, as::NoCrashActionSpace)
     acceptable = IntSet()
     for i in 1:NB_NORMAL_ACTIONS
         a = as.NORMAL_ACTIONS[i]
@@ -240,8 +240,9 @@ function is_safe(mdp::NoCrashProblem, s::Union{MLState,MLObs}, a::MLAction)
                     return false
                 end
                 n_braking_acc = nullable_max_safe_acc(gap, car.vel, ego.vel, mdp.dmodel.phys_param.brake_limit, dt)
-                if isnull(n_braking_acc) || get(n_braking_acc) < -mdp.dmodel.phys_param.brake_limit
-                # if braking_acc < 0.0
+
+                # if isnull(n_braking_acc) || get(n_braking_acc) < -mdp.dmodel.phys_param.brake_limit
+                if isnull(n_braking_acc) || get(n_braking_acc) < max_accel(car.behavior)
                     return false
                 end
             end
@@ -254,7 +255,11 @@ end
 create_state(p::NoCrashProblem) = MLState(0.0, 0.0, Array(CarState, p.dmodel.nb_cars), nothing)
 create_observation(pomdp::Union{NoCrashPOMDP,SuccessPOMDP}) = MLObs(0.0, 0.0, Array(CarStateObs, pomdp.dmodel.nb_cars), nothing)
 
-function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState=create_state(mdp))
+function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractRNG)
+
+    @if_debug dbg_rng = copy(rng)
+
+    sp::MLState=create_state(mdp)
 
     pp = mdp.dmodel.phys_param
     dt = pp.dt
@@ -358,10 +363,16 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                 # check if they will be in the same lane
                 if occupation_overlap(car_i.y + dys[i], car_j.y + dys[j])
                     # warn and nudge behind
+                    @if_debug begin
+                        println("Conflict because of noise: front:$i, back:$j")
+                        Gallium.@enter generate_s(mdp, s, a, dbg_rng)
+                    end
                     if i == 1
-                        warn("Car nudged because noise would cause a crash (ego in front).")
+                        # warn("Car nudged because noise would cause a crash (ego in front).")
+                        error("Car nudged because noise would cause a crash (ego in front).")
                     else
-                        warn("Car nudged because noise would cause a crash.")
+                        # warn("Car nudged because noise would cause a crash.")
+                        error("Car nudged because noise would cause a crash.")
                     end
                     dxs[j] = car_i.x + dxs[i] - car_j.x - 1.01*pp.l_car
                     dvs[j] = 2.0*(dxs[j]/dt - car_j.vel)
@@ -622,13 +633,13 @@ function initial_state(mdp::NoCrashProblem, rng::AbstractRNG=Base.GLOBAL_RNG)
     return relaxed_initial_state(mdp, 200, rng)
 end
 
-function generate_o(mdp::NoCrashProblem, s::MLState, a::MLAction, sp::MLState, o::MLObs=create_observation(mdp))
+function generate_o(mdp::NoCrashProblem, s::MLState, a::MLAction, sp::MLState)
     return MLObs(sp)
 end
 
-function generate_sor(pomdp::Union{NoCrashPOMDP, SuccessPOMDP}, s::MLState, a::MLAction, rng::AbstractRNG, sp::MLState, o::MLObs)
-    sp, r = generate_sr(pomdp, s, a, rng, sp)
-    o = generate_o(pomdp, s, a, sp, o)
+function generate_sor(pomdp::Union{NoCrashPOMDP, SuccessPOMDP}, s::MLState, a::MLAction, rng::AbstractRNG)
+    sp, r = generate_sr(pomdp, s, a, rng)
+    o = generate_o(pomdp, s, a, sp)
     return sp, o, r
 end
 
