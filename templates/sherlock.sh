@@ -25,4 +25,4 @@
 #SBATCH --ntasks-per-node=1
 #################
 
-~/bin/julia ~/.julia/v0.4/Multilane/scripts/runsims.jl {{{:object_file_path}}} {{{:list_file_path}}}
+~/bin/julia ~/.julia/v0.5/Multilane/scripts/runsims.jl {{{:object_file_path}}} {{{:list_file_path}}}
