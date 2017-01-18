@@ -2,6 +2,8 @@ using POMDPs
 
 POMDPs.add("GenerativeModels")
 POMDPs.add("POMDPToolbox")
+POMDPs.add("MCTS")
+POMDPs.add("POMCP")
 
 try
     Pkg.clone("https://github.com/tawheeler/Vec.jl.git")
