@@ -1,4 +1,4 @@
-const GLOBAL_DEBUG = 1
+const GLOBAL_DEBUG = 0
 
 import Gallium
 

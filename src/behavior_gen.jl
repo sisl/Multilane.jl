@@ -7,6 +7,13 @@ end
 
 rand(rng::AbstractRNG, s::DiscreteBehaviorSet) = sample(rng, s.models, s.weights)
 
+function max_accel(gen::DiscreteBehaviorSet)
+    m = gen.models
+    w = gen.weights
+    len = length(m)
+    return maximum(max_accel(m[i]) for i in 1:len if w[i] > 0.0)
+end
+
 type UniformIDMMOBIL <: BehaviorGenerator
     min_idm::IDMParam
     max_idm::IDMParam
@@ -195,3 +202,5 @@ CorrelatedIDMMOBIL(gen::Union{CopulaIDMMOBIL, UniformIDMMOBIL}) = CorrelatedIDMM
     gen.max_mobil,
     gen.next_idx
 )
+
+max_accel(gen::BehaviorGenerator) = 1.5*gen.max_idm.a

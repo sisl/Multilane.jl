@@ -33,6 +33,13 @@ gen_lane_change(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLSta
 
 function gen_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 
+    d = accel_dist(bmodel, dmodel, s, neighborhood, idx)
+    acc = rand(rng, d)
+
+    return max(acc, -dmodel.phys_param.brake_limit)
+end
+
+function accel_dist(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int)
 	pp = dmodel.phys_param
 	dt = pp.dt
 	car = s.cars[idx]
@@ -45,6 +52,9 @@ function gen_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s:
 
     @assert acc <= 1.01*bmodel.p_idm.a
 
+    @if_debug if ds < 0.0
+        Gallium.@enter accel_dist(bmodel, dmodel, s, neighborhood, idx)
+    end
     @assert ds >= 0.0 # can get rid of this
     if neighborhood[2] > 0
         @assert abs(s.cars[neighborhood[2]].vel - (vel-dv)) < 0.0001
@@ -61,36 +71,12 @@ function gen_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s:
     lower_bound = min(-1e-5, max(-bmodel.p_idm.a/2, -pp.brake_limit-acc))
     upper_bound = min(bmodel.p_idm.a/2, max(max_safe-acc, 1e-5))
 
-    d = TriangularDist(lower_bound, upper_bound, 0.0)
-    acc += rand(rng, d)
-
-	# add gaussian noise
-	# acc += randn(rng) * dmodel.vel_sigma/dt
-
-    # enforce physical limit (maybe this should not be done right here?)
-	return max(acc, -dmodel.phys_param.brake_limit)
+    return TriangularDist(acc+lower_bound, acc+upper_bound, acc)
 end
 
 function max_accel(bmodel::IDMMOBILBehavior)
     return 1.5*bmodel.p_idm.a
 end
-
-#=
-function max_accel(bmodel::IDMMOBILBehavior, dt, vel, dv, ds)
-	dvel = get_idm_dv(bmodel.p_idm, dt, vel, dv, ds)
-    acc = dvel/dt
-    return acc+bmodel.p_idm.a/2
-end
-
-function max_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int)
-	pp = dmodel.phys_param
-	dt = pp.dt
-	car = s.cars[idx]
-	vel = car.vel
-	dv, ds = get_dv_ds(pp,s,neighborhood,idx,2)
-    return max_accel(bmodel::IDMMOBILBehavior, dt, vel, dv, ds)
-end
-=#
 
 function gen_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
 

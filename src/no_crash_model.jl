@@ -242,7 +242,7 @@ function is_safe(mdp::NoCrashProblem, s::Union{MLState,MLObs}, a::MLAction)
                 n_braking_acc = nullable_max_safe_acc(gap, car.vel, ego.vel, mdp.dmodel.phys_param.brake_limit, dt)
 
                 # if isnull(n_braking_acc) || get(n_braking_acc) < -mdp.dmodel.phys_param.brake_limit
-                if isnull(n_braking_acc) || get(n_braking_acc) < max_accel(car.behavior)
+                if isnull(n_braking_acc) || get(n_braking_acc) < max_accel(mdp.dmodel.behaviors)
                     return false
                 end
             end
@@ -305,6 +305,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         end
     end
     sorted_changers = sort!(collect(changers), by=i->s.cars[i].x, rev=true) # this might be slow because anonymous functions are slow
+    # from front to back
 
     if length(sorted_changers) >= 2 #something to compare
         # iterate through pairs
@@ -313,19 +314,25 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         while !done(sorted_changers, iter_state)
             i = j
             j, iter_state = next(sorted_changers, iter_state)
-            car_i = s.cars[i]
-            car_j = s.cars[j]
+            car_i = s.cars[i] # front
+            car_j = s.cars[j] # back
 
             # check if they are both starting to change lanes on this step
             if isinteger(car_i.y) && isinteger(car_j.y)
 
-                # make sure there is a conflict longitudinally
-                # if car_i.x - car_j.x <= pp.l_car || car_i.x + dxs[i] - car_j.x + dxs[j] <= pp.l_car
-                # if car_i.x - car_j.x <= mdp.dmodel.appear_clearance # made more conservative on 8/19
-                if car_i.x - car_j.x <= get_idm_s_star(car_j.behavior.p_idm, car_j.vel, car_j.vel-car_i.vel) # upgraded to sstar on 8/19
+                # check if they are near each other lanewise
+                if abs(car_i.y - car_j.y) <= 2.0
 
-                    # check if they are near each other lanewise
-                    if abs(car_i.y - car_j.y) <= 2.0
+                    # make sure there is a conflict longitudinally
+                    # if car_i.x - car_j.x <= pp.l_car || car_i.x + dxs[i] - car_j.x + dxs[j] <= pp.l_car
+                    # if car_i.x - car_j.x <= mdp.dmodel.appear_clearance # made more conservative on 8/19
+                    # if car_i.x - car_j.x <= get_idm_s_star(car_j.behavior.p_idm, car_j.vel, car_j.vel-car_i.vel) # upgraded to sstar on 8/19
+                    ivp = car_i.vel + dt*dvs[i]
+                    jvp = car_j.vel + dt*dvs[j]
+                    ixp = car_i.x + dt*(car_i.vel + ivp)/2.0
+                    jxp = car_j.x + dt*(car_j.vel + jvp)/2.0
+                    n_max_acc_p = nullable_max_safe_acc(ixp-jxp-pp.l_car, jvp, ivp, pp.brake_limit,dt)
+                    if ixp - jxp <= pp.l_car || car_i.x - car_j.x <= pp.l_car || isnull(n_max_acc_p) || get(n_max_acc_p) < -pp.brake_limit
 
                         # check if they are moving towards each other
                         # if dys[i]*dys[j] < 0.0 && abs(car_i.y+dys[i] - car_j.y+dys[j]) < 2.0
