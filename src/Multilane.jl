@@ -5,9 +5,9 @@ import StatsBase: WeightVec, sample
 
 using POMDPs
 import POMDPs: actions, discount, isterminal, iterator
-import POMDPs: create_action, create_state, rand, reward, create_observation, create_policy
+import POMDPs: rand, reward
 import POMDPs: solve, action
-import POMDPs: create_belief, update, initialize_belief
+import POMDPs: update, initialize_belief
 using GenerativeModels
 import GenerativeModels: generate_s, generate_sr, initial_state, generate_o, generate_sor
 
@@ -35,6 +35,8 @@ import Mustache
 import JLD
 
 using Parameters
+
+include("debug.jl")
 
 # package code goes here
 export
@@ -144,6 +146,7 @@ export
 export
     include_visualization
 
+include("triangular.jl")
 include("physical.jl")
 include("MDP_types.jl")
 include("crash.jl")
@@ -171,5 +174,16 @@ include("sherlock.jl")
 
 include_visualization() = include(joinpath(Pkg.dir("Multilane"),"src","visualization.jl"))
 
+if gethostname() == "Theresa"
+    println("Automatically loading visualization components.")
+    include("visualization.jl")
+    export
+        display_sim,
+        show_state,
+        show_sim,
+        display_sim,
+        save_frame,
+        visualize
+end
 
 end # module

@@ -87,13 +87,12 @@ function weights_from_particles!(b::BehaviorParticleBelief,
             co = o.cars[io]
             csp = sp.cars[isp]
             if co.id == csp.id
-                # sigma_acc = dmodel.vel_sigma/dt
-                # dv = acc*dt
-                # sigma_v = sigma_dv = dmodel.vel_sigma
                 if abs(co.x-csp.x) < 0.2*problem.dmodel.phys_param.lane_length
-                    proportional_likelihood = proportional_normal_pdf(csp.vel,
-                                                                      co.vel,
-                                                                      problem.dmodel.vel_sigma*(1+p.smoothing))
+                    @assert isa(csp.behavior, IDMMOBILBehavior)
+                    a = csp.behavior.p_idm.a
+                    dt = problem.dmodel.phys_param.dt
+                    veld = TriangularDist(csp.vel-a*dt/2.0, csp.vel+a*dt/2.0, csp.vel)
+                    proportional_likelihood = Distributions.pdf(veld, co.vel)
                     if proportional_likelihood > 0.0
                         if co.y == csp.y
                             push!(b.particles[io], csp.behavior)

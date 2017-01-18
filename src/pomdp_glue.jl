@@ -40,7 +40,7 @@ function action(agent::MLPOMDPAgent, state::MLState)
     return a
 end
 
-type ParticleGenerator <: AbstractDistribution{MLState}
+type ParticleGenerator
     physical::MLPhysicalState
     behaviors::BehaviorGenerator
 end

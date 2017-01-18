@@ -1,6 +1,6 @@
 set_problem!(u::Updater, ::Union{POMDP,MDP}) = u
 
-abstract BehaviorBelief <: AbstractDistribution{MLState}
+abstract BehaviorBelief
 
 type DiscreteBehaviorBelief <: BehaviorBelief
     physical::MLPhysicalState

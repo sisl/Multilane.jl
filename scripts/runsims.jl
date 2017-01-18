@@ -34,6 +34,16 @@ stats = list["stats"]
 metrics = get(list, "metrics", [])
 
 sims = run_simulations(stats, objects, progress=args["progress"])
+if any(isa(r, RemoteException) || !isnull(r.exception) for r in sims)
+    print_with_color(:red, """
+        Error in simulations. Run the following to debug:
+
+        ARGS = $ARGS
+        include("$(@__FILE__)")
+        """)
+        # julia -i $(@__FILE__) $(first(args["objectfile"])) $(first(args["listfile"]))
+    println()
+end
 fill_stats!(stats, objects, sims)
 
 objects["stats"] = stats

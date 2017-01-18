@@ -2,8 +2,9 @@ immutable GaussianCopula
     cov::Array{Float64, 2}
     _chol::Array{Float64, 2}
     # GaussianCopula(cov::Array{Float64,2}) = new(cov, chol(cov, Val{:L}))
-    GaussianCopula(cov::Array{Float64,2}) = new(cov, ctranspose(chol(cov)))
+    # two argument constructor is allowed for easy copy-paste for debugging
 end
+GaussianCopula(cov::Array{Float64,2}) = GaussianCopula(cov, ctranspose(chol(cov)))
 GaussianCopula(ndim::Int, rho::Float64) = GaussianCopula(rho*ones(ndim, ndim) + (1.0-rho)*diagm(ones(ndim)))
 
 ndim(c::GaussianCopula) = size(c.cov,1)

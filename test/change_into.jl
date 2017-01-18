@@ -8,12 +8,13 @@ s = Multilane.MLState(0.0,0.0,[Multilane.CarState(50.0,1.0,31.74906513736733,0.0
 
 a = Multilane.MLAction(-0.37277643831998186,0.6666666666666666)
 
+# show_state(mdp, s)
+
 sp = generate_s(mdp, s, a, MersenneTwister(1))
 
 @test !(sp.cars[1].y > 1 && sp.cars[3].y < 3)
 
 #=
-
 using Cairo
 c = visualize(mdp, s, a, sp)
 fname = string(tempname(), ".png")
@@ -23,5 +24,4 @@ c2 = visualize(mdp, sp)
 fname = string(tempname(), ".png")
 write_to_png(c2, fname)
 @spawn run(`xdg-open $fname`)
-
 =#

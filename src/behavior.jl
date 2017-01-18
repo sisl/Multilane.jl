@@ -32,6 +32,14 @@ gen_accel(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, ne
 gen_lane_change(bmodel::BehaviorModel, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG) = error("Uninstantiated Behavior Model")
 
 function gen_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
+
+    d = accel_dist(bmodel, dmodel, s, neighborhood, idx)
+    acc = rand(rng, d)
+
+    return max(acc, -dmodel.phys_param.brake_limit)
+end
+
+function accel_dist(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int)
 	pp = dmodel.phys_param
 	dt = pp.dt
 	car = s.cars[idx]
@@ -44,11 +52,30 @@ function gen_accel(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s:
 
     @assert acc <= 1.01*bmodel.p_idm.a
 
-	# add gaussian noise
-	acc += randn(rng) * dmodel.vel_sigma/dt
+    @if_debug if ds < 0.0
+        Gallium.@enter accel_dist(bmodel, dmodel, s, neighborhood, idx)
+    end
+    @assert ds >= 0.0 # can get rid of this
+    if neighborhood[2] > 0
+        @assert abs(s.cars[neighborhood[2]].vel - (vel-dv)) < 0.0001
+    end
 
-    # enforce physical limit (maybe this should not be done right here?)
-	return max(acc, -dmodel.phys_param.brake_limit)
+    max_safe = max_safe_acc(ds, vel, vel-dv, pp.brake_limit, dt)
+
+    # if T, a, and b are small the idm may command something faster than the max_safe
+    # @assert max_safe >= acc "max_safe=$max_safe; acc=$acc"
+    if acc > max_safe
+        acc = max_safe
+    end
+
+    lower_bound = min(-1e-5, max(-bmodel.p_idm.a/2, -pp.brake_limit-acc))
+    upper_bound = min(bmodel.p_idm.a/2, max(max_safe-acc, 1e-5))
+
+    return TriangularDist(acc+lower_bound, acc+upper_bound, acc)
+end
+
+function max_accel(bmodel::IDMMOBILBehavior)
+    return 1.5*bmodel.p_idm.a
 end
 
 function gen_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s::MLState, neighborhood::Array{Int,1}, idx::Int, rng::AbstractRNG)
@@ -57,37 +84,18 @@ function gen_lane_change(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsMod
 	dt = pp.dt
 	car = s.cars[idx]
 	lane_change = car.lane_change #this is a velocity in the y direction in LANES PER SECOND
-	#lane_ = round(max(1,min(car.y+lane_change,2*pp.nb_lanes-1)))
-	#if increment y in the same timestep as deciding to lanechange
 	lane_ = car.y
 
 	if mod(lane_-0.5,1) == 0. #in between lanes
         @assert lane_change != 0
 		return lane_change
-
-        #= # cannot abort lane changes
-		if is_lanechange_dangerous(pp, s, neighborhood, idx, lanechange)
-				lanechange *= -1
-		end
-        =#
 	end
 
 	#sample normally
 	lanechange_::Int = get_mobil_lane_change(bmodel, pp, s, neighborhood, idx, rng)
 	#gives +1, -1 or 0
-	#if frnot neighbor is lanechanging, don't lane change
-    # I DONT think this works because lane_change may not be updated
-    #=
-	nbr = neighborhood[2]
-	ahead_dy = nbr != 0 ? s.cars[nbr].lane_change : 0
-	if ahead_dy != 0
-			lanechange_ = 0.
-	end
-    =#
 
     lanechange = lanechange_
-	#NO LANECHANGING
-	#lanechange = 0
 
 	return lanechange * dmodel.lane_change_rate
 end
