@@ -19,3 +19,4 @@ end
 function rand(rng::AbstractRNG, c::GaussianCopula, sample::Vector{Float64}=Array(Float64, ndim(c)))
     return normal_cdf(sample_mvn(rng, c._chol))
 end
+rand(c::GaussianCopula) = rand(Base.GLOBAL_RNG, c)

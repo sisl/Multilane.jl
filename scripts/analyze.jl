@@ -1,4 +1,4 @@
-#!/usr/bin/julia --color=yes
+#!/usr/bin/env julia --color=yes
 
 using ArgParse
 
