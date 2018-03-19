@@ -1,4 +1,4 @@
-type BehaviorParticleBelief <: BehaviorBelief
+mutable struct BehaviorParticleBelief <: BehaviorBelief
     gen::UniformIDMMOBIL
     physical::MLPhysicalState
     particles::Vector{Vector{BehaviorModel}} # First index is the position in physical.cars
@@ -117,7 +117,7 @@ function weights_from_particles!(b::BehaviorParticleBelief,
     return b
 end
 
-type BehaviorParticleUpdater <: Updater{BehaviorParticleBelief}
+mutable struct BehaviorParticleUpdater <: Updater{BehaviorParticleBelief}
     problem::Nullable{NoCrashProblem}
     nb_sims::Int
     p_resample_noise::Float64

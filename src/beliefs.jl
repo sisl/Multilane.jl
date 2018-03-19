@@ -1,8 +1,8 @@
 set_problem!(u::Updater, ::Union{POMDP,MDP}) = u
 
-abstract BehaviorBelief
+abstract type BehaviorBelief end
 
-type DiscreteBehaviorBelief <: BehaviorBelief
+mutable struct DiscreteBehaviorBelief <: BehaviorBelief
     physical::MLPhysicalState
     models::AbstractVector
     weights::Vector{Vector{Float64}}
@@ -20,7 +20,7 @@ function rand(rng::AbstractRNG,
     return s
 end
 
-@with_kw type WeightUpdateParams
+@with_kw mutable struct WeightUpdateParams
     smoothing::Float64 = 0.02 # value between 0 and 1, adds this fraction of the max to each entry in the vector
     wrong_lane_factor::Float64 = 0.1
 end
@@ -74,7 +74,7 @@ function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProb
     return b
 end
 
-type BehaviorBeliefUpdater <: Updater{DiscreteBehaviorBelief}
+mutable struct BehaviorBeliefUpdater <: Updater{DiscreteBehaviorBelief}
     problem::NoCrashProblem
     smoothing::Float64
     nb_particles::Float64
@@ -98,7 +98,7 @@ function update(up::BehaviorBeliefUpdater,
     error("not implemented")
 end
 
-type BehaviorRootUpdater <: Updater{POMCP.BeliefNode}
+mutable struct BehaviorRootUpdater <: Updater{POMCP.BeliefNode}
     problem::NoCrashProblem
     params::WeightUpdateParams
     min_particles::Int

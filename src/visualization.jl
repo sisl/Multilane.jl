@@ -104,7 +104,7 @@ function visualize(pp::PhysicalParam, s::MLState)
     render(scene, roadway, [CarIDOverlay(), CarVelOverlay()], cam=FitToContentCamera())
 end
 
-type HardBrakeOverlay <: SceneOverlay
+mutable struct HardBrakeOverlay <: SceneOverlay
     pp::PhysicalParam
     ids::Vector{Int}
 end
@@ -124,7 +124,7 @@ function AutoViz.render!(rm::RenderModel, o::HardBrakeOverlay, scene::Scene, roa
     # end
 end
 
-type InfoOverlay <: SceneOverlay
+mutable struct InfoOverlay <: SceneOverlay
     pp::PhysicalParam
     state_index::Nullable{Int}
     vel::Float64
@@ -155,7 +155,7 @@ function AutoViz.render!(rm::RenderModel, o::InfoOverlay, scene::Scene, roadway:
     end
 end
 
-type CarIDOverlay <: SceneOverlay end
+mutable struct CarIDOverlay <: SceneOverlay end
 
 function AutoViz.render!(rm::RenderModel, o::CarIDOverlay, scene::Scene, roadway::Roadway)
     for (i,v) in enumerate(scene)
@@ -172,7 +172,7 @@ function AutoViz.render!(rm::RenderModel, o::CarIDOverlay, scene::Scene, roadway
     end
 end
 
-type CarVelOverlay <: SceneOverlay end
+mutable struct CarVelOverlay <: SceneOverlay end
 
 function AutoViz.render!(rm::RenderModel, o::CarVelOverlay, scene::Scene, roadway::Roadway)
     for (i,v) in enumerate(scene)

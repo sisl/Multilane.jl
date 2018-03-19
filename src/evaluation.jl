@@ -260,7 +260,7 @@ function careful_merge!(d1::Dict, d2::Dict)
     return d1
 end
 
-function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any}, r2::Dict{S2, Any}; careful=true)
+function merge_results!(r1::Dict{S1, Any}, r2::Dict{S2, Any}; careful=true) where {S1<:AbstractString, S2<:AbstractString}
     merge!(r1["solvers"], r2["solvers"])
     merge!(r1["problems"], r2["problems"])
     if careful
@@ -303,7 +303,7 @@ function merge_results!{S1<:AbstractString, S2<:AbstractString}(r1::Dict{S1, Any
 end
 
 
-function rerun{S<:AbstractString}(results::Dict{S, Any}, id; enforce_match=true)
+function rerun(results::Dict{S, Any}, id; enforce_match=true) where S<:AbstractString
     stats = results["stats"]
     @assert stats[:id][id] == id
     problem = results["problems"][stats[:problem_key][id]]

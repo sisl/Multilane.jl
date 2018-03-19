@@ -1,20 +1,20 @@
-abstract BehaviorModel
-abstract AbstractMLRewardModel
-abstract AbstractMLDynamicsModel
+abstract type BehaviorModel end
+abstract type AbstractMLRewardModel end
+abstract type AbstractMLDynamicsModel end
 
-type MLMDP{S, A, DModel<:AbstractMLDynamicsModel, RModel<:AbstractMLRewardModel}  <: MDP{S, A}
+mutable struct MLMDP{S, A, DModel<:AbstractMLDynamicsModel, RModel<:AbstractMLRewardModel}  <: MDP{S, A}
     dmodel::DModel
     rmodel::RModel
     discount::Float64
 end
 
-type MLPOMDP{S, A, O, DModel<:AbstractMLDynamicsModel, RModel<:AbstractMLRewardModel}  <: POMDP{S, A, O}
+mutable struct MLPOMDP{S, A, O, DModel<:AbstractMLDynamicsModel, RModel<:AbstractMLRewardModel}  <: POMDP{S, A, O}
   dmodel::DModel
   rmodel::RModel
   discount::Float64
 end
 
-type OriginalRewardModel <: AbstractMLRewardModel
+mutable struct OriginalRewardModel <: AbstractMLRewardModel
 	r_crash::Float64
 	accel_cost::Float64
 	decel_cost::Float64
@@ -23,7 +23,7 @@ type OriginalRewardModel <: AbstractMLRewardModel
 	lanechange_cost::Float64
 end
 
-type IDMMOBILModel <: AbstractMLDynamicsModel
+mutable struct IDMMOBILModel <: AbstractMLDynamicsModel
 	nb_cars::Int
     phys_param::PhysicalParam
 
@@ -40,7 +40,7 @@ function IDMMOBILModel(nb_cars, phys_param; encounter_prob=0.5, accels=Int[-3,-2
 end
 
 # TODO for performance, parameterize this by BehaviorModel
-immutable CarState
+struct CarState
     x::Float64
     y::Float64
 	vel::Float64 #v_x
@@ -56,7 +56,7 @@ Base.hash(a::CarState, h::UInt64=zero(UInt64)) = hash(a.vel, hash(a.x, hash(a.y,
 "Return a representation that will produce a valid object if executed"
 Base.repr(c::CarState) = "CarState($(c.x),$(c.y),$(c.vel),$(c.lane_change),$(c.behavior),$(c.id))"
 
-type MLState
+mutable struct MLState
     x::Float64 # total distance traveled by the ego
     t::Float64 # total time of the simulation
 	cars::Array{CarState,1} #NOTE ego car is first car
@@ -89,7 +89,7 @@ function Base.hash(a::MLState, h::UInt64=zero(UInt64))
     end
 end
 
-immutable MLAction
+struct MLAction
     acc::Float64
     lane_change::Float64 # ydot
 end
@@ -98,25 +98,25 @@ MLAction() = MLAction(0,0)
 Base.hash(a::MLAction,h::UInt64=zero(UInt64)) = hash(a.acc,hash(a.lane_change,h))
 function MLAction(x::Array{Float64,1})
 	assert(length(x)==2)
-	lane_change = abs(x[2]) <= 0.3? 0: sign(x[2])
+	lane_change = abs(x[2]) <= 0.3 ? 0 : sign(x[2])
 	return MLAction(x[1],lane_change)
 end
 vec(a::MLAction) = Float64[a.acc;a.lane_change]
 
-typealias OriginalMDP MLMDP{MLState, MLAction, IDMMOBILModel, OriginalRewardModel}
+const OriginalMDP = MLMDP{MLState, MLAction, IDMMOBILModel, OriginalRewardModel}
 
-type ActionSpace
+mutable struct ActionSpace
 	actions::Vector{MLAction}
 end
 
-immutable CarPhysicalState
+struct CarPhysicalState
     x::Float64
     y::Float64
     vel::Float64
     lane_change::Float64
     id::Int
 end
-typealias CarStateObs CarPhysicalState
+const CarStateObs = CarPhysicalState
 
 ==(a::CarPhysicalState, b::CarPhysicalState) = (a.x == b.x) && (a.y == b.y) && (a.vel == b.vel) && (a.lane_change == b.lane_change) && (a.id == b.id)
 Base.hash(a::CarPhysicalState, h::UInt64=zero(UInt64)) = hash(a.x, hash(a.y, hash(a.vel, (hash(a.lane_change, hash(a.id,h))))))
@@ -125,13 +125,13 @@ function CarState(cps::CarPhysicalState, behavior::BehaviorModel)
     return CarState(cps.x, cps.y, cps.vel, cps.lane_change, behavior, cps.id)
 end
 
-immutable MLPhysicalState
+struct MLPhysicalState
     x::Float64
     t::Float64
     cars::Array{CarPhysicalState,1}
     terminal::Nullable{Any} # Should be Nullable{Symbol}
 end
-typealias MLObs MLPhysicalState
+const MLObs = MLPhysicalState
 
 MLPhysicalState(s::MLState) = MLPhysicalState(s.x, s.t, CarPhysicalState[CarPhysicalState(cs) for cs in s.cars], s.terminal)
 

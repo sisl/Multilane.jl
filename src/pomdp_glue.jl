@@ -1,6 +1,6 @@
 # XXX this is all kind of hacky
 
-type MLPOMDPSolver <: Solver
+mutable struct MLPOMDPSolver <: Solver
     solver
     updater::Nullable{Any}
 end
@@ -9,7 +9,7 @@ function set_rng!(s::MLPOMDPSolver, rng::AbstractRNG)
     set_rng!(get(s.updater), rng)
 end
 
-type MLPOMDPAgent <: Policy
+mutable struct MLPOMDPAgent <: Policy
     updater::Updater
     previous_belief::Nullable{Any}
     policy::Policy
@@ -40,7 +40,7 @@ function action(agent::MLPOMDPAgent, state::MLState)
     return a
 end
 
-type ParticleGenerator
+mutable struct ParticleGenerator
     physical::MLPhysicalState
     behaviors::BehaviorGenerator
 end

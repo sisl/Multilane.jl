@@ -1,6 +1,6 @@
-abstract SimMetric # functions: key(m), datatype(m), calculate(m, mdp, sim)
+abstract type SimMetric end # functions: key(m), datatype(m), calculate(m, mdp, sim)
 
-type MaxBrakeMetric <: SimMetric end
+mutable struct MaxBrakeMetric <: SimMetric end
 key(::MaxBrakeMetric) = :max_brake
 datatype(::MaxBrakeMetric) = Float64
 function calculate(m::MaxBrakeMetric, problem::NoCrashProblem, sim::HistoryRecorder)
@@ -15,7 +15,7 @@ function calculate(m::MaxBrakeMetric, problem::NoCrashProblem, sim::HistoryRecor
     return max_brake
 end
 
-type NumBehaviorBrakesMetric
+mutable struct NumBehaviorBrakesMetric
     idx::Int
     name::AbstractString
     threshold::Float64

@@ -2,7 +2,7 @@
 ##Physical Parameters##
 #######################
 
-type PhysicalParam
+mutable struct PhysicalParam
 	dt::Float64
 	w_car::Float64
 	l_car::Float64

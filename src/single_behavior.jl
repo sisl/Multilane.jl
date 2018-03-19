@@ -1,11 +1,11 @@
 # Code for solving assuming that all other cars have a single identical behavior model
 
-type SingleBehaviorSolver <: Solver
+mutable struct SingleBehaviorSolver <: Solver
     inner_solver::Solver
     behavior::BehaviorModel
 end
 
-type SingleBehaviorPolicy <: Policy{MLState}
+mutable struct SingleBehaviorPolicy <: Policy{MLState}
     inner_policy::Policy{MLState}
     behavior::BehaviorModel
 end

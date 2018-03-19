@@ -1,4 +1,4 @@
-immutable IDMMOBILBehavior <: BehaviorModel
+struct IDMMOBILBehavior <: BehaviorModel
 	p_idm::IDMParam
 	p_mobil::MOBILParam
 	idx::Int
@@ -13,7 +13,7 @@ Base.hash(a::IDMMOBILBehavior,h::UInt64=zero(UInt64)) = hash(a.p_idm,hash(a.p_mo
 .*(b::IDMMOBILBehavior, v::Vector{Float64}) = IDMMOBILBehavior(b.p_idm.*v[1:6], b.p_mobil.*v[7:9], 0)
 ^(b::IDMMOBILBehavior, p::Integer) = IDMMOBILBehavior(b.p_idm.^p, b.p_mobil.^p, 0)
 .^(b::IDMMOBILBehavior, p::Integer) = IDMMOBILBehavior(b.p_idm.^p, b.p_mobil.^p, 0)
-.-{B<:BehaviorModel}(v::Vector{B}, b::IDMMOBILBehavior) = B[v[i]-b for i in 1:length(v)]
+.-(v::Vector{B}, b::IDMMOBILBehavior) where {B<:BehaviorModel} = B[v[i]-b for i in 1:length(v)]
 /(b::IDMMOBILBehavior, f::Real) = 1/f*b
 sqrt(b::IDMMOBILBehavior) = IDMMOBILBehavior(sqrt(b.p_idm), sqrt(b.p_mobil), 0)
 zero(::Type{IDMMOBILBehavior}) = IDMMOBILBehavior(zero(IDMParam), zero(MOBILParam), 0)
@@ -103,7 +103,7 @@ end
 #############################################################################
 #TODO How to make compatible with MOBIL?
 
-type AvoidModel <: BehaviorModel
+mutable struct AvoidModel <: BehaviorModel
 	jerk::Bool
 end
 AvoidModel() = AvoidModel(false)

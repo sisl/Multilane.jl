@@ -1,4 +1,4 @@
-immutable GaussianCopula
+struct GaussianCopula
     cov::Array{Float64, 2}
     _chol::Array{Float64, 2}
     # GaussianCopula(cov::Array{Float64,2}) = new(cov, chol(cov, Val{:L}))

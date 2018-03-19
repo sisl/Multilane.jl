@@ -14,7 +14,7 @@ function RobustMCTS.next_model(gen::RandomModelGenerator, rmdp::RobustNoCrashMDP
 end
 =#
 
-abstract EmbeddedBehaviorMDP <: MDP{MLPhysicalState, MLAction}
+abstract type EmbeddedBehaviorMDP <: MDP{MLPhysicalState, MLAction} end
 
 actions(p::EmbeddedBehaviorMDP) = actions(p.base)
 actions(p::EmbeddedBehaviorMDP, s::MLPhysicalState, as::NoCrashActionSpace) = actions(p.base, s, as)
@@ -23,7 +23,7 @@ create_state(p::EmbeddedBehaviorMDP) = MLPhysicalState(false, 0.0, 0.0, [])
 discount(p::EmbeddedBehaviorMDP) = discount(p.base)
 # reward(p::EmbeddedBehaviorMDP, s::MLPhysicalState, a::MLAction, sp::MLPhysicalState)
 
-type FixedBehaviorNoCrashMDP <: EmbeddedBehaviorMDP
+mutable struct FixedBehaviorNoCrashMDP <: EmbeddedBehaviorMDP
     behaviors::Dict{Int,Nullable{BehaviorModel}}
     base::MLMDP
 end
@@ -42,7 +42,7 @@ function generate_sr(mdp::FixedBehaviorNoCrashMDP, s::MLPhysicalState, a::MLActi
     return MLPhysicalState(full_sp), reward(mdp.base, full_s, a, full_sp)
 end
 
-type StochasticBehaviorNoCrashMDP <: EmbeddedBehaviorMDP
+mutable struct StochasticBehaviorNoCrashMDP <: EmbeddedBehaviorMDP
     base::MLMDP
 end
 

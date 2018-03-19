@@ -5,7 +5,7 @@
 ##MOBIL Model##
 ###############
 
-immutable MOBILParam
+struct MOBILParam
 	p::Float64 #politeness factor
 	b_safe::Float64 #safe braking value
 	a_thr::Float64 #minimum accel

@@ -1,12 +1,12 @@
 # heuristics.jl
 # heuristic policies
 
-type Simple <: Policy #
+mutable struct Simple <: Policy #
   mdp
   A::NoCrashActionSpace
   sweeping_up::Bool
 end
-type SimpleSolver <: Solver end
+mutable struct SimpleSolver <: Solver end
 
 Simple(mdp) = Simple(mdp,actions(mdp),true)
 solve(solver::SimpleSolver, problem::MDP) = Simple(problem)
@@ -54,12 +54,12 @@ function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.md
 end
 action(p::Simple, b::BehaviorBelief, a::MLAction=create_action(p.mdp)) = action(p, b.physical, a)
 
-type BehaviorSolver <: Solver
+mutable struct BehaviorSolver <: Solver
     b::BehaviorModel
     keep_lane::Bool
     rng::AbstractRNG
 end
-type BehaviorPolicy <: Policy
+mutable struct BehaviorPolicy <: Policy
     problem::NoCrashProblem
     b::BehaviorModel
     keep_lane::Bool
@@ -80,12 +80,12 @@ end
 action(p::BehaviorPolicy, b::AggressivenessBelief, a::MLAction=MLAction(0.0,0.0)) = action(p, most_likely_state(b))
 action(p::BehaviorPolicy, b::BehaviorParticleBelief, a::MLAction=MLAction(0.0,0.0)) = action(p, most_likely_state(b))
 
-type IDMLaneSeekingSolver <: Solver
+mutable struct IDMLaneSeekingSolver <: Solver
     b::BehaviorModel
     rng::AbstractRNG
 end
 
-type IDMLaneSeekingPolicy <: Policy
+mutable struct IDMLaneSeekingPolicy <: Policy
     problem::NoCrashProblem
     b::BehaviorModel
     rng::AbstractRNG

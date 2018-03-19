@@ -5,7 +5,7 @@
 ##IDM Model##
 #############
 
-immutable IDMParam
+struct IDMParam
 	a::Float64 #max  comfy acceleration
 	b::Float64 #max comfy brake speed
 	T::Float64 #desired safety time headway

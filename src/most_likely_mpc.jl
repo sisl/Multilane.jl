@@ -1,4 +1,4 @@
-type MLMPCSolver <: Solver
+mutable struct MLMPCSolver <: Solver
     solver
     updater::Nullable{Any}
 end
@@ -7,7 +7,7 @@ function set_rng!(s::MLMPCSolver, rng::AbstractRNG)
     set_rng!(get(s.updater), rng)
 end
 
-type MLMPCAgent <: Policy
+mutable struct MLMPCAgent <: Policy
     updater::Updater
     previous_belief::Nullable{Any}
     policy::Policy

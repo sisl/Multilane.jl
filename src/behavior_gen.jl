@@ -1,6 +1,6 @@
-abstract BehaviorGenerator
+abstract type BehaviorGenerator end
 
-type DiscreteBehaviorSet <: BehaviorGenerator
+mutable struct DiscreteBehaviorSet <: BehaviorGenerator
     models::Vector{BehaviorModel}
     weights::WeightVec
 end
@@ -14,7 +14,7 @@ function max_accel(gen::DiscreteBehaviorSet)
     return maximum(max_accel(m[i]) for i in 1:len if w[i] > 0.0)
 end
 
-type UniformIDMMOBIL <: BehaviorGenerator
+mutable struct UniformIDMMOBIL <: BehaviorGenerator
     min_idm::IDMParam
     max_idm::IDMParam
     min_mobil::MOBILParam
@@ -117,7 +117,7 @@ function clip(b::IDMMOBILBehavior, gen::UniformIDMMOBIL)
     )
 end
 
-type CorrelatedIDMMOBIL <: BehaviorGenerator
+mutable struct CorrelatedIDMMOBIL <: BehaviorGenerator
     min_idm::IDMParam
     max_idm::IDMParam
     min_mobil::MOBILParam
@@ -152,7 +152,7 @@ function aggressiveness(gen::CorrelatedIDMMOBIL, b::IDMMOBILBehavior)
     return (b.p_idm.v0 - gen.min_idm.v0)/(gen.max_idm.v0 - gen.min_idm.v0)
 end
 
-type CopulaIDMMOBIL <: BehaviorGenerator
+mutable struct CopulaIDMMOBIL <: BehaviorGenerator
     min_idm::IDMParam
     max_idm::IDMParam
     min_mobil::MOBILParam

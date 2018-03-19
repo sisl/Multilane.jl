@@ -1,4 +1,4 @@
-type AggressivenessBelief <: BehaviorBelief
+mutable struct AggressivenessBelief <: BehaviorBelief
     gen::CorrelatedIDMMOBIL
     physical::MLPhysicalState
     particles::Vector{Vector{Float64}} # First index is the position in physical.cars
@@ -111,7 +111,7 @@ function weights_from_particles!(b::AggressivenessBelief,
     return b
 end
 
-type AggressivenessUpdater <: Updater{AggressivenessBelief}
+mutable struct AggressivenessUpdater <: Updater{AggressivenessBelief}
     problem::Nullable{NoCrashProblem}
     nb_sims::Int
     p_resample_noise::Float64

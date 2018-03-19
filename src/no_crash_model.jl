@@ -1,4 +1,4 @@
-type NoCrashRewardModel <: AbstractMLRewardModel
+mutable struct NoCrashRewardModel <: AbstractMLRewardModel
     cost_dangerous_brake::Float64 # POSITIVE NUMBER
     reward_in_target_lane::Float64 # POSITIVE NUMBER
 
@@ -10,7 +10,7 @@ end
 NoCrashRewardModel() = NoCrashRewardModel(100.,10.,2.5,4)
 lambda(rm::NoCrashRewardModel) = rm.cost_dangerous_brake/rm.reward_in_target_lane
 
-type NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
+mutable struct NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     nb_cars::Int
     phys_param::PhysicalParam
 
@@ -60,19 +60,19 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
     )
 end
 
-typealias NoCrashMDP{R<:AbstractMLRewardModel} MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, R}
-typealias NoCrashPOMDP{R<:AbstractMLRewardModel} MLPOMDP{MLState, MLAction, MLObs, NoCrashIDMMOBILModel, R}
-typealias SuccessMDP NoCrashMDP{TargetLaneReward}
-typealias SuccessPOMDP NoCrashPOMDP{TargetLaneReward}
+NoCrashMDP{R<:AbstractMLRewardModel} =  MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, R}
+NoCrashPOMDP{R<:AbstractMLRewardModel} =  MLPOMDP{MLState, MLAction, MLObs, NoCrashIDMMOBILModel, R}
+const SuccessMDP = NoCrashMDP{TargetLaneReward}
+const SuccessPOMDP = NoCrashPOMDP{TargetLaneReward}
 
-typealias NoCrashProblem{R<:AbstractMLRewardModel} Union{NoCrashMDP{R}, NoCrashPOMDP{R}}
-typealias SuccessProblem Union{SuccessMDP, SuccessPOMDP}
+NoCrashProblem{R<:AbstractMLRewardModel} =  Union{NoCrashMDP{R}, NoCrashPOMDP{R}}
+const SuccessProblem = Union{SuccessMDP, SuccessPOMDP}
 
 # TODO issue here VVV need a different way to create observation
 create_action(::NoCrashProblem) = MLAction()
 
 # action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {brake}
-immutable NoCrashActionSpace
+struct NoCrashActionSpace
     NORMAL_ACTIONS::Vector{MLAction} # all the actions except brake
     acceptable::IntSet
     brake::MLAction # this action will be EITHER braking at half the dangerous brake threshold OR the braking necessary to prevent a collision at all time in the future

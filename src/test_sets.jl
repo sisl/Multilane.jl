@@ -60,7 +60,7 @@ const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS l
 
 const INITIAL_RELEVANT = [:behaviors]
 
-type TestSet
+mutable struct TestSet
     solver_key::String
     problem_params::Dict{Symbol, Any}
     solver_problem_params::Dict{Symbol, Any}
