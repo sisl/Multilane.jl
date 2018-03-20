@@ -7,15 +7,15 @@ mutable struct DiscreteBehaviorBelief <: BehaviorBelief
     models::AbstractVector
     weights::Vector{Vector{Float64}}
 end
-DiscreteBehaviorBelief(ps::MLPhysicalState, models::AbstractVector) = DiscreteBehaviorBelief(ps, models, Array(Vector{Float64}, length(ps.cars)))
+DiscreteBehaviorBelief(ps::MLPhysicalState, models::AbstractVector) = DiscreteBehaviorBelief(ps, models, Vector{Vector{Float64}}(length(ps.cars)))
 
 function rand(rng::AbstractRNG,
               b::DiscreteBehaviorBelief,
-              s::MLState=MLState(b.physical, Array(CarState, length(b.physical.cars))))
+              s::MLState=MLState(b.physical, Vector{CarState}(length(b.physical.cars))))
     s.crashed = b.physical.crashed
     resize!(s.cars, length(b.physical.cars))
     for i in 1:length(s.cars)
-        s.cars[i] = CarState(b.physical.cars[i], sample(rng, b.models, WeightVec(b.weights[i])))
+        s.cars[i] = CarState(b.physical.cars[i], sample(rng, b.models, Weights(b.weights[i])))
     end
     return s
 end
@@ -74,7 +74,7 @@ function weights_from_particles!(b::DiscreteBehaviorBelief, problem::NoCrashProb
     return b
 end
 
-mutable struct BehaviorBeliefUpdater <: Updater{DiscreteBehaviorBelief}
+mutable struct BehaviorBeliefUpdater <: Updater
     problem::NoCrashProblem
     smoothing::Float64
     nb_particles::Float64
@@ -89,7 +89,7 @@ function update(up::BehaviorBeliefUpdater,
                 o::MLPhysicalState,
                 b_new::DiscreteBehaviorBelief=DiscreteBehaviorBelief(o,
                                                        up.problem.dmodel.behaviors,
-                                                       Array(Vector{Float64}, 0)))
+                                                       Vector{Vector{Float64}}(0)))
     # particles = SharedArray(MLState, )
     # @parallel
     # # run simulations
@@ -98,7 +98,8 @@ function update(up::BehaviorBeliefUpdater,
     error("not implemented")
 end
 
-mutable struct BehaviorRootUpdater <: Updater{POMCP.BeliefNode}
+#=
+mutable struct BehaviorRootUpdater <: Updater
     problem::NoCrashProblem
     params::WeightUpdateParams
     min_particles::Int
@@ -162,7 +163,7 @@ function count_particles!(d::Dict{Int,Int}, n::POMCP.BeliefNode)
         end
     end
 end
-
+=#
 
 # TODO clean up
 #=

@@ -4,6 +4,7 @@
 import Distributions.TriangularDist
 import Distributions.params
 
+#=
 function rand(rng::AbstractRNG, d::TriangularDist)
     (a, b, c) = params(d)
     b_m_a = b - a
@@ -14,3 +15,4 @@ function rand(rng::AbstractRNG, d::TriangularDist)
         return b - sqrt((1 - u) * b_m_a * (b - c))
     end
 end
+=#

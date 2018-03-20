@@ -2,7 +2,7 @@ abstract type BehaviorGenerator end
 
 mutable struct DiscreteBehaviorSet <: BehaviorGenerator
     models::Vector{BehaviorModel}
-    weights::WeightVec
+    weights::Weights
 end
 
 rand(rng::AbstractRNG, s::DiscreteBehaviorSet) = sample(rng, s.models, s.weights)

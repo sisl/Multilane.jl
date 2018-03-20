@@ -51,7 +51,7 @@ end
 
 function rand(rng::AbstractRNG, gen::ParticleGenerator,
               full_s::MLState=MLState(gen.physical,
-                                      Array(CarState,
+                                      Vector{CarState}(
                                             length(gen.physical.cars))))
     s = gen.physical
     resize!(full_s.cars, length(s.cars))
@@ -68,7 +68,7 @@ type BasicMLReinvigorator <: POMCP.ParticleReinvigorator
     N::Int # target number of particles
     p_change::Float64 # (independent) probability of the behavior of each car changing
     behaviors::AbstractVector
-    weights::WeightVec
+    weights::Weights
 end
 
 # ideas for future reinvigorators

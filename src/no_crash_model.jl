@@ -15,7 +15,7 @@ mutable struct NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     phys_param::PhysicalParam
 
     # behaviors::Vector{BehaviorModel}
-    # behavior_probabilities::WeightVec
+    # behavior_probabilities::Weights
     behaviors::BehaviorGenerator
 
     adjustment_acceleration::Float64
@@ -42,7 +42,7 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
                               behaviors=DiscreteBehaviorSet(IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
                                                  enumerate(Iterators.product(["cautious","normal","aggressive"],
                                                         [pp.v_slow+0.5;pp.v_med;pp.v_fast],
-                                                        [pp.l_car]))], WeightVec(ones(9)))
+                                                        [pp.l_car]))], Weights(ones(9)))
                               )
 
     return NoCrashIDMMOBILModel(
@@ -252,8 +252,8 @@ function is_safe(mdp::NoCrashProblem, s::Union{MLState,MLObs}, a::MLAction)
 end
 
 #XXX temp
-create_state(p::NoCrashProblem) = MLState(0.0, 0.0, Array(CarState, p.dmodel.nb_cars), nothing)
-create_observation(pomdp::Union{NoCrashPOMDP,SuccessPOMDP}) = MLObs(0.0, 0.0, Array(CarStateObs, pomdp.dmodel.nb_cars), nothing)
+create_state(p::NoCrashProblem) = MLState(0.0, 0.0, Vector{CarState}(p.dmodel.nb_cars), nothing)
+create_observation(pomdp::Union{NoCrashPOMDP,SuccessPOMDP}) = MLObs(0.0, 0.0, Vector{CarStateObs}(pomdp.dmodel.nb_cars), nothing)
 
 function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractRNG)
 
@@ -270,10 +270,10 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
     ## Calculate deltas ##
     #====================#
 
-    dxs = Array(Float64, nb_cars)
-    dvs = Array(Float64, nb_cars)
-    dys = Array(Float64, nb_cars)
-    lcs = Array(Float64, nb_cars)
+    dxs = Vector{Float64}(nb_cars)
+    dvs = Vector{Float64}(nb_cars)
+    dys = Vector{Float64}(nb_cars)
+    lcs = Vector{Float64}(nb_cars)
 
     # agent
     dvs[1] = a.acc*dt
@@ -448,11 +448,11 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         behavior = rand(rng, mdp.dmodel.behaviors)
         vel = typical_velocity(behavior) + randn(rng)*mdp.dmodel.vel_sigma
 
-        clearances = Array(Float64, pp.nb_lanes)
+        clearances = Vector{Float64}(pp.nb_lanes)
         fill!(clearances, Inf)
-        closest_cars = Array(Int, pp.nb_lanes)
+        closest_cars = Vector{Int}(pp.nb_lanes)
         fill!(closest_cars, 0)
-        sstar_margins = Array(Float64, pp.nb_lanes)
+        sstar_margins = Vector{Float64}(pp.nb_lanes)
         if vel > s.cars[1].vel
             # put at back
             # sstar is the sstar of the new guy
@@ -627,7 +627,7 @@ end
 Assign behaviors to a given physical state.
 """
 function initial_state(mdp::NoCrashProblem, ps::MLPhysicalState, rng::AbstractRNG)
-    s = MLState(ps, Array(CarState, length(ps.cars)))
+    s = MLState(ps, Vector{CarState}(length(ps.cars)))
     s.cars[1] = CarState(ps.cars[1], NORMAL)
     for i in 2:length(s.cars)
         behavior = rand(rng, mdp.dmodel.behaviors)
@@ -636,7 +636,8 @@ function initial_state(mdp::NoCrashProblem, ps::MLPhysicalState, rng::AbstractRN
     return s
 end
 
-function initial_state(mdp::NoCrashProblem, rng::AbstractRNG=Base.GLOBAL_RNG)
+function initial_state(p::NoCrashProblem, rng::AbstractRNG=Base.GLOBAL_RNG)
+    mdp = NoCrashMDP{typeof(p.rmodel)}(p.dmodel, p.rmodel, p.discount) # make sure an MDP
     return relaxed_initial_state(mdp, 200, rng)
 end
 

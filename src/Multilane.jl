@@ -1,15 +1,14 @@
 __precompile__()
 module Multilane
 
-import StatsBase: WeightVec, sample
+import StatsBase: Weights, sample
 
 using POMDPs
 import POMDPs: actions, discount, isterminal, iterator
 import POMDPs: rand, reward
 import POMDPs: solve, action
 import POMDPs: update, initialize_belief
-using GenerativeModels
-import GenerativeModels: generate_s, generate_sr, initial_state, generate_o, generate_sor
+import POMDPs: generate_s, generate_sr, initial_state, generate_o, generate_sor
 
 import Distributions: Dirichlet, Exponential, Gamma, rand
 
@@ -25,7 +24,7 @@ using PmapProgressMeter
 using POMDPToolbox
 import MCTS # so that we can define node_tag, etc.
 # using RobustMCTS # for RobustMDP
-import POMCP # for particle filter
+# import POMCP # for particle filter
 
 # using Reel
 # using AutomotiveDrivingModels
@@ -35,6 +34,8 @@ import Mustache
 import JLD
 
 using Parameters
+using StaticArrays
+using SpecialFunctions
 
 include("debug.jl")
 
@@ -163,11 +164,11 @@ include("test_sets.jl")
 include("relax.jl")
 include("robust_mdp.jl")
 include("pomdp_glue.jl")
-include("most_likely_mpc.jl")
-include("single_behavior.jl")
 include("beliefs.jl")
 include("aggressiveness_particle_filter.jl")
 include("uniform_particle_filter.jl")
+include("most_likely_mpc.jl")
+include("single_behavior.jl")
 include("heuristics.jl")
 include("tree_vis.jl")
 include("sherlock.jl")

@@ -5,7 +5,7 @@
 ##IDM Model##
 #############
 
-struct IDMParam
+struct IDMParam <: FieldVector{6, Float64}
 	a::Float64 #max  comfy acceleration
 	b::Float64 #max comfy brake speed
 	T::Float64 #desired safety time headway
@@ -13,6 +13,10 @@ struct IDMParam
 	s0::Float64 #minimum headway (e.g. if x is less than this then you crashed)
 	del::Float64 #'accel exponent'
 end #IDMParam
+
+StaticArrays.similar_type(::Type{IDMParam}, ::Type{Float64}, ::Size{(6,)}) = IDMParam
+
+#=
 ==(a::IDMParam,b::IDMParam) = (a.a==b.a) && (a.b==b.b) &&(a.T == b.T)&&(a.v0==b.v0)&&(a.s0==b.s0)&&(a.del==b.del)
 Base.hash(a::IDMParam,h::UInt64=zero(UInt64)) = hash(a.a,hash(a.b,hash(a.T,hash(a.v0,hash(a.s0,hash(a.del,h))))))
 
@@ -27,6 +31,7 @@ zero(::Type{IDMParam}) = IDMParam(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 nan(::Type{IDMParam}) = IDMParam(NaN, NaN, NaN, NaN, NaN, NaN)
 abs(p::IDMParam) = IDMParam(abs(p.a), abs(p.b), abs(p.T), abs(p.v0), abs(p.s0), abs(p.del))
 max(a::IDMParam, b::IDMParam) = IDMParam(max(a.a,b.a), max(a.b,b.b), max(a.T,b.T), max(a.v0,b.v0), max(a.s0,b.s0), max(a.del,b.del))
+=#
 
 function get_idm_s_star(p::IDMParam, v::Float64, dv::Float64)
     return p.s0 + max(0.,v*p.T+v*dv/(2*sqrt(p.a*p.b)))

@@ -38,10 +38,10 @@ end
 const NINE_BEHAVIORS = generate_nine_behaviors()
 
 const DEFAULT_BEHAVIORS = Dict{String, Any}(
-    # "3_even" => DiscreteBehaviorSet(THREE_BEHAVIORS, WeightVec(ones(3))),
-    # "9_even" => DiscreteBehaviorSet(NINE_BEHAVIORS, WeightVec(ones(9))),
-    "agents" => DiscreteBehaviorSet([NORMAL, TIMID, AGGRESSIVE], WeightVec(ones(3))),
-    "9_agents" => DiscreteBehaviorSet(NINE_BEHAVIORS, WeightVec(ones(3)))
+    # "3_even" => DiscreteBehaviorSet(THREE_BEHAVIORS, Weights(ones(3))),
+    # "9_even" => DiscreteBehaviorSet(NINE_BEHAVIORS, Weights(ones(9))),
+    "agents" => DiscreteBehaviorSet([NORMAL, TIMID, AGGRESSIVE], Weights(ones(3))),
+    "9_agents" => DiscreteBehaviorSet(NINE_BEHAVIORS, Weights(ones(3)))
 )
 
 const DEFAULT_PROBLEM_PARAMS = Dict{Symbol, Any}( #NOTE VALUES ARE NOT VECTORS like in linked

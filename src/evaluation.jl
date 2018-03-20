@@ -33,10 +33,10 @@ function run_simulations(stats::DataFrame,
 
     nb_sims = nrow(stats)
 
-    all_solvers = Array(Any, nb_sims)
-    all_problems = Array(Any, nb_sims)
-    all_solver_problems = Array(Any, nb_sims)
-    all_initial = Array(Any, nb_sims)
+    all_solvers = Vector{Any}(nb_sims)
+    all_problems = Vector{Any}(nb_sims)
+    all_solver_problems = Vector{Any}(nb_sims)
+    all_initial = Vector{Any}(nb_sims)
 
     solvers = objects["solvers"]
     problems = objects["problems"]
@@ -94,7 +94,7 @@ function run_simulations(eval_problems::AbstractVector,
                         )
         end
     else
-        sims = Array(HistoryRecorder, length(eval_problems))
+        sims = Vector{HistoryRecorder}(length(eval_problems))
         if progress
             @showprogress for j in 1:length(eval_problems)
                 sims[j] = test_run(eval_problems[j],

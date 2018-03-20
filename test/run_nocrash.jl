@@ -30,20 +30,20 @@ policy = Multilane.BehaviorPolicy(mdp, Multilane.NORMAL, false, rng)
 
 sim = HistoryRecorder(rng=rng, max_steps=100) # initialize a random number generator
 
-simulate(sim, mdp, policy, s)
+hist = simulate(sim, mdp, policy, s)
 
 # check for crashes
-for i in 1:length(sim.state_hist)-1
-    if is_crash(mdp, sim.state_hist[i], sim.state_hist[i+1])
+for i in 1:length(state_hist(hist))-1
+    if is_crash(mdp, state_hist(hist)[i], state_hist(hist)[i+1])
         println("Crash:")
         println("mdp = $mdp\n")
-        println("s = $(sim.state_hist[i])\n")
-        println("a = $(sim.action_hist[i])\n")
+        println("s = $(state_hist(hist)[i])\n")
+        println("a = $(action_hist(hist)[i])\n")
         println("Saving gif...")
-        f = write_tmp_gif(mdp, sim)
+        f = write_tmp_gif(mdp, hist)
         println("gif written to $f")
     end
-    @test !is_crash(mdp, sim.state_hist[i], sim.state_hist[i+1])
+    @test !is_crash(mdp, state_hist(hist)[i], state_hist(hist)[i+1])
 end
 
 # for i in 1:length(sim.state_hist)-1

@@ -5,13 +5,17 @@
 ##MOBIL Model##
 ###############
 
-struct MOBILParam
+struct MOBILParam <: FieldVector{3, Float64}
 	p::Float64 #politeness factor
 	b_safe::Float64 #safe braking value
 	a_thr::Float64 #minimum accel
 	#db::Float64 #lane bias #we follow the symmetric/USA lane change rule
 end #MOBILParam
 MOBILParam(;p::Float64=0.25,b_safe::Float64=4.,a_thr::Float64=0.2) = MOBILParam(p,b_safe,a_thr)
+
+StaticArrays.similar_type(::Type{MOBILParam}, ::Type{Float64}, ::Size{(3,)}) = MOBILParam
+
+#=
 ==(a::MOBILParam,b::MOBILParam) = (a.p==b.p) && (a.b_safe==b.b_safe) && (a.a_thr == b.a_thr)
 Base.hash(a::MOBILParam,h::UInt64=zero(UInt64)) = hash(a.p,hash(a.b_safe,hash(a.a_thr,h)))
 
@@ -25,6 +29,7 @@ zero(::Type{MOBILParam}) = MOBILParam(0.0, 0.0, 0.0)
 nan(::Type{MOBILParam}) = MOBILParam(NaN, NaN, NaN)
 abs(p::MOBILParam) = MOBILParam(abs(p.p), abs(p.b_safe), abs(p.a_thr))
 max(a::MOBILParam, b::MOBILParam) = MOBILParam(max(a.p,b.p), max(a.b_safe, b.b_safe), max(a.a_thr, b.a_thr))
+=#
 
 function MOBILParam(s::AbstractString)
 	#typical politeness range: [0.0,0.5]
