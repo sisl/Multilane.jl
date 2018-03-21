@@ -19,10 +19,13 @@ function rand(rng::AbstractRNG,
     s.x = b.physical.x
     s.t = b.physical.t
     resize!(s.cars, length(b.physical.cars))
-    for i in 1:length(s.cars)
+    for i in 1:length(s.cars) # XXX could speed this up by sampling all at once
         particle = sample(rng, b.particles[i], Weights(b.weights[i]))
         nudged = max(min(particle+sample_noises[i]*randn(rng),1.0),0.0)
-        s.cars[i] = CarState(b.physical.cars[i], create_model(b.gen, nudged))
+        @assert !isnan(nudged)
+        m = create_model(b.gen, nudged)
+        @assert !any(isnan, m.p_idm)
+        s.cars[i] = CarState(b.physical.cars[i], m)
     end
     s.terminal = b.physical.terminal
     return s
@@ -61,14 +64,14 @@ function weights_from_particles!(b::AggressivenessBelief,
     resize!(b.particles, length(o.cars))
     for i in 1:length(o.cars)
         # make sure we're not going to be allocating a bunch of memory in the loop
-        if isdefined(b.particles, i)
+        if isassigned(b.particles, i)
             sizehint!(b.particles[i], length(particles))
             resize!(b.particles[i], 0)
         else
             b.particles[i] = Vector{Float64}(length(particles))
             resize!(b.particles[i], 0)
         end
-        if isdefined(b.weights, i)
+        if isassigned(b.weights, i)
             sizehint!(b.weights[i], length(particles))
             resize!(b.weights[i], 0)
         else
@@ -107,6 +110,21 @@ function weights_from_particles!(b::AggressivenessBelief,
             end
         end
     end
+
+    @if_debug begin
+        if any(ws->any(isnan,ws), b.weights)
+            warn("NaN weight in aggressiveness filter.")
+        end
+        if any(ws->any(isnan,ws), b.weights)
+            warn("NaN particle in aggressiveness filter.")
+        end
+    end
+
+    for w in b.weights
+        if sum(w) == 0.0
+            fill!(w, 1.0)
+        end
+    end
    
     return b
 end
@@ -129,14 +147,18 @@ end
 function update(up::AggressivenessUpdater,
                 b_old::AggressivenessBelief,
                 a::MLAction,
-                o::MLPhysicalState,
-                b_new::AggressivenessBelief=AggressivenessBelief(CorrelatedIDMMOBIL(
-                                                    get(up.problem).dmodel.behaviors), o,
-                                                    Vector{Vector{Float64}}(length(o.cars)),
-                                                    Vector{Vector{Float64}}(length(o.cars))))
+                o::MLPhysicalState)
+
+    b_new = AggressivenessBelief(CorrelatedIDMMOBIL(
+                                 get(up.problem).dmodel.behaviors), o,
+                                 Vector{Vector{Float64}}(length(o.cars)),
+                                 Vector{Vector{Float64}}(length(o.cars)))
 
     particles = Vector{MLState}(up.nb_sims)
-    stds = max(agg_stds(b_old), 0.01)
+    stds = max.(agg_stds(b_old), 0.01)
+    @if_debug if any(isnan, stds)
+        Gallium.@enter update(up, b_old, a, o)
+    end
     for i in 1:up.nb_sims
         if rand(up.rng) < up.p_resample_noise
             s = rand(up.rng, b_old, up.resample_noise_factor*stds)

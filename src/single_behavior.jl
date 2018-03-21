@@ -20,16 +20,17 @@ function solve(solver::SingleBehaviorSolver, mdp::NoCrashProblem)
     return SingleBehaviorPolicy(inner_policy, solver.behavior)
 end
 
-function action(p::SingleBehaviorPolicy, s::Union{MLPhysicalState, MLState})
+function action_info(p::SingleBehaviorPolicy, s::Union{MLPhysicalState, MLState})
     as = actions(p.inner_policy.mdp, s, actions(p.inner_policy.mdp))
     if length(as) == 1
-        return first(as)
+        return first(as), Dict(:tree_queries=>missing)
     end
-    return action(p.inner_policy, single_behavior_state(s, p.behavior))
+    return action_info(p.inner_policy, single_behavior_state(s, p.behavior))
 end
 
-action(p::SingleBehaviorPolicy, agg::AggressivenessBelief) = action(p, agg.physical)
+action_info(p::SingleBehaviorPolicy, agg::AggressivenessBelief) = action_info(p, agg.physical)
 
+action(p::SingleBehaviorPolicy, s) = first(action_info(p, s))
 
 function single_behavior_state(s::Union{MLState, MLPhysicalState}, behavior)
     new_cars = Vector{CarState}(length(s.cars))

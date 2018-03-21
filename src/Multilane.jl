@@ -12,6 +12,8 @@ import POMDPs: generate_s, generate_sr, initial_state, generate_o, generate_sor
 
 import Distributions: Dirichlet, Exponential, Gamma, rand
 
+import POMDPToolbox: action_info
+
 import Iterators
 
 import Base: ==, hash, length, vec, +, -, *, .*, ^, .^, .-, /, sqrt, zero, abs, max

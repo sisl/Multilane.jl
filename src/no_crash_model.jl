@@ -375,8 +375,8 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                         Gallium.@enter generate_s(mdp, s, a, dbg_rng)
                     end
                     if i == 1
-                        # warn("Car nudged because noise would cause a crash (ego in front).")
-                        error("Car nudged because noise would cause a crash (ego in front).")
+                        warn("Car nudged because noise would cause a crash (ego in front).")
+                        @if_debug Gallium.@enter generate_s(mdp, s, a, dbg_rng)
                     else
                         # warn("Car nudged because noise would cause a crash.")
                         error("Car nudged because noise would cause a crash.")
@@ -521,10 +521,12 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         sp.terminal = Nullable{Any}(:distance)
     end
 
-    # sp.crashed = is_crash(mdp, s, sp, warning=false)
-    # sp.crashed = false
-
     @assert sp.cars[1].x == s.cars[1].x # ego should not move
+    @if_debug begin
+        if any(any(isnan.(c.behavior.p_idm)) for c in sp.cars)
+            warn("NaN in idm.")
+        end
+    end
 
     return sp
 end
@@ -637,6 +639,7 @@ function initial_state(mdp::NoCrashProblem, ps::MLPhysicalState, rng::AbstractRN
 end
 
 function initial_state(p::NoCrashProblem, rng::AbstractRNG=Base.GLOBAL_RNG)
+    @if_debug println("debugging")
     mdp = NoCrashMDP{typeof(p.rmodel)}(p.dmodel, p.rmodel, p.discount) # make sure an MDP
     return relaxed_initial_state(mdp, 200, rng)
 end

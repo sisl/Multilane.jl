@@ -1,8 +1,16 @@
+Tue 20 Mar 2018 10:37:28 AM PDT
+
+[ ] Curve with baseline
+[ ] Quick profile
+[ ] Curve with upper bound
+[ ] Curve with MLMPC
+[ ] Curve with PFT-DPW
+
 Mon 19 Mar 2018 06:23:30 PM PDT
 
 Resurrection
 
-[ ] Figure out how to run with assume normal solver
+[X] Figure out how to run with assume normal solver
 
 
 Wed 18 Jan 2017 01:40:01 PM PST

@@ -50,9 +50,12 @@ function accel_dist(bmodel::IDMMOBILBehavior, dmodel::AbstractMLDynamicsModel, s
 	dvel = get_idm_dv(bmodel.p_idm,dt,vel,dv,ds) #call idm model
     acc = dvel/dt
 
-    @assert acc <= 1.01*bmodel.p_idm.a
+    # @assert acc <= 1.01*bmodel.p_idm.a "Acceleration too high: acc=$acc; idm.a=$(bmodel.p_idm.a)"
 
-    @if_debug if ds < 0.0
+    @if_debug if ds < 0.0 || !(acc <= 1.01*bmodel.p_idm.a)
+        @show ds
+        @show acc
+        @show bmodel.p_idm.a
         Gallium.@enter accel_dist(bmodel, dmodel, s, neighborhood, idx)
     end
     @assert ds >= 0.0 # can get rid of this
