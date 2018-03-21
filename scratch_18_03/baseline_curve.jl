@@ -42,8 +42,8 @@ for lambda in 2.^(0:5)
     rmodel = NoCrashRewardModel()
     rmodel.brake_penalty_thresh = 4.0
     rmodel.cost_dangerous_brake = lambda*rmodel.reward_in_target_lane
-    pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, true)
-    mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, true)
+    pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
+    mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
     is = initial_state(pomdp, Base.GLOBAL_RNG)
     ips = MLPhysicalState(is)
 
@@ -51,7 +51,7 @@ for lambda in 2.^(0:5)
 
     sim_pomdp = deepcopy(pomdp)
     sim_pomdp.dmodel.lane_terminate=true
-    sim_pomdp.throw=false
+    sim_pomdp.throw=true
 
     sims = []
 
@@ -75,38 +75,45 @@ for lambda in 2.^(0:5)
     # data = run(sims) do sim, hist
     data = run_parallel(sims) do sim, hist
 
-        p = problem(sim)
-        steps_in_lane = 0
-        steps_to_lane = missing
-        nb_brakes = 0
-        crashed = false
-        for (k,(s,sp)) in enumerate(eachstep(hist, "s,sp"))
+        if isnull(exception(hist))
+            p = problem(sim)
+            steps_in_lane = 0
+            steps_to_lane = missing
+            nb_brakes = 0
+            crashed = false
+            for (k,(s,sp)) in enumerate(eachstep(hist, "s,sp"))
 
-            nb_brakes += detect_braking(p, s, sp)
+                nb_brakes += detect_braking(p, s, sp)
 
-            if sp.cars[1].y == p.rmodel.target_lane
-                steps_in_lane += 1
-            end
-            if sp.cars[1].y == p.rmodel.target_lane
-                if ismissing(steps_to_lane)
-                    steps_to_lane = k
+                if sp.cars[1].y == p.rmodel.target_lane
+                    steps_in_lane += 1
+                end
+                if sp.cars[1].y == p.rmodel.target_lane
+                    if ismissing(steps_to_lane)
+                        steps_to_lane = k
+                    end
+                end
+
+                if is_crash(p, s, sp)
+                    crashed = true
                 end
             end
+            time_to_lane = steps_to_lane*p.dmodel.phys_param.dt
 
-            if is_crash(p, s, sp)
-                crashed = true
-            end
+            return [:n_steps=>n_steps(hist),
+                    :mean_iterations=>mean(ai[:tree_queries] for ai in eachstep(hist, "ai")),
+                    :reward=>discounted_reward(hist),
+                    :crashed=>crashed,
+                    :steps_to_lane=>steps_to_lane,
+                    :steps_in_lane=>steps_in_lane,
+                    :nb_brakes=>nb_brakes,
+                    :exception=>false
+                   ]
+        else
+            return [:exception=>true,
+                    :ex_type=>string(typeof(get(exception(hist))))
+                   ]
         end
-        time_to_lane = steps_to_lane*p.dmodel.phys_param.dt
-
-        return [:n_steps=>n_steps(hist),
-                :mean_iterations=>mean(ai[:tree_queries] for ai in eachstep(hist, "ai")),
-                :reward=>discounted_reward(hist),
-                :crashed=>crashed,
-                :steps_to_lane=>steps_to_lane,
-                :steps_in_lane=>steps_in_lane,
-                :nb_brakes=>nb_brakes
-               ]
     end
 
     if isempty(alldata)

@@ -2,7 +2,6 @@
 #push!(LOAD_PATH,joinpath("..","src"))
 
 using Multilane
-using GenerativeModels
 using MCTS
 using POMDPs
 using POMDPToolbox
@@ -18,7 +17,7 @@ rmodel = NoCrashRewardModel()
 
 dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
 
-mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, _discount);
+mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, _discount, true);
 
 rng = MersenneTwister(5)
 

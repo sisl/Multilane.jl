@@ -182,24 +182,24 @@ function max_safe_acc(gap, v_behind, v_ahead, braking_limit, dt)
     vo = v_ahead
     g = gap
     # VVV see mathematica notebook
-    # return - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
-    ret = 0.0
-    try
-        ret = - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
-    catch ex
-        if isa(ex, DomainError)
-            @show gap
-            @show v_behind
-            @show v_ahead
-            @show braking_limit
-            @show dt
-            error("Bad max_safe_acc calculation")
-            return -braking_limit
-        else
-            rethrow(ex)
-        end
-    end
-    return ret
+    return - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
+    # ret = 0.0
+    # try
+    #     ret = - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
+    # catch ex
+    #     if isa(ex, DomainError)
+    #         @show gap
+    #         @show v_behind
+    #         @show v_ahead
+    #         @show braking_limit
+    #         @show dt
+    #         error("Bad max_safe_acc calculation")
+    #         return -braking_limit
+    #     else
+    #         rethrow(ex)
+    #     end
+    # end
+    # return ret
 end
 
 """
@@ -376,19 +376,25 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                     # check if they will be in the same lane
                     if occupation_overlap(car_i.y + dys[i], car_j.y + dys[j])
                         # warn and nudge behind
+                        if mdp.throw
+                            @show car_j.x + dxs[j]
+                            @show car_i.x + dxs[i]
+                            @show pp.l_car
+                        end
                         @if_debug begin
                             println("Conflict because of noise: front:$i, back:$j")
                             Gallium.@enter generate_s(mdp, s, a, dbg_rng)
                         end
                         if i == 1
-                            warn("Car nudged because noise would cause a crash (ego in front).")
+                            if mdp.throw
+                                error("Car nudged because noise would cause a crash (ego in front).")
+                            end
                         else
                             # warn("Car nudged because noise would cause a crash.")
-                            warn("Car nudged because noise would cause a crash.")
+                            if mdp.throw
+                                error("Car nudged because noise would cause a crash.")
+                            end
                         end
-                        @show car_j.x + dxs[j]
-                        @show car_i.x + dxs[i]
-                        @show pp.l_car
                         dxs[j] = car_i.x + dxs[i] - car_j.x - 1.01*pp.l_car
                         dvs[j] = 2.0*(dxs[j]/dt - car_j.vel)
                     end
@@ -657,7 +663,7 @@ end
 
 function initial_state(p::NoCrashProblem, rng::AbstractRNG=Base.GLOBAL_RNG)
     @if_debug println("debugging")
-    mdp = NoCrashMDP{typeof(p.rmodel)}(p.dmodel, p.rmodel, p.discount) # make sure an MDP
+    mdp = NoCrashMDP{typeof(p.rmodel)}(p.dmodel, p.rmodel, p.discount, p.throw) # make sure an MDP
     return relaxed_initial_state(mdp, 200, rng)
 end
 

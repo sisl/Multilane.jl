@@ -16,7 +16,7 @@ rmodel = NoCrashRewardModel()
 
 dmodel = NoCrashIDMMOBILModel(nb_cars, pp)
 
-mdp = NoCrashMDP(dmodel, rmodel, _discount);
+mdp = NoCrashMDP(dmodel, rmodel, _discount, true);
 
 rng = MersenneTwister(5)
 
