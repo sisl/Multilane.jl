@@ -6,6 +6,7 @@ using POMDPs
 # using POMCP
 using Missings
 using DataFrames
+using CSV
 
 @everywhere using Missings
 @everywhere using Multilane
@@ -24,10 +25,11 @@ dpws = DPWSolver(depth=20,
 
 solver = SingleBehaviorSolver(dpws, Multilane.NORMAL)
 
-N = 1
+@show N = 500
 alldata = DataFrame()
 
 for lambda in 2.^(0:5)
+# for lambda in 2.^1
 
     @show lambda
 
@@ -113,3 +115,8 @@ for lambda in 2.^(0:5)
 end
 
 @show alldata
+
+datestring = Dates.format(now(), "E_d_u_HH_MM")
+filename = Pkg.dir("Multilane", "data", "baseline_curve_"*datestring*".csv")
+println("Writing data to $filename")
+CSV.write(filename, alldata)
