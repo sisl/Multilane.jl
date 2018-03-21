@@ -65,7 +65,7 @@ for lambda in 2.^(0:5)
                         :dt=>pp.dt
                    )   
 
-        hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=true)
+        hr = HistoryRecorder(max_steps=10000, rng=rng, capture_exception=true)
         push!(sims, Sim(sim_pomdp, planner, agg_up, ips, is,
                         simulator=hr,
                         metadata=metadata

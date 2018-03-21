@@ -1,6 +1,7 @@
 Tue 20 Mar 2018 10:37:28 AM PDT
 
-[ ] Curve with baseline
+[X] Curve with baseline
+[ ] Plot baseline curve
 [ ] Quick profile
 [ ] Curve with upper bound
 [ ] Curve with MLMPC
