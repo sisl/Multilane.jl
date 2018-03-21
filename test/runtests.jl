@@ -1,7 +1,6 @@
 push!(LOAD_PATH,joinpath("..","src"))
 using Multilane
 using Base.Test
-using GenerativeModels
 using POMDPs
 using Gallium
 

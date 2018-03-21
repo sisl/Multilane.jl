@@ -11,6 +11,7 @@ import POMDPs: update, initialize_belief
 import POMDPs: generate_s, generate_sr, initial_state, generate_o, generate_sor
 
 import Distributions: Dirichlet, Exponential, Gamma, rand
+import Distributions
 
 import POMDPToolbox: action_info
 

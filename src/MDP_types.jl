@@ -6,12 +6,14 @@ mutable struct MLMDP{S, A, DModel<:AbstractMLDynamicsModel, RModel<:AbstractMLRe
     dmodel::DModel
     rmodel::RModel
     discount::Float64
+    throw::Bool
 end
 
 mutable struct MLPOMDP{S, A, O, DModel<:AbstractMLDynamicsModel, RModel<:AbstractMLRewardModel}  <: POMDP{S, A, O}
-  dmodel::DModel
-  rmodel::RModel
-  discount::Float64
+    dmodel::DModel
+    rmodel::RModel
+    discount::Float64
+    throw::Bool
 end
 
 mutable struct OriginalRewardModel <: AbstractMLRewardModel

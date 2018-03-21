@@ -42,30 +42,32 @@ for lambda in 2.^(0:5)
     rmodel = NoCrashRewardModel()
     rmodel.brake_penalty_thresh = 4.0
     rmodel.cost_dangerous_brake = lambda*rmodel.reward_in_target_lane
-    pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95)
-    mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 0.95)
+    pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, true)
+    mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, true)
     is = initial_state(pomdp, Base.GLOBAL_RNG)
     ips = MLPhysicalState(is)
 
     planner = solve(solver, mdp)
 
     sim_pomdp = deepcopy(pomdp)
-    pomdp.dmodel.lane_terminate=true
+    sim_pomdp.dmodel.lane_terminate=true
+    sim_pomdp.throw=false
 
     sims = []
 
     for i in 1:N
         rng_seed = i
         rng = MersenneTwister(rng_seed)
-        agg_up = AggressivenessUpdater(pomdp, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(rng_seed+50000))
+        agg_up = AggressivenessUpdater(sim_pomdp, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(rng_seed+50000))
         metadata = Dict(:rng_seed=>rng_seed,
                         :lambda=>lambda,
                         :solver=>"baseline",
                         :dt=>pp.dt
                    )   
-        push!(sims, Sim(pomdp, planner, agg_up, ips, is,
-                        max_steps=100,
-                        rng=rng,
+
+        hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=true)
+        push!(sims, Sim(sim_pomdp, planner, agg_up, ips, is,
+                        simulator=hr,
                         metadata=metadata
                        ))
     end
