@@ -80,6 +80,7 @@ export
     NoCrashIDMMOBILModel,
     NoCrashMDP,
     NoCrashPOMDP,
+    SuccessReward,
     Simple,
     SimpleSolver,
     BehaviorSolver,
@@ -159,10 +160,10 @@ include("MOBIL.jl")
 include("behavior.jl")
 include("copula.jl")
 include("behavior_gen.jl")
-include("success_model.jl")
 include("no_crash_model.jl")
-include("metrics.jl")
-include("evaluation.jl")
+include("success_model.jl")
+# include("metrics.jl")
+# include("evaluation.jl")
 include("test_sets.jl")
 include("relax.jl")
 include("robust_mdp.jl")

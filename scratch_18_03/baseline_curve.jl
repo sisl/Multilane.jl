@@ -38,10 +38,13 @@ for lambda in 2.^(0:5)
     dmodel = NoCrashIDMMOBILModel(10, pp,
                                   behaviors=behaviors,
                                   p_appear=1.0,
-                                  lane_terminate=false)
-    rmodel = NoCrashRewardModel()
-    rmodel.brake_penalty_thresh = 4.0
-    rmodel.cost_dangerous_brake = lambda*rmodel.reward_in_target_lane
+                                  lane_terminate=true,
+                                  max_dist=500.0
+                                 )
+    rmodel = SuccessReward(lambda=lambda,
+                           target_lane=4,
+                           brake_penalty_thresh=4.0
+                          )
     pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
     mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
     is = initial_state(pomdp, Base.GLOBAL_RNG)
@@ -50,7 +53,6 @@ for lambda in 2.^(0:5)
     planner = solve(solver, mdp)
 
     sim_pomdp = deepcopy(pomdp)
-    sim_pomdp.dmodel.lane_terminate=true
     sim_pomdp.throw=true
 
     sims = []
@@ -65,7 +67,7 @@ for lambda in 2.^(0:5)
                         :dt=>pp.dt
                    )   
 
-        hr = HistoryRecorder(max_steps=10000, rng=rng, capture_exception=true)
+        hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=true)
         push!(sims, Sim(sim_pomdp, planner, agg_up, ips, is,
                         simulator=hr,
                         metadata=metadata
@@ -107,7 +109,8 @@ for lambda in 2.^(0:5)
                     :steps_to_lane=>steps_to_lane,
                     :steps_in_lane=>steps_in_lane,
                     :nb_brakes=>nb_brakes,
-                    :exception=>false
+                    :exception=>false,
+                    :terminal=>string(get(last(state_hist(hist)).terminal, missing))
                    ]
         else
             return [:exception=>true,

@@ -62,11 +62,8 @@ end
 
 NoCrashMDP{R<:AbstractMLRewardModel} =  MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, R}
 NoCrashPOMDP{R<:AbstractMLRewardModel} =  MLPOMDP{MLState, MLAction, MLObs, NoCrashIDMMOBILModel, R}
-const SuccessMDP = NoCrashMDP{TargetLaneReward}
-const SuccessPOMDP = NoCrashPOMDP{TargetLaneReward}
 
 NoCrashProblem{R<:AbstractMLRewardModel} =  Union{NoCrashMDP{R}, NoCrashPOMDP{R}}
-const SuccessProblem = Union{SuccessMDP, SuccessPOMDP}
 
 # TODO issue here VVV need a different way to create observation
 create_action(::NoCrashProblem) = MLAction()
@@ -113,7 +110,7 @@ function actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}, as::No
 end
 
 calc_brake_acc(mdp::NoCrashProblem{NoCrashRewardModel}, s::Union{MLState, MLPhysicalState}) = min(max_safe_acc(mdp,s), -mdp.rmodel.brake_penalty_thresh/2.0)
-calc_brake_acc(mdp::NoCrashProblem{TargetLaneReward}, s::Union{MLState, MLPhysicalState}) = min(max_safe_acc(mdp, s), min(-mdp.dmodel.phys_param.brake_limit/2, -mdp.dmodel.brake_terminate_thresh/2))
+# calc_brake_acc(mdp::NoCrashProblem{TargetLaneReward}, s::Union{MLState, MLPhysicalState}) = min(max_safe_acc(mdp, s), min(-mdp.dmodel.phys_param.brake_limit/2, -mdp.dmodel.brake_terminate_thresh/2))
 
 iterator(as::NoCrashActionSpace) = as
 Base.start(as::NoCrashActionSpace) = 1
@@ -258,7 +255,7 @@ end
 
 #XXX temp
 create_state(p::NoCrashProblem) = MLState(0.0, 0.0, Vector{CarState}(p.dmodel.nb_cars), nothing)
-create_observation(pomdp::Union{NoCrashPOMDP,SuccessPOMDP}) = MLObs(0.0, 0.0, Vector{CarStateObs}(pomdp.dmodel.nb_cars), nothing)
+create_observation(pomdp::NoCrashPOMDP) = MLObs(0.0, 0.0, Vector{CarStateObs}(pomdp.dmodel.nb_cars), nothing)
 
 function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractRNG)
 
@@ -592,7 +589,6 @@ function detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState, threshold:
 end
 
 detect_braking(mdp::NoCrashProblem, s::MLState, sp::MLState) = detect_braking(mdp, s, sp, mdp.rmodel.brake_penalty_thresh)
-detect_braking(mdp::SuccessProblem, s::MLState, sp::MLState) = detect_braking(mdp, s, sp, mdp.dmodel.brake_terminate_thresh)
 
 """
 Return the ids of cars that brake during this state transition
@@ -671,7 +667,7 @@ function generate_o(mdp::NoCrashProblem, s::MLState, a::MLAction, sp::MLState)
     return MLObs(sp)
 end
 
-function generate_sor(pomdp::Union{NoCrashPOMDP, SuccessPOMDP}, s::MLState, a::MLAction, rng::AbstractRNG)
+function generate_sor(pomdp::NoCrashPOMDP, s::MLState, a::MLAction, rng::AbstractRNG)
     sp, r = generate_sr(pomdp, s, a, rng)
     o = generate_o(pomdp, s, a, sp)
     return sp, o, r
