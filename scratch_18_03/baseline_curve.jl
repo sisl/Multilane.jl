@@ -28,9 +28,9 @@ solver = SingleBehaviorSolver(dpws, Multilane.NORMAL)
 @show N = 500
 alldata = DataFrame()
 
-# for lambda in 2.^(0:5)
+for lambda in 2.0.^(-1:5)
 # for lambda in 2.^1
-for lambda in [1.0, 10.0, 100.0, 1000.0]
+# for lambda in [1.0, 10.0, 100.0, 1000.0]
 
     @show lambda
 
@@ -40,7 +40,7 @@ for lambda in [1.0, 10.0, 100.0, 1000.0]
                                   behaviors=behaviors,
                                   p_appear=1.0,
                                   lane_terminate=true,
-                                  max_dist=1000.0
+                                  max_dist=2000.0
                                  )
     rmodel = SuccessReward(lambda=lambda)
     pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
