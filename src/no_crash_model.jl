@@ -109,7 +109,7 @@ function actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}, as::No
     return NoCrashActionSpace(as.NORMAL_ACTIONS, acceptable, brake)
 end
 
-calc_brake_acc(mdp::NoCrashProblem{NoCrashRewardModel}, s::Union{MLState, MLPhysicalState}) = min(max_safe_acc(mdp,s), -mdp.rmodel.brake_penalty_thresh/2.0)
+calc_brake_acc(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}) = min(max_safe_acc(mdp,s), -mdp.rmodel.brake_penalty_thresh/2.0)
 # calc_brake_acc(mdp::NoCrashProblem{TargetLaneReward}, s::Union{MLState, MLPhysicalState}) = min(max_safe_acc(mdp, s), min(-mdp.dmodel.phys_param.brake_limit/2, -mdp.dmodel.brake_terminate_thresh/2))
 
 iterator(as::NoCrashActionSpace) = as

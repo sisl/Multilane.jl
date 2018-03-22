@@ -168,13 +168,11 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 	s_behind_ += s_behind + pp.l_car
 
 	dt = pp.dt
-	#TODO generalize to get_dv?
-	if !(typeof(s.cars[nbhd[5+dir]].behavior) <: IDMMOBILBehavior)
-		# assume some default idm model TODO
-		behind_idm = IDMParam("normal",31.,4.)
-	else
-		behind_idm = s.cars[nbhd[5+dir]].behavior.p_idm
-	end
+	# if !(typeof(s.cars[nbhd[5+dir]].behavior) <: IDMMOBILBehavior)
+	# 	behind_idm = NORMAL_IDM
+	# else
+	# end
+	behind_idm = s.cars[nbhd[5+dir]].behavior.p_idm::IDMParam
 	a_follower = get_idm_dv(behind_idm,dt,v_behind,dv_behind,s_behind)/dt #distance behind is a negative number
 	a_follower_ = get_idm_dv(behind_idm,dt,v_behind,dv_behind_,s_behind_)/dt
 

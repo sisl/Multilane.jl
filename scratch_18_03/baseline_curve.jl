@@ -1,6 +1,5 @@
 using Multilane
 using MCTS
-using JLD
 using POMDPToolbox
 using POMDPs
 # using POMCP
@@ -20,6 +19,7 @@ dpws = DPWSolver(depth=20,
                  exploration_constant=50.0,
                  k_state=4.0,
                  alpha_state=1/8,
+                 enable_action_pw=false,
                  estimate_value=RolloutEstimator(SimpleSolver()))
 
 
