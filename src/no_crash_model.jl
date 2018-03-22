@@ -31,7 +31,6 @@ mutable struct NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
     max_dist::Float64 # terminate simulation if distance becomes greater than this
 end
 
-#XXX temporary
 function NoCrashIDMMOBILModel(nb_cars::Int,
                               pp::PhysicalParam;
                               vel_sigma = 0.5,
@@ -65,7 +64,6 @@ NoCrashPOMDP{R<:AbstractMLRewardModel} =  MLPOMDP{MLState, MLAction, MLObs, NoCr
 
 NoCrashProblem{R<:AbstractMLRewardModel} =  Union{NoCrashMDP{R}, NoCrashPOMDP{R}}
 
-# TODO issue here VVV need a different way to create observation
 create_action(::NoCrashProblem) = MLAction()
 
 # action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {brake}
@@ -74,7 +72,7 @@ struct NoCrashActionSpace
     acceptable::IntSet
     brake::MLAction # this action will be EITHER braking at half the dangerous brake threshold OR the braking necessary to prevent a collision at all time in the future
 end
-# TODO for performance, make this a macro?
+
 const NB_NORMAL_ACTIONS = 9
 
 function NoCrashActionSpace(mdp::NoCrashProblem)
@@ -352,48 +350,51 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         end
 
         # second, prevent cars hitting each other due to noise
-        sorted = sort!(collect(1:length(s.cars)), by=i->s.cars[i].x, rev=true)
+        if mdp.throw
+            # sorted = sort!(collect(1:length(s.cars)), by=i->s.cars[i].x, rev=true)
+            sorted = sortperm(collect(c.x for c in s.cars), rev=true)
 
-        if length(sorted) >= 2 #something to compare
-            # iterate through pairs
-            iter_state = start(sorted)
-            j, iter_state = next(sorted, iter_state)
-            while !done(sorted, iter_state)
-                i = j
+            if length(sorted) >= 2 #something to compare
+                # iterate through pairs
+                iter_state = start(sorted)
                 j, iter_state = next(sorted, iter_state)
-                if j == 1
-                    continue # don't check for the ego since the ego does not have noise
-                end
-                car_i = s.cars[i]
-                car_j = s.cars[j]
+                while !done(sorted, iter_state)
+                    i = j
+                    j, iter_state = next(sorted, iter_state)
+                    if j == 1
+                        continue # don't check for the ego since the ego does not have noise
+                    end
+                    car_i = s.cars[i]
+                    car_j = s.cars[j]
 
-                # check if they overlap longitudinally
-                if car_j.x + dxs[j] > car_i.x + dxs[i] - pp.l_car
-                
-                    # check if they will be in the same lane
-                    if occupation_overlap(car_i.y + dys[i], car_j.y + dys[j])
-                        # warn and nudge behind
-                        if mdp.throw
-                            @show car_j.x + dxs[j]
-                            @show car_i.x + dxs[i]
-                            @show pp.l_car
-                        end
-                        @if_debug begin
-                            println("Conflict because of noise: front:$i, back:$j")
-                            Gallium.@enter generate_s(mdp, s, a, dbg_rng)
-                        end
-                        if i == 1
+                    # check if they overlap longitudinally
+                    if car_j.x + dxs[j] > car_i.x + dxs[i] - pp.l_car
+                    
+                        # check if they will be in the same lane
+                        if occupation_overlap(car_i.y + dys[i], car_j.y + dys[j])
+                            # warn and nudge behind
                             if mdp.throw
-                                error("Car nudged because noise would cause a crash (ego in front).")
+                                @show car_j.x + dxs[j]
+                                @show car_i.x + dxs[i]
+                                @show pp.l_car
                             end
-                        else
-                            # warn("Car nudged because noise would cause a crash.")
-                            if mdp.throw
-                                error("Car nudged because noise would cause a crash.")
+                            @if_debug begin
+                                println("Conflict because of noise: front:$i, back:$j")
+                                Gallium.@enter generate_s(mdp, s, a, dbg_rng)
                             end
+                            if i == 1
+                                if mdp.throw
+                                    error("Car nudged because noise would cause a crash (ego in front).")
+                                end
+                            else
+                                # warn("Car nudged because noise would cause a crash.")
+                                if mdp.throw
+                                    error("Car nudged because noise would cause a crash.")
+                                end
+                            end
+                            dxs[j] = car_i.x + dxs[i] - car_j.x - 1.01*pp.l_car
+                            dvs[j] = 2.0*(dxs[j]/dt - car_j.vel)
                         end
-                        dxs[j] = car_i.x + dxs[i] - car_j.x - 1.01*pp.l_car
-                        dvs[j] = 2.0*(dxs[j]/dt - car_j.vel)
                     end
                 end
             end
@@ -482,9 +483,9 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                 for j in 1:pp.nb_lanes
                     other = closest_cars[j]
                     if other == 0
-                        sstar = 0
+                        sstar = 0.0
                     else
-                        sstar = get_idm_s_star(behavior.p_idm, vel, vel-s.cars[other].vel)
+                        sstar = get_idm_s_star(behavior.p_idm::IDMParam, vel, vel-s.cars[other].vel::Float64)
                     end
                     sstar_margins[j] = clearances[j] - sstar
                 end

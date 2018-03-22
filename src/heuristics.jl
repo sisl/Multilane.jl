@@ -1,8 +1,8 @@
 # heuristics.jl
 # heuristic policies
 
-mutable struct Simple <: Policy #
-  mdp
+mutable struct Simple{M} <: Policy #
+  mdp::M
   A::NoCrashActionSpace
   sweeping_up::Bool
 end
