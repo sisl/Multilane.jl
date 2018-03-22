@@ -28,8 +28,9 @@ solver = SingleBehaviorSolver(dpws, Multilane.NORMAL)
 @show N = 500
 alldata = DataFrame()
 
-for lambda in 2.^(0:5)
+# for lambda in 2.^(0:5)
 # for lambda in 2.^1
+for lambda in [1.0, 10.0, 100.0, 1000.0]
 
     @show lambda
 
@@ -39,7 +40,7 @@ for lambda in 2.^(0:5)
                                   behaviors=behaviors,
                                   p_appear=1.0,
                                   lane_terminate=true,
-                                  max_dist=500.0
+                                  max_dist=150.0
                                  )
     rmodel = SuccessReward(lambda=lambda,
                            target_lane=4,
@@ -72,6 +73,7 @@ for lambda in 2.^(0:5)
                         simulator=hr,
                         metadata=metadata
                        ))
+        @assert problem(last(sims)).throw
     end
 
     # data = run(sims) do sim, hist
@@ -83,6 +85,8 @@ for lambda in 2.^(0:5)
             steps_to_lane = missing
             nb_brakes = 0
             crashed = false
+            min_speed = Inf
+            min_ego_speed = Inf
             for (k,(s,sp)) in enumerate(eachstep(hist, "s,sp"))
 
                 nb_brakes += detect_braking(p, s, sp)
@@ -99,8 +103,12 @@ for lambda in 2.^(0:5)
                 if is_crash(p, s, sp)
                     crashed = true
                 end
+
+                min_speed = min(minimum(c.vel for c in sp.cars), min_speed)
+                min_ego_speed = min(min_ego_speed, sp.cars[1].vel)
             end
             time_to_lane = steps_to_lane*p.dmodel.phys_param.dt
+            distance = last(state_hist(hist)).cars[1].x
 
             return [:n_steps=>n_steps(hist),
                     :mean_iterations=>mean(ai[:tree_queries] for ai in eachstep(hist, "ai")),
@@ -110,14 +118,28 @@ for lambda in 2.^(0:5)
                     :steps_in_lane=>steps_in_lane,
                     :nb_brakes=>nb_brakes,
                     :exception=>false,
+                    :distance=>distance,
+                    :mean_ego_speed=>distance/(n_steps(hist)*p.dmodel.phys_param.dt),
+                    :min_speed=>min_speed,
+                    :min_ego_speed=>min_ego_speed,
                     :terminal=>string(get(last(state_hist(hist)).terminal, missing))
                    ]
         else
+            warn("Error in Simulation")
+            showerror(STDERR, get(exception(hist)))
             return [:exception=>true,
                     :ex_type=>string(typeof(get(exception(hist))))
                    ]
         end
     end
+
+    success = 100.0*sum(data[:terminal].=="lane")/N
+    brakes = 100.0*sum(data[:nb_brakes].>=1)/N
+    @printf("%% reaching:%5.1f; %% braking:%5.1f\n", success, brakes)
+
+    @show extrema(data[:distance])
+    @show mean(data[:mean_ego_speed])
+    @show minimum(data[:min_speed])
 
     if isempty(alldata)
         alldata = data
@@ -126,7 +148,7 @@ for lambda in 2.^(0:5)
     end
 end
 
-@show alldata
+# @show alldata
 
 datestring = Dates.format(now(), "E_d_u_HH_MM")
 filename = Pkg.dir("Multilane", "data", "baseline_curve_"*datestring*".csv")
