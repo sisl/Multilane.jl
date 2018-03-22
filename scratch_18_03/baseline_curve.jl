@@ -40,12 +40,9 @@ for lambda in [1.0, 10.0, 100.0, 1000.0]
                                   behaviors=behaviors,
                                   p_appear=1.0,
                                   lane_terminate=true,
-                                  max_dist=150.0
+                                  max_dist=1000.0
                                  )
-    rmodel = SuccessReward(lambda=lambda,
-                           target_lane=4,
-                           brake_penalty_thresh=4.0
-                          )
+    rmodel = SuccessReward(lambda=lambda)
     pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
     mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
     is = initial_state(pomdp, Base.GLOBAL_RNG)
@@ -108,7 +105,7 @@ for lambda in [1.0, 10.0, 100.0, 1000.0]
                 min_ego_speed = min(min_ego_speed, sp.cars[1].vel)
             end
             time_to_lane = steps_to_lane*p.dmodel.phys_param.dt
-            distance = last(state_hist(hist)).cars[1].x
+            distance = last(state_hist(hist)).x
 
             return [:n_steps=>n_steps(hist),
                     :mean_iterations=>mean(ai[:tree_queries] for ai in eachstep(hist, "ai")),

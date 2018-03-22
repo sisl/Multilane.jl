@@ -22,9 +22,10 @@ end
 Reward of +1 on transition INTO target lane, -lambda on unsafe transitions
 """
 @with_kw struct SuccessReward <: AbstractMLRewardModel
-    lambda::Float64 # always positive
-    target_lane::Int
-    brake_penalty_thresh::Float64 # always positive
+    lambda::Float64                 = 1.0  # always positive
+    target_lane::Int                = 4
+    brake_penalty_thresh::Float64   = 4.0  # always positive
+    speed_thresh::Float64           = 15.0 # always positive
 end
 
 function reward(p::NoCrashProblem{SuccessReward}, s::MLState, ::MLAction, sp::MLState)
@@ -33,7 +34,10 @@ function reward(p::NoCrashProblem{SuccessReward}, s::MLState, ::MLAction, sp::ML
     else
         r = 0.0
     end
+    min_speed = minimum(c.vel for c in sp.cars)
     nb_brakes = detect_braking(p, s, sp)
-    r -= p.rmodel.lambda*nb_brakes
+    if nb_brakes > 0 || min_speed < p.rmodel.speed_thresh
+        r -= p.rmodel.lambda
+    end
     return r
 end

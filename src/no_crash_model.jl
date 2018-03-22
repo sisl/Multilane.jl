@@ -447,6 +447,8 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
             end
         end
 
+        sp.x = s.x + dxs[1]
+
         next_id = maximum([c.id for c in s.cars]) + 1
 
         deleteat!(sp.cars, exits)
@@ -655,6 +657,8 @@ function initial_state(mdp::NoCrashProblem, ps::MLPhysicalState, rng::AbstractRN
         behavior = rand(rng, mdp.dmodel.behaviors)
         s.cars[i] = CarState(ps.cars[i], behavior)
     end
+    s.x = 0.0
+    s.t = 0.0
     return s
 end
 

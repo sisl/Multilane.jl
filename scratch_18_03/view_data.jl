@@ -15,7 +15,9 @@ data[:brakes_per_step] = data[:nb_brakes]./data[:n_steps]
 combined = by(data, :lambda) do df
     n = size(df, 1)
     return DataFrame(reached_lane=sum(df[:terminal].=="lane")/n,
-                     had_brakes=sum(df[:nb_brakes].>=1)/n)
+                     had_brakes=sum(df[:nb_brakes].>=1)/n,
+                    )
+
     # return DataFrame(ttl=mean(df[:time_to_lane]),
     #                  ttl_sem=std(df[:time_to_lane])./sqrt(size(df,1)),
     #                  bps=mean(df[:brakes_per_step]),
