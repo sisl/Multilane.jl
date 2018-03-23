@@ -13,7 +13,7 @@ using CSV
 
 using Gallium
 
-@show N = 1
+@show N = 500
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=20,
@@ -29,15 +29,15 @@ solvers = Dict{String, Solver}(
     "baseline" => begin
         SingleBehaviorSolver(dpws, Multilane.NORMAL)
     end,
-
     "omniscient" => dpws,
 )
 
 
 
 
-# for lambda in 2.0.^(-1:5)
-for lambda in [1.0]
+for lambda in 2.0.^(-1:5)
+# for lambda in [1.0]
+    @show lambda
 
     behaviors = standard_uniform(correlation=0.75)
     pp = PhysicalParam(4, lane_length=100.0)
@@ -45,7 +45,7 @@ for lambda in [1.0]
                                   behaviors=behaviors,
                                   p_appear=1.0,
                                   lane_terminate=true,
-                                  max_dist=2000.0
+                                  max_dist=1000.0
                                  )
     rmodel = SuccessReward(lambda=lambda)
     pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
@@ -57,12 +57,9 @@ for lambda in [1.0]
     )
 
     for (k, solver) in solvers
+        @show k
         p = problems[k]
-
         planner = solve(solver, p)
-
-        @show lambda
-
         sim_problem = deepcopy(problems[k])
         sim_problem.throw=true
 
