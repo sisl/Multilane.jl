@@ -14,6 +14,7 @@ function relaxed_initial_state(mdp::NoCrashProblem, steps=200,
     s = last(state_hist(hist))
     s.t = 0.0
     s.x = 0.0
+    @assert s.cars[1].y == 1.0
     @assert isnull(s.terminal)
     return s
 end

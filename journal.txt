@@ -2,7 +2,7 @@ Tue 20 Mar 2018 10:37:28 AM PDT
 
 [X] Curve with baseline
 [ ] Plot baseline curve
-[ ] Quick profile
+[X] Quick profile
 [ ] Curve with upper bound
 [ ] Curve with MLMPC
 [ ] Curve with PFT-DPW
