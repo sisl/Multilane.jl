@@ -1,11 +1,16 @@
+Fri 23 Mar 2018 01:25:54 PM PDT
+
+- Store particles by car? Yes
+- Aggressiveness? Yes
+
 Tue 20 Mar 2018 10:37:28 AM PDT
 
 [X] Curve with baseline
 [ ] Plot baseline curve
 [X] Quick profile
-[ ] Curve with upper bound
-[ ] Curve with MLMPC
-[ ] Curve with PFT-DPW
+[X] Curve with upper bound
+[/] Curve with MLMPC
+[/] Curve with PFT-DPW
 
 Mon 19 Mar 2018 06:23:30 PM PDT
 
