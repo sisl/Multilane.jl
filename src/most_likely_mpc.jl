@@ -2,16 +2,16 @@ struct MLMPCSolver <: Solver
     solver
 end
 
-function solve(sol::MLMPCSolver, problem::NoCrashProblem)
+function solve(sol::MLMPCSolver, p::NoCrashProblem)
     mdp = NoCrashMDP{typeof(p.rmodel)}(p.dmodel, p.rmodel, p.discount, p.throw) # make sure an MDP
     return MLMPCPolicy(solve(sol.solver, mdp))
 end
 
-struct MLMPCPolicy{P<:Policy} <: Solver
+struct MLMPCPolicy{P<:Policy} <: Policy
     planner::P
 end
 
-action_info(p::MLMPCPolicy, b) = action_info(p, most_likely_state(b))
+action_info(p::MLMPCPolicy, b) = action_info(p.planner, most_likely_state(b))
 
 action(p::MLMPCPolicy, b) = first(action_info(p, b))
 

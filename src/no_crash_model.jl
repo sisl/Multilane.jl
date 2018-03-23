@@ -64,7 +64,7 @@ NoCrashPOMDP{R<:AbstractMLRewardModel} =  MLPOMDP{MLState, MLAction, MLObs, NoCr
 
 NoCrashProblem{R<:AbstractMLRewardModel} =  Union{NoCrashMDP{R}, NoCrashPOMDP{R}}
 
-create_action(::NoCrashProblem) = MLAction()
+# create_action(::NoCrashProblem) = MLAction()
 
 # action space = {a in {accelerate,maintain,decelerate}x{left_lane_change,maintain,right_lane_change} | a is safe} U {brake}
 struct NoCrashActionSpace

@@ -210,5 +210,4 @@ function initialize_belief(up::AggressivenessUpdater, physical::MLPhysicalState)
     return AggressivenessBelief(gen, physical, particles, weights)
 end
 
-
 initialize_belief(up::AggressivenessUpdater, d::AggressivenessBelief) = d

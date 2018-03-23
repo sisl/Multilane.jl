@@ -13,7 +13,7 @@ using CSV
 
 using Gallium
 
-@show N = 500
+@show N = 1
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=20,
@@ -25,21 +25,26 @@ dpws = DPWSolver(depth=20,
                  enable_action_pw=false,
                  estimate_value=RolloutEstimator(SimpleSolver()))
 
-agg_up = AggressivenessUpdater(nothing, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(123))
 
 solvers = Dict{String, Solver}(
     "baseline" => begin
         SingleBehaviorSolver(dpws, Multilane.NORMAL)
     end,
     "omniscient" => dpws,
-    "mlmpc" => MLMPCSolver(dpws, agg_up)
+    "mlmpc" => MLMPCSolver(dpws),
+    "pftdpw" => begin
+        m = 10
+        wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
+        rng = MersenneTwister(123)
+        up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
+        ABMDPSolver(dpws, up)
+    end
 )
 
 
 
-
-for lambda in 2.0.^(-1:5)
-# for lambda in [1.0]
+# for lambda in 2.0.^(-2:4)
+for lambda in [1.0]
     @show lambda
 
     behaviors = standard_uniform(correlation=0.75)
@@ -56,14 +61,14 @@ for lambda in 2.0.^(-1:5)
 
     problems = Dict{String, Any}(
         "baseline"=>mdp,
-        "omniscient"=>mdp,
+        "omniscient"=>mdp
     )
 
     for (k, solver) in solvers
         @show k
-        p = problems[k]
+        p = get(problems, k, pomdp)
         planner = solve(solver, p)
-        sim_problem = deepcopy(problems[k])
+        sim_problem = deepcopy(p)
         sim_problem.throw=true
 
         sims = []
@@ -79,7 +84,7 @@ for lambda in 2.0.^(-1:5)
                             :solver=>"baseline",
                             :dt=>pp.dt
                        )   
-            hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=true)
+            hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
 
             if p isa POMDP
                 agg_up = AggressivenessUpdater(sim_problem, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(rng_seed+50000))
@@ -96,8 +101,8 @@ for lambda in 2.0.^(-1:5)
             @assert problem(last(sims)).throw
         end
 
-        # data = run(sims) do sim, hist
-        data = run_parallel(sims) do sim, hist
+        data = run(sims) do sim, hist
+        # data = run_parallel(sims) do sim, hist
 
             if isnull(exception(hist))
                 p = problem(sim)
@@ -147,6 +152,7 @@ for lambda in 2.0.^(-1:5)
             else
                 warn("Error in Simulation")
                 showerror(STDERR, get(exception(hist)))
+                # show(STDERR, MIME("text/plain"), stacktrace(get(backtrace(hist))))
                 return [:exception=>true,
                         :ex_type=>string(typeof(get(exception(hist))))
                        ]

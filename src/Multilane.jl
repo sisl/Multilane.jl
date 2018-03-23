@@ -67,6 +67,7 @@ export
     RobustMLPolicy,
     MLPOMDPSolver,
     MLPOMDPAgent,
+    ABMDPSolver,
     DiscreteBehaviorSet,
     DiscreteBehaviorBelief,
     WeightUpdateParams,
@@ -172,6 +173,7 @@ include("beliefs.jl")
 include("aggressiveness_particle_filter.jl")
 include("uniform_particle_filter.jl")
 include("most_likely_mpc.jl")
+include("aggressiveness_belief_mdp.jl")
 include("single_behavior.jl")
 include("heuristics.jl")
 include("tree_vis.jl")

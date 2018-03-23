@@ -18,7 +18,7 @@ abstract type EmbeddedBehaviorMDP <: MDP{MLPhysicalState, MLAction} end
 
 actions(p::EmbeddedBehaviorMDP) = actions(p.base)
 actions(p::EmbeddedBehaviorMDP, s::MLPhysicalState, as::NoCrashActionSpace) = actions(p.base, s, as)
-create_action(p::EmbeddedBehaviorMDP) = create_action(p.base)
+# create_action(p::EmbeddedBehaviorMDP) = create_action(p.base)
 create_state(p::EmbeddedBehaviorMDP) = MLPhysicalState(false, 0.0, 0.0, [])
 discount(p::EmbeddedBehaviorMDP) = discount(p.base)
 # reward(p::EmbeddedBehaviorMDP, s::MLPhysicalState, a::MLAction, sp::MLPhysicalState)

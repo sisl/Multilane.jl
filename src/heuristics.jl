@@ -12,14 +12,16 @@ Simple(mdp) = Simple(mdp,actions(mdp),true)
 solve(solver::SimpleSolver, problem::MDP) = Simple(problem)
 solve(solver::SimpleSolver, problem::EmbeddedBehaviorMDP) = Simple(problem.base)
 solve(solver::SimpleSolver, problem::POMDP) = Simple(problem)
+solve(solver::SimpleSolver, problem::AggressivenessBeliefMDP) = Simple(get(problem.up.problem))
 POMDPs.updater(::Simple) = POMDPToolbox.FastPreviousObservationUpdater{MLObs}()
 create_policy(s::SimpleSolver, problem::MDP) = Simple(problem)
 create_policy(s::SimpleSolver, problem::POMDP) = Simple(problem)
 
 set_rng!(solver::SimpleSolver, rng::AbstractRNG) = nothing
 
-function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.mdp))
+function action(p::Simple,s::Union{MLState,MLObs})
 # lane changes if there is an opportunity
+    a = MLAction()
     goal_lane = p.mdp.rmodel.target_lane
     y_desired = goal_lane
     dmodel = p.mdp.dmodel
@@ -52,7 +54,7 @@ function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.md
   
     return MLAction(min(accel, max_accel),0.)
 end
-action(p::Simple, b::BehaviorBelief, a::MLAction=create_action(p.mdp)) = action(p, b.physical, a)
+action(p::Simple, b::BehaviorBelief) = action(p, b.physical)
 
 mutable struct BehaviorSolver <: Solver
     b::BehaviorModel
