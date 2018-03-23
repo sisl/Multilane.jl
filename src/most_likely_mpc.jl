@@ -1,3 +1,21 @@
+struct MLMPCSolver <: Solver
+    solver
+end
+
+function solve(sol::MLMPCSolver, problem::NoCrashProblem)
+    mdp = NoCrashMDP{typeof(p.rmodel)}(p.dmodel, p.rmodel, p.discount, p.throw) # make sure an MDP
+    return MLMPCPolicy(solve(sol.solver, mdp))
+end
+
+struct MLMPCPolicy{P<:Policy} <: Solver
+    planner::P
+end
+
+action_info(p::MLMPCPolicy, b) = action_info(p, most_likely_state(b))
+
+action(p::MLMPCPolicy, b) = first(action_info(p, b))
+
+#=
 mutable struct MLMPCSolver <: Solver
     solver
     updater::Nullable{Any}
@@ -38,3 +56,4 @@ function action(agent::MLMPCAgent, state::MLState)
     agent.previous_belief = belief
     return a
 end
+=#

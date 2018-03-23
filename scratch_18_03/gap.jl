@@ -25,12 +25,14 @@ dpws = DPWSolver(depth=20,
                  enable_action_pw=false,
                  estimate_value=RolloutEstimator(SimpleSolver()))
 
+agg_up = AggressivenessUpdater(nothing, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(123))
+
 solvers = Dict{String, Solver}(
     "baseline" => begin
         SingleBehaviorSolver(dpws, Multilane.NORMAL)
     end,
-
     "omniscient" => dpws,
+    "mlmpc" => MLMPCSolver(dpws, agg_up)
 )
 
 
