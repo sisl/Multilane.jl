@@ -28,7 +28,7 @@ solver = SingleBehaviorSolver(dpws, Multilane.NORMAL)
 @show N = 500
 alldata = DataFrame()
 
-for lambda in 2.0.^(-1:5)
+for lambda in 2.0.^(-2:5)
 # for lambda in 2.^1
 # for lambda in [1.0, 10.0, 100.0, 1000.0]
 
@@ -40,14 +40,12 @@ for lambda in 2.0.^(-1:5)
                                   behaviors=behaviors,
                                   p_appear=1.0,
                                   lane_terminate=true,
-                                  max_dist=2000.0
+                                  brake_terminate_thresh=4.0,
+                                  max_dist=1000.0
                                  )
     rmodel = SuccessReward(lambda=lambda)
     pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
     mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
-    is = initial_state(pomdp, Base.GLOBAL_RNG)
-    ips = MLPhysicalState(is)
-
     planner = solve(solver, mdp)
 
     sim_pomdp = deepcopy(pomdp)
@@ -56,7 +54,7 @@ for lambda in 2.0.^(-1:5)
     sims = []
 
     for i in 1:N
-        rng_seed = i
+        rng_seed = i+40000
         rng = MersenneTwister(rng_seed)
         agg_up = AggressivenessUpdater(sim_pomdp, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(rng_seed+50000))
         metadata = Dict(:rng_seed=>rng_seed,
@@ -64,6 +62,9 @@ for lambda in 2.0.^(-1:5)
                         :solver=>"baseline",
                         :dt=>pp.dt
                    )   
+
+        is = initial_state(pomdp, MersenneTwister(i+30000))
+        ips = MLPhysicalState(is)
 
         hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=true)
         push!(sims, Sim(sim_pomdp, planner, agg_up, ips, is,

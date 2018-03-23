@@ -529,10 +529,10 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
             end
         end
 
-        if mdp.dmodel.lane_terminate && sp.cars[1].y == mdp.rmodel.target_lane
-            sp.terminal = Nullable{Any}(:lane)
-        elseif sp.x > mdp.dmodel.max_dist
+        if sp.x > mdp.dmodel.max_dist
             sp.terminal = Nullable{Any}(:distance)
+        elseif mdp.dmodel.lane_terminate && sp.cars[1].y == mdp.rmodel.target_lane
+            sp.terminal = Nullable{Any}(:lane)
         end
 
         @assert sp.cars[1].x == s.cars[1].x # ego should not move

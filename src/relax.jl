@@ -3,7 +3,9 @@ function relaxed_initial_state(mdp::NoCrashProblem, steps=200,
                              solver=BehaviorSolver(NORMAL, true, rng))
     
     mdp = deepcopy(mdp)
-    mdp.dmodel.max_dist=Inf
+    mdp.dmodel.max_dist = Inf
+    mdp.dmodel.brake_terminate_thresh = Inf
+    mdp.dmodel.lane_terminate = false
     pp = mdp.dmodel.phys_param
     is = MLState(0.0, 0.0, CarState[CarState(pp.lane_length/2, 1.0, pp.v_med, 0.0, NORMAL, 1)])
     sim = HistoryRecorder(max_steps=steps, rng=rng)
