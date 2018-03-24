@@ -6,6 +6,7 @@ using POMDPs
 using Missings
 using DataFrames
 using CSV
+using POMCPOW
 
 @everywhere using Missings
 @everywhere using Multilane
@@ -23,6 +24,7 @@ dpws = DPWSolver(depth=20,
                  k_state=4.0,
                  alpha_state=1/8,
                  enable_action_pw=false,
+                 check_repeat_state=false,
                  estimate_value=RolloutEstimator(SimpleSolver()))
 
 
@@ -38,7 +40,18 @@ solvers = Dict{String, Solver}(
         rng = MersenneTwister(123)
         up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
         ABMDPSolver(dpws, up)
-    end
+    end,
+    "pomcpow" => POMCPOWSolver(tree_queries=10_000_000,
+                               criterion=MaxUCB(10.0),
+                               max_depth=20,
+                               max_time=1.0,
+                               enable_action_pw=false,
+                               k_state=4.0,
+                               alpha_state=1/8,
+                               estimate_value=FORollout(SimpleSolver()),
+                               check_repeat_obs=false
+                               node_sr_belief_updater=AggressivenessPOWFilter()
+                              )
 )
 
 

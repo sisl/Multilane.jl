@@ -2,8 +2,10 @@ mutable struct AggressivenessBelief <: BehaviorBelief
     gen::CorrelatedIDMMOBIL
     physical::MLPhysicalState
     particles::Vector{Vector{Float64}} # First index is the position in physical.cars
-    weights::Vector{Vector{Float64}}   # Second index is the particle number
+    weights::Vector{Vector{Float64}}   # Second index is the particle number 
 end
+
+# XXX to improve performance, store cdf instead of weights
 
 function rand(rng::AbstractRNG,
                  b::AggressivenessBelief,
@@ -79,36 +81,8 @@ function weights_from_particles!(b::AggressivenessBelief,
             resize!(b.weights[i], 0)
         end
     end
-    for (j, sp) in enumerate(particles)
-        isp = 1
-        io = 1
-        while io <= length(o.cars) && isp <= length(sp.cars)
-            co = o.cars[io]
-            csp = sp.cars[isp]
-            if co.id == csp.id
-                if abs(co.x-csp.x) < 0.2*problem.dmodel.phys_param.lane_length
-                    @assert isa(csp.behavior, IDMMOBILBehavior)
-                    a = csp.behavior.p_idm.a
-                    dt = problem.dmodel.phys_param.dt
-                    veld = TriangularDist(csp.vel-a*dt/2.0, csp.vel+a*dt/2.0, csp.vel)
-                    proportional_likelihood = Distributions.pdf(veld, co.vel)
-                    if co.y == csp.y
-                        push!(b.particles[io], aggressiveness(b.gen, csp.behavior))
-                        push!(b.weights[io], proportional_likelihood)
-                    elseif abs(co.y - csp.y) <= 1.1
-                        push!(b.particles[io], aggressiveness(b.gen, csp.behavior))
-                        push!(b.weights[io], p.wrong_lane_factor*proportional_likelihood)
-                    end # if greater than one lane apart, do nothing
-                end
-                io += 1
-                isp += 1
-            elseif co.id < csp.id
-                io += 1
-            else 
-                @assert co.id > csp.id
-                isp += 1
-            end
-        end
+    for sp in particles
+        maybe_push_one!(particles, weights, problem.dmodel.phys_param, b.gen, sp, o)
     end
 
     @if_debug begin
@@ -127,6 +101,39 @@ function weights_from_particles!(b::AggressivenessBelief,
     end
    
     return b
+end
+
+function maybe_push_one!(particles, weights, pp, gen, sp, o)
+    gen = problem.dmodel.behaviors
+    isp = 1
+    io = 1
+    while io <= length(o.cars) && isp <= length(sp.cars)
+        co = o.cars[io]
+        csp = sp.cars[isp]
+        if co.id == csp.id
+            if abs(co.x-csp.x) < 0.2*pp.lane_length
+                @assert isa(csp.behavior, IDMMOBILBehavior)
+                a = csp.behavior.p_idm.a
+                dt = pp.dt
+                veld = TriangularDist(csp.vel-a*dt/2.0, csp.vel+a*dt/2.0, csp.vel)
+                proportional_likelihood = Distributions.pdf(veld, co.vel)
+                if co.y == csp.y
+                    push!(particles[io], aggressiveness(gen, csp.behavior))
+                    push!(weights[io], proportional_likelihood)
+                elseif abs(co.y - csp.y) <= 1.1
+                    push!(particles[io], aggressiveness(gen, csp.behavior))
+                    push!(weights[io], p.wrong_lane_factor*proportional_likelihood)
+                end # if greater than one lane apart, do nothing
+            end
+            io += 1
+            isp += 1
+        elseif co.id < csp.id
+            io += 1
+        else 
+            @assert co.id > csp.id
+            isp += 1
+        end
+    end
 end
 
 mutable struct AggressivenessUpdater <: Updater
