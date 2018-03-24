@@ -13,7 +13,7 @@ using CSV
 
 using Gallium
 
-@show N = 1
+@show N = 500
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=20,
@@ -43,8 +43,8 @@ solvers = Dict{String, Solver}(
 
 
 
-# for lambda in 2.0.^(-2:4)
-for lambda in [1.0]
+for lambda in 2.0.^(-2:4)
+# for lambda in [1.0]
     @show lambda
 
     behaviors = standard_uniform(correlation=0.75)
@@ -81,7 +81,7 @@ for lambda in [1.0]
 
             metadata = Dict(:rng_seed=>rng_seed,
                             :lambda=>lambda,
-                            :solver=>"baseline",
+                            :solver=>k,
                             :dt=>pp.dt
                        )   
             hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
@@ -101,8 +101,8 @@ for lambda in [1.0]
             @assert problem(last(sims)).throw
         end
 
-        data = run(sims) do sim, hist
-        # data = run_parallel(sims) do sim, hist
+        # data = run(sims) do sim, hist
+        data = run_parallel(sims) do sim, hist
 
             if isnull(exception(hist))
                 p = problem(sim)
@@ -164,8 +164,9 @@ for lambda in [1.0]
         @printf("%% reaching:%5.1f; %% braking:%5.1f\n", success, brakes)
 
         @show extrema(data[:distance])
-        @show mean(data[:mean_ego_speed])
-        @show minimum(data[:min_speed])
+        if minimum(data[:min_speed]) < 15.0
+            @show minimum(data[:min_speed])
+        end
 
         if isempty(alldata)
             alldata = data
