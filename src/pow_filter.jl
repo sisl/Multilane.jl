@@ -6,18 +6,21 @@ end
 
 rand(rng::AbstractRNG, b::AggressivenessPOWNodeBelief) = (rand(rng, b.b), b.r)
 
-struct AggressivenessPOWFilter end
+struct AggressivenessPOWFilter
+    params::WeightUpdateParams
+end
 
-belief_type(filter::AggressivenessPOWFilter, pomdp::MLPOMDP) = AggressivenessPOWNodeBelief{typeof(pomdp)}
+POMCPOW.belief_type(::Type{AggressivenessPOWFilter}, ::Type{P}) where P<:MLPOMDP = AggressivenessPOWNodeBelief{P}
 
-function init_node_sr_belief(filter::AggressivenessPOWFilter, p::MLPOMDP, s, a, sp, o, r)
-    particles = Vector{Float64}[]
-    weights = Vector{Float64}[]
-    push_one!(particles, weights, p.dmodel.phys_param, p.dmodel.behaviors, sp, o)
+function POMCPOW.init_node_sr_belief(f::AggressivenessPOWFilter, p::MLPOMDP, s, a, sp, o, r)
+    particles = [Vector{Float64}() for c in o.cars]
+    weights = [Vector{Float64}() for c in o.cars]
+    gen = CorrelatedIDMMOBIL(p.dmodel.behaviors)
+    maybe_push_one!(particles, weights, f.params, p.dmodel.phys_param, gen, sp, o)
     ab = AggressivenessBelief(gen, o, particles, weights)
     return AggressivenessPOWNodeBelief(p, ab, r)
 end
 
-function push_wieghted!(b::AggressivenessPOWNodeBelief, ::AggressivenessPOWFilter, s, sp, r)
-    maybe_push_one!(b.b.particles, b.b.weights, b.model.dmodel.phys_param, b.b.gen, sp, o)
+function POMCPOW.push_weighted!(b::AggressivenessPOWNodeBelief, f::AggressivenessPOWFilter, s, sp, r)
+    maybe_push_one!(b.b.particles, b.b.weights, f.params, b.model.dmodel.phys_param, b.b.gen, sp, b.b.physical)
 end

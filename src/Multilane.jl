@@ -26,6 +26,7 @@ using ProgressMeter
 using PmapProgressMeter
 using POMDPToolbox
 import MCTS # so that we can define node_tag, etc.
+import POMCPOW
 # using RobustMCTS # for RobustMDP
 # import POMCP # for particle filter
 
@@ -133,6 +134,7 @@ export # POMDP belief stuff
     BehaviorRootUpdaterStub,
     AggressivenessBelief,
     AggressivenessUpdater,
+    AggressivenessPOWFilter,
     agg_means,
     agg_stds,
     aggressiveness,

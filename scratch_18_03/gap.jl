@@ -14,7 +14,7 @@ using POMCPOW
 
 using Gallium
 
-@show N = 500
+@show N = 1
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=20,
@@ -27,37 +27,38 @@ dpws = DPWSolver(depth=20,
                  check_repeat_state=false,
                  estimate_value=RolloutEstimator(SimpleSolver()))
 
+wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
 
 solvers = Dict{String, Solver}(
-    "baseline" => begin
-        SingleBehaviorSolver(dpws, Multilane.NORMAL)
-    end,
-    "omniscient" => dpws,
-    "mlmpc" => MLMPCSolver(dpws),
-    "pftdpw" => begin
-        m = 10
-        wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
-        rng = MersenneTwister(123)
-        up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
-        ABMDPSolver(dpws, up)
-    end,
+    # "baseline" => begin
+    #     SingleBehaviorSolver(dpws, Multilane.NORMAL)
+    # end,
+    # "omniscient" => dpws,
+    # "mlmpc" => MLMPCSolver(dpws),
+    # "pftdpw" => begin
+    #     m = 10
+    #     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
+    #     rng = MersenneTwister(123)
+    #     up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
+    #     ABMDPSolver(dpws, up)
+    # end,
     "pomcpow" => POMCPOWSolver(tree_queries=10_000_000,
                                criterion=MaxUCB(10.0),
                                max_depth=20,
                                max_time=1.0,
                                enable_action_pw=false,
-                               k_state=4.0,
-                               alpha_state=1/8,
+                               k_observation=4.0,
+                               alpha_observation=1/8,
                                estimate_value=FORollout(SimpleSolver()),
-                               check_repeat_obs=false
-                               node_sr_belief_updater=AggressivenessPOWFilter()
+                               check_repeat_obs=false,
+                               node_sr_belief_updater=AggressivenessPOWFilter(wup)
                               )
 )
 
 
 
-for lambda in 2.0.^(-2:4)
-# for lambda in [1.0]
+# for lambda in 2.0.^(-2:4)
+for lambda in [1.0]
     @show lambda
 
     behaviors = standard_uniform(correlation=0.75)
@@ -114,8 +115,8 @@ for lambda in 2.0.^(-2:4)
             @assert problem(last(sims)).throw
         end
 
-        # data = run(sims) do sim, hist
-        data = run_parallel(sims) do sim, hist
+        data = run(sims) do sim, hist
+        # data = run_parallel(sims) do sim, hist
 
             if isnull(exception(hist))
                 p = problem(sim)

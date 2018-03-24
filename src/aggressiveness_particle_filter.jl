@@ -82,7 +82,7 @@ function weights_from_particles!(b::AggressivenessBelief,
         end
     end
     for sp in particles
-        maybe_push_one!(particles, weights, problem.dmodel.phys_param, b.gen, sp, o)
+        maybe_push_one!(b.particles, b.weights, p, problem.dmodel.phys_param, b.gen, sp, o)
     end
 
     @if_debug begin
@@ -103,8 +103,7 @@ function weights_from_particles!(b::AggressivenessBelief,
     return b
 end
 
-function maybe_push_one!(particles, weights, pp, gen, sp, o)
-    gen = problem.dmodel.behaviors
+function maybe_push_one!(particles, weights, params, pp, gen, sp, o)
     isp = 1
     io = 1
     while io <= length(o.cars) && isp <= length(sp.cars)
@@ -122,7 +121,7 @@ function maybe_push_one!(particles, weights, pp, gen, sp, o)
                     push!(weights[io], proportional_likelihood)
                 elseif abs(co.y - csp.y) <= 1.1
                     push!(particles[io], aggressiveness(gen, csp.behavior))
-                    push!(weights[io], p.wrong_lane_factor*proportional_likelihood)
+                    push!(weights[io], params.wrong_lane_factor*proportional_likelihood)
                 end # if greater than one lane apart, do nothing
             end
             io += 1
