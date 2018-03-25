@@ -14,7 +14,7 @@ using POMCPOW
 
 using Gallium
 
-@show N = 1
+@show N = 50
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=20,
@@ -30,9 +30,7 @@ dpws = DPWSolver(depth=20,
 wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
 
 solvers = Dict{String, Solver}(
-    # "baseline" => begin
-    #     SingleBehaviorSolver(dpws, Multilane.NORMAL)
-    # end,
+    "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
     # "omniscient" => dpws,
     # "mlmpc" => MLMPCSolver(dpws),
     # "pftdpw" => begin
@@ -115,8 +113,8 @@ for lambda in [1.0]
             @assert problem(last(sims)).throw
         end
 
-        data = run(sims) do sim, hist
-        # data = run_parallel(sims) do sim, hist
+        # data = run(sims) do sim, hist
+        data = run_parallel(sims) do sim, hist
 
             if isnull(exception(hist))
                 p = problem(sim)
@@ -178,6 +176,7 @@ for lambda in [1.0]
         @printf("%% reaching:%5.1f; %% braking:%5.1f\n", success, brakes)
 
         @show extrema(data[:distance])
+        @show mean(data[:mean_iterations])
         if minimum(data[:min_speed]) < 15.0
             @show minimum(data[:min_speed])
         end
