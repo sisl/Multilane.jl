@@ -3,12 +3,11 @@
 
 mutable struct Simple{M} <: Policy #
   mdp::M
-  A::NoCrashActionSpace
   sweeping_up::Bool
 end
 mutable struct SimpleSolver <: Solver end
 
-Simple(mdp) = Simple(mdp,actions(mdp),true)
+Simple(mdp) = Simple(mdp,true)
 solve(solver::SimpleSolver, problem::MDP) = Simple(problem)
 solve(solver::SimpleSolver, problem::EmbeddedBehaviorMDP) = Simple(problem.base)
 solve(solver::SimpleSolver, problem::POMDP) = Simple(problem)

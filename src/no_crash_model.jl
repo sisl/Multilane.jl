@@ -82,13 +82,8 @@ function NoCrashActionSpace(mdp::NoCrashProblem)
     return NoCrashActionSpace(NORMAL_ACTIONS, IntSet(), MLAction()) # note: brake will be calculated later based on the state
 end
 
-function actions(mdp::NoCrashProblem)
-    return NoCrashActionSpace(mdp)
-end
-
-actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}) = actions(mdp, s, actions(mdp))
-
-function actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}, as::NoCrashActionSpace)
+function actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState})
+    as = NoCrashActionSpace(mdp)
     acceptable = IntSet()
     for i in 1:NB_NORMAL_ACTIONS
         a = as.NORMAL_ACTIONS[i]

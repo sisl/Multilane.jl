@@ -96,7 +96,7 @@ for lambda in [1.0]
                             :solver=>k,
                             :dt=>pp.dt
                        )   
-            hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
+            hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=true)
 
             if p isa POMDP
                 agg_up = AggressivenessUpdater(sim_problem, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(rng_seed+50000))

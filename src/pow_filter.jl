@@ -24,3 +24,13 @@ end
 function POMCPOW.push_weighted!(b::AggressivenessPOWNodeBelief, f::AggressivenessPOWFilter, s, sp, r)
     maybe_push_one!(b.b.particles, b.b.weights, f.params, b.model.dmodel.phys_param, b.b.gen, sp, b.b.physical)
 end
+
+actions(p::MLPOMDP, b::AggressivenessPOWNodeBelief) = actions(p, b.b.physical)
+
+function actions(p::MLPOMDP, h::POWTreeObsNode) 
+    if isroot(h)
+        return actions(p, belief(h))
+    else
+        return actions(p, sr_belief(h))
+    end
+end

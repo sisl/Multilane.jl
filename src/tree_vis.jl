@@ -1,26 +1,28 @@
 function MCTS.node_tag(s::MLState)
-    if s.crashed
-        return "CRASH"
+    if isnull(s.terminal)
+        desc = ""
     else
-        desc = "("
-        for c in s.cars
-            desc = string(desc, @sprintf("[%.1f,%.1f]",c.x,c.y))
-        end
-        return string(desc,")")
+        desc = "[$(uppercase(get(s.terminal)))] "
     end
+    desc *= "("
+    for c in s.cars
+        desc *= @sprintf("[%.1f,%.1f]",c.x,c.y)
+    end
+    return string(desc,")")
 end
 
 function MCTS.tooltip_tag(s::MLState)
-    if s.crashed
-        return "CRASH"
+    if isnull(s.terminal)
+        desc = ""
     else
-        desc = "( "
-        for c in s.cars
-            desc = string(desc, 
-            @sprintf("[%.1f,%.1f,v:%.1f,l:%.1f] ", c.x, c.y, c.vel, c.lane_change))
-        end
-        return string(desc,")")
+        desc = "[$(uppercase(get(s.terminal)))] "
     end
+    desc *= "("
+    for c in s.cars
+        desc *= @sprintf("[%.1f,%.1f,v:%.1f,l:%.1f] ", c.x, c.y, c.vel, c.lane_change)
+    end
+    desc *= ")"
+    return desc
 end
 
 function MCTS.node_tag(a::MLAction)
