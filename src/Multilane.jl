@@ -26,7 +26,7 @@ using ProgressMeter
 using PmapProgressMeter
 using POMDPToolbox
 import MCTS # so that we can define node_tag, etc.
-import POMCPOW
+using POMCPOW
 # using RobustMCTS # for RobustMDP
 # import POMCP # for particle filter
 
