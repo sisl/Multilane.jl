@@ -14,7 +14,7 @@ using POMCPOW
 
 using Gallium
 
-@show N = 50
+@show N = 500
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=20,
@@ -31,15 +31,15 @@ wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
 
 solvers = Dict{String, Solver}(
     "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
-    # "omniscient" => dpws,
-    # "mlmpc" => MLMPCSolver(dpws),
-    # "pftdpw" => begin
-    #     m = 10
-    #     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
-    #     rng = MersenneTwister(123)
-    #     up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
-    #     ABMDPSolver(dpws, up)
-    # end,
+    "omniscient" => dpws,
+    "mlmpc" => MLMPCSolver(dpws),
+    "pftdpw" => begin
+        m = 10
+        wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
+        rng = MersenneTwister(123)
+        up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
+        ABMDPSolver(dpws, up)
+    end,
     "pomcpow" => POMCPOWSolver(tree_queries=10_000_000,
                                criterion=MaxUCB(10.0),
                                max_depth=20,
@@ -55,8 +55,8 @@ solvers = Dict{String, Solver}(
 
 
 
-# for lambda in 2.0.^(-2:4)
-for lambda in [1.0]
+for lambda in 2.0.^(-2:4)
+# for lambda in [1.0]
     @show lambda
 
     behaviors = standard_uniform(correlation=0.75)

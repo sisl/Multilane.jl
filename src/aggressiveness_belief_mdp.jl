@@ -42,7 +42,7 @@ function generate_sr(p::AggressivenessBeliefMDP, b_old::AggressivenessBelief, a:
     return b_new, rsum/up.nb_sims
 end
 
-actions(p::AggressivenessBeliefMDP) = actions(get(p.up.problem))
+# actions(p::AggressivenessBeliefMDP) = actions(get(p.up.problem))
 actions(p::AggressivenessBeliefMDP, b::AggressivenessBelief) = actions(get(p.up.problem), b.physical)
 discount(p::AggressivenessBeliefMDP) = discount(get(p.up.problem))
 

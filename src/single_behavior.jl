@@ -21,7 +21,7 @@ function solve(solver::SingleBehaviorSolver, mdp::NoCrashProblem)
 end
 
 function action_info(p::SingleBehaviorPolicy, s::Union{MLPhysicalState, MLState})
-    as = actions(p.inner_policy.mdp, s, actions(p.inner_policy.mdp))
+    as = actions(p.inner_policy.mdp, s)
     if length(as) == 1
         return first(as), Dict(:tree_queries=>missing)
     end
