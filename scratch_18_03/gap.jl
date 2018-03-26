@@ -14,7 +14,7 @@ using POMCPOW
 
 using Gallium
 
-@show N = 500
+@show N = 2000
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=20,
@@ -55,7 +55,7 @@ solvers = Dict{String, Solver}(
 
 
 
-for lambda in 2.0.^(-2:4)
+for lambda in 2.0.^(-2:5)
 # for lambda in [1.0]
     @show lambda
 
