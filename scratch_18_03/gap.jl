@@ -14,13 +14,13 @@ using POMCPOW
 
 using Gallium
 
-@show N = 2000
+@show N = 1
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=20,
                  n_iterations=1_000_000,
                  max_time=1.0,
-                 exploration_constant=10.0,
+                 exploration_constant=2.0,
                  k_state=4.0,
                  alpha_state=1/8,
                  enable_action_pw=false,
@@ -33,6 +33,7 @@ solvers = Dict{String, Solver}(
     "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "omniscient" => dpws,
     "mlmpc" => MLMPCSolver(dpws),
+    "qmdp" => GenQMDPSolver(dpws),
     "pftdpw" => begin
         m = 10
         wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
@@ -41,7 +42,7 @@ solvers = Dict{String, Solver}(
         ABMDPSolver(dpws, up)
     end,
     "pomcpow" => POMCPOWSolver(tree_queries=10_000_000,
-                               criterion=MaxUCB(10.0),
+                               criterion=MaxUCB(2.0),
                                max_depth=20,
                                max_time=1.0,
                                enable_action_pw=false,
@@ -55,8 +56,8 @@ solvers = Dict{String, Solver}(
 
 
 
-for lambda in 2.0.^(-2:5)
-# for lambda in [1.0]
+# for lambda in 2.0.^(-2:5)
+for lambda in [1.0]
     @show lambda
 
     behaviors = standard_uniform(correlation=0.75)
@@ -75,11 +76,22 @@ for lambda in 2.0.^(-2:5)
         "baseline"=>mdp,
         "omniscient"=>mdp
     )
+    solver_problems = Dict{String, Any}(
+        "qmdp"=>begin
+            rng = MersenneTwister(50000)
+            agg_up = AggressivenessUpdater(pomdp, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), rng)
+            is = initial_state(pomdp, rng)
+            ips = MLPhysicalState(is)
+            b = initialize_belief(agg_up, ips)
+            QMDPWrapper(mdp, typeof(b))
+        end
+    )
 
     for (k, solver) in solvers
         @show k
         p = get(problems, k, pomdp)
-        planner = solve(solver, p)
+        sp = get(solver_problems, k, p)
+        planner = solve(solver, sp)
         sim_problem = deepcopy(p)
         sim_problem.throw=true
 
@@ -96,7 +108,7 @@ for lambda in 2.0.^(-2:5)
                             :solver=>k,
                             :dt=>pp.dt
                        )   
-            hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=true)
+            hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
 
             if p isa POMDP
                 agg_up = AggressivenessUpdater(sim_problem, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(rng_seed+50000))
@@ -113,8 +125,8 @@ for lambda in 2.0.^(-2:5)
             @assert problem(last(sims)).throw
         end
 
-        # data = run(sims) do sim, hist
-        data = run_parallel(sims) do sim, hist
+        data = run(sims) do sim, hist
+        # data = run_parallel(sims) do sim, hist
 
             if isnull(exception(hist))
                 p = problem(sim)
@@ -177,6 +189,7 @@ for lambda in 2.0.^(-2:5)
 
         @show extrema(data[:distance])
         @show mean(data[:mean_iterations])
+        @show mean(data[:reward])
         if minimum(data[:min_speed]) < 15.0
             @show minimum(data[:min_speed])
         end

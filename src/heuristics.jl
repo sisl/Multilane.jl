@@ -12,6 +12,7 @@ solve(solver::SimpleSolver, problem::MDP) = Simple(problem)
 solve(solver::SimpleSolver, problem::EmbeddedBehaviorMDP) = Simple(problem.base)
 solve(solver::SimpleSolver, problem::POMDP) = Simple(problem)
 solve(solver::SimpleSolver, problem::AggressivenessBeliefMDP) = Simple(get(problem.up.problem))
+solve(solver::SimpleSolver, problem::QMDPWrapper) = Simple(problem.mdp)
 POMDPs.updater(::Simple) = POMDPToolbox.FastPreviousObservationUpdater{MLObs}()
 create_policy(s::SimpleSolver, problem::MDP) = Simple(problem)
 create_policy(s::SimpleSolver, problem::POMDP) = Simple(problem)
@@ -29,11 +30,9 @@ function action(p::Simple,s::Union{MLState,MLObs})
   
     #if can't move towards desired lane sweep through accelerating and decelerating
   
-    # TODO need an equivalent of is_safe that can operate on observations
     if is_safe(p.mdp, s, MLAction(0.,lc))
         return MLAction(0.,lc)
     end
-    # maintain distance from other cars
   
     # maintain distance
     nbhd = get_neighborhood(dmodel.phys_param,s,1)
@@ -54,6 +53,13 @@ function action(p::Simple,s::Union{MLState,MLObs})
     return MLAction(min(accel, max_accel),0.)
 end
 action(p::Simple, b::BehaviorBelief) = action(p, b.physical)
+function action(pol::Simple, s::QMDPState)
+    if s.isstate
+        return action(pol, get(s.s))
+    else
+        return action(pol, get(s.b))
+    end
+end
 
 mutable struct BehaviorSolver <: Solver
     b::BehaviorModel

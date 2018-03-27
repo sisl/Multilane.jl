@@ -33,7 +33,7 @@ function rand(rng::AbstractRNG,
     return s
 end
 
-actions(p::MLPOMDP, b::AggressivenessBelief) = actions(p, b.physical)
+actions(p::Union{MLMDP,MLPOMDP}, b::AggressivenessBelief) = actions(p, b.physical)
 
 function most_likely_state(b::AggressivenessBelief)
     s = MLState(b.physical, Vector{CarState}(length(b.physical.cars)))

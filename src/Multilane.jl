@@ -75,7 +75,9 @@ export
     UniformIDMMOBIL,
     standard_uniform,
     MLMPCSolver,
-    MLPOMDPSolver
+    MLPOMDPSolver,
+    GenQMDPSolver,
+    QMDPWrapper
 
 export
     NoCrashRewardModel,
@@ -121,7 +123,8 @@ export #data structure stuff
     sbatch_spawn,
     gather_results,
     relaxed_initial_state,
-    nan
+    nan,
+    state
 
 export # POMDP belief stuff
     ParticleUpdater,
@@ -177,10 +180,11 @@ include("uniform_particle_filter.jl")
 include("pow_filter.jl")
 include("most_likely_mpc.jl")
 include("aggressiveness_belief_mdp.jl")
+include("qmdp.jl")
 include("single_behavior.jl")
 include("heuristics.jl")
 include("tree_vis.jl")
-include("sherlock.jl")
+# include("sherlock.jl")
 
 include_visualization() = include(joinpath(Pkg.dir("Multilane"),"src","visualization.jl"))
 
