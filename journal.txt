@@ -1,3 +1,38 @@
+Tue 27 Mar 2018 12:53:59 PM PDT
+
+With lots of comutation:
+    
+    "pomcpow" => POMCPOWSolver(tree_queries=10_000_000,
+                               criterion=MaxUCB(2.0),
+                               max_depth=40,
+                               max_time=20.0,
+                               enable_action_pw=false,
+                               k_observation=4.0,
+                               alpha_observation=1/8,
+                               estimate_value=FORollout(SimpleSolver()),
+                               check_repeat_obs=false,
+                               node_sr_belief_updater=AggressivenessPOWFilter(wup)
+                              )
+
+
+zsunberg@bethpage:~/.julia/v0.6/Multilane$ julia -p 54 scratch_18_03/long_compute.jl
+N = 2000 = 2000
+lambda = 1.0
+k = "pomcpow"
+Simulating...100%|██████████████████████████████████████| Time: 4:40:09
+% reaching: 97.2; % braking:  3.8
+extrema(data[:distance]) = (141.58465389163146, 1038.654002736081)
+mean(data[:mean_iterations]) = 53012.58754853618
+k = "omniscient"
+Simulating...100%|██████████████████████████████████████| Time: 0:16:58
+% reaching: 80.1; % braking:  1.1
+extrema(data[:distance]) = (140.8302636907952, 1032.1174082929251)
+mean(data[:mean_iterations]) = 10113.634496570035
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/baseline_curve_Monday_26_Mar_23_54.csv
+
+This is much better...
+Need to optimize parameters I suppose
+
 Fri 23 Mar 2018 01:25:54 PM PDT
 
 - Store particles by car? Yes
