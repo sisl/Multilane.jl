@@ -14,7 +14,7 @@ using POMCPOW
 
 using Gallium
 
-@show N = 1
+@show N = 2000
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=20,
@@ -56,8 +56,8 @@ solvers = Dict{String, Solver}(
 
 
 
-# for lambda in 2.0.^(-2:5)
-for lambda in [1.0]
+for lambda in 2.0.^(-2:5)
+# for lambda in [1.0]
     @show lambda
 
     behaviors = standard_uniform(correlation=0.75)
@@ -118,8 +118,8 @@ for lambda in [1.0]
             @assert problem(last(sims)).throw
         end
 
-        data = run(sims) do sim, hist
-        # data = run_parallel(sims) do sim, hist
+        # data = run(sims) do sim, hist
+        data = run_parallel(sims) do sim, hist
 
             if isnull(exception(hist))
                 p = problem(sim)
