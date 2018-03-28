@@ -1,4 +1,4 @@
-__precompile__()
+__precompile__(true)
 module Multilane
 
 import StatsBase: Weights, sample
@@ -25,8 +25,9 @@ using DataFrames
 using ProgressMeter
 using PmapProgressMeter
 using POMDPToolbox
-import MCTS # so that we can define node_tag, etc.
+using MCTS # so that we can define node_tag, etc.
 using POMCPOW
+using CPUTime
 # using RobustMCTS # for RobustMDP
 # import POMCP # for particle filter
 
@@ -77,6 +78,7 @@ export
     MLMPCSolver,
     MLPOMDPSolver,
     GenQMDPSolver,
+    QBSolver,
     QMDPWrapper
 
 export
@@ -181,6 +183,7 @@ include("pow_filter.jl")
 include("most_likely_mpc.jl")
 include("aggressiveness_belief_mdp.jl")
 include("qmdp.jl")
+include("qbmcts.jl")
 include("single_behavior.jl")
 include("heuristics.jl")
 include("tree_vis.jl")
@@ -188,16 +191,16 @@ include("tree_vis.jl")
 
 include_visualization() = include(joinpath(Pkg.dir("Multilane"),"src","visualization.jl"))
 
-if gethostname() == "Theresa"
-    println("Automatically loading visualization components.")
-    include("visualization.jl")
-    export
-        display_sim,
-        show_state,
-        show_sim,
-        display_sim,
-        save_frame,
-        visualize
-end
+# if gethostname() == "Theresa"
+#     println("Automatically loading visualization components.")
+#     include("visualization.jl")
+#     export
+#         display_sim,
+#         show_state,
+#         show_sim,
+#         display_sim,
+#         save_frame,
+#         visualize
+# end
 
 end # module

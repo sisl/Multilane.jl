@@ -23,9 +23,9 @@ wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
 #                               )
 
 dpws = DPWSolver(depth=20,
-                 n_iterations=20_000,
+                 n_iterations=100_000,
                  max_time=1.0,
-                 exploration_constant=10.0,
+                 exploration_constant=2.0,
                  k_state=4.0,
                  alpha_state=1/8,
                  enable_action_pw=false,
@@ -34,8 +34,7 @@ dpws = DPWSolver(depth=20,
                  tree_in_info=tii
                 )
 # solver = MLMPCSolver(dpws)
-
-solver = GenQMDPSolver(dpws)
+solver = QBSolver(dpws)
 
 behaviors = standard_uniform(correlation=0.75)
 pp = PhysicalParam(4, lane_length=100.0)
@@ -57,14 +56,10 @@ ips = MLPhysicalState(is)
 agg_up = AggressivenessUpdater(pomdp, 500, 0.1, 0.1, wup, MersenneTwister(50000))
 ib = initialize_belief(agg_up, ips)
 
-qmdp = QMDPWrapper(mdp, typeof(ib))
-# planner = solve(solver, pomdp)
-planner = solve(solver, qmdp)
+planner = solve(solver, mdp)
 
 @show collect(actions(pomdp, ips))
 @show collect(actions(pomdp, ib))
-@show collect(actions(qmdp, state(qmdp, is)))
-@show collect(actions(qmdp, state(qmdp, ib)))
 
 action(planner, ib)
 @time action(planner, ib)

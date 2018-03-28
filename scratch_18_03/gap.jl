@@ -33,7 +33,7 @@ solvers = Dict{String, Solver}(
     "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "omniscient" => dpws,
     "mlmpc" => MLMPCSolver(dpws),
-    "qmdp" => GenQMDPSolver(dpws),
+    "qmdp" => QBSolver(dpws),
     "pftdpw" => begin
         m = 10
         wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
@@ -77,14 +77,7 @@ for lambda in [1.0]
         "omniscient"=>mdp
     )
     solver_problems = Dict{String, Any}(
-        "qmdp"=>begin
-            rng = MersenneTwister(50000)
-            agg_up = AggressivenessUpdater(pomdp, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), rng)
-            is = initial_state(pomdp, rng)
-            ips = MLPhysicalState(is)
-            b = initialize_belief(agg_up, ips)
-            QMDPWrapper(mdp, typeof(b))
-        end
+        "qmdp"=>mdp
     )
 
     for (k, solver) in solvers
