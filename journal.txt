@@ -1,3 +1,9 @@
+Fri 30 Mar 2018 09:36:59 AM PDT
+
+with fully-corellated
+
+/home/zsunberg/.julia/v0.6/Multilane/data/baseline_curve_Friday_30_Mar_07_36.csv
+
 Thu 29 Mar 2018 03:26:12 PM PDT
 
 Need to keep track of the average number of iters *ON THE FIRST STEP*

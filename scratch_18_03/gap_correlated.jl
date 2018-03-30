@@ -35,8 +35,8 @@ wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
 solvers = Dict{String, Solver}(
     "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "omniscient" => dpws,
-    "mlmpc" => MLMPCSolver(dpws),
-    "qmdp" => QBSolver(dpws),
+    # "mlmpc" => MLMPCSolver(dpws),
+    # "qmdp" => QBSolver(dpws),
     # "pftdpw" => begin
     #     m = 10
     #     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
@@ -57,11 +57,11 @@ solvers = Dict{String, Solver}(
                               )
 )
 
-for lambda in 2.0.^(-2:4)
+for lambda in 2.0.^(-1:3)
 # for lambda in [1.0]
     @show lambda
 
-    behaviors = standard_uniform(correlation=0.75)
+    behaviors = standard_uniform(correlation=true)
     pp = PhysicalParam(4, lane_length=100.0)
     dmodel = NoCrashIDMMOBILModel(10, pp,
                                   behaviors=behaviors,
@@ -156,6 +156,7 @@ for lambda in 2.0.^(-2:4)
                 return [:n_steps=>n_steps(hist),
                         :mean_iterations=>mean(ai[:tree_queries] for ai in eachstep(hist, "ai")),
                         :mean_search_time=>1e-6*mean(ai[:search_time_us] for ai in eachstep(hist, "ai")),
+                        :first_search_time=>1e-6*first(eachstep(hist, "ai"))[:search_time_us],
                         :reward=>discounted_reward(hist),
                         :crashed=>crashed,
                         :steps_to_lane=>steps_to_lane,
@@ -184,7 +185,7 @@ for lambda in 2.0.^(-2:4)
 
         @show extrema(data[:distance])
         @show mean(data[:mean_iterations])
-        @show mean(data[:mean_search_time])
+        @show mean(data[:first_search_time])
         @show mean(data[:reward])
         if minimum(data[:min_speed]) < 15.0
             @show minimum(data[:min_speed])

@@ -56,7 +56,7 @@ solvers = Dict{String, Solver}(
 
 
 
-for lambda in 2.0.^(-2:5)
+for lambda in 2.0.^(-2:4)
 # for lambda in [1.0]
     @show lambda
 

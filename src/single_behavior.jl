@@ -23,7 +23,7 @@ end
 function action_info(p::SingleBehaviorPolicy, s::Union{MLPhysicalState, MLState})
     as = actions(p.inner_policy.mdp, s)
     if length(as) == 1
-        return first(as), Dict(:tree_queries=>missing)
+        return first(as), Dict(:tree_queries=>missing, :search_time_us=>missing)
     end
     return action_info(p.inner_policy, single_behavior_state(s, p.behavior))
 end
