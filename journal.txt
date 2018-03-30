@@ -1,3 +1,7 @@
+Thu 29 Mar 2018 03:26:12 PM PDT
+
+Need to keep track of the average number of iters *ON THE FIRST STEP*
+
 Wed 28 Mar 2018 09:11:16 PM PDT
 
 gap with new qmdp

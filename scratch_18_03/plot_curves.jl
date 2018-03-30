@@ -11,7 +11,8 @@ function only(a)
 end
 
 # filename = Pkg.dir("Multilane", "data/baseline_curve_Saturday_24_Mar_21_08.csv")
-filename = Pkg.dir("Multilane", "data/baseline_curve_Sunday_25_Mar_12_09.csv")
+# filename = Pkg.dir("Multilane", "data/baseline_curve_Sunday_25_Mar_12_09.csv")
+filename = Pkg.dir("Multilane", "data/baseline_curve_Wednesday_28_Mar_16_55.csv")
 data = CSV.read(filename, nullable=true)
 
 data[:time_to_lane] = data[:steps_to_lane].*data[:dt]
