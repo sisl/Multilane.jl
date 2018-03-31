@@ -111,54 +111,30 @@ function action(p::IDMLaneSeekingPolicy, s::MLState, a::MLAction=MLAction(0.0,0.
     return MLAction(acc, 0.0)
 end
 
-#=
-Heuristics that I want:
-Cautious - move over if it doesn't cause braking
-Aggressive - move over if it doesn't cause a crash
-=#
 
-# type Simple <: Policy #
-#   mdp::MDP
-#   A::NoCrashActionSpace
-#   sweeping_up::Bool
-# end
-# type SimpleSolver <: Solver end
-# 
-# Simple(mdp::MDP) = Simple(mdp,actions(mdp),true)
-# solve(solver::SimpleSolver, problem::MDP) = Simple(problem)
-# solve(solver::SimpleSolver, problem::EmbeddedBehaviorMDP) = Simple(problem.base)
-# POMDPs.updater(::Simple) = POMDPToolbox.FastPreviousObservationUpdater{MLObs}()
-# create_policy(s::SimpleSolver, problem::MDP) = Simple(problem)
-# 
-# function action(p::Simple,s::Union{MLState,MLObs},a::MLAction=create_action(p.mdp))
-# # lane changes if there is an opportunity
-#   goal_lane = p.mdp.rmodel.target_lane
-#   y_desired = goal_lane
-#   dmodel = p.mdp.dmodel
-#   lc = sign(y_desired-s.cars[1].y) * dmodel.lane_change_rate
-#   acc = dmodel.adjustment_acceleration
-# 
-#   #if can't move towards desired lane sweep through accelerating and decelerating
-# 
-#   # TODO need an equivalent of is_safe that can operate on observations
-#   if is_safe(p.mdp,s,MLAction(0.,lc))
-#     return MLAction(0.,lc)
-#   end
-#   # maintain distance from other cars
-# 
-#   # maintain distance
-#   nbhd = get_neighborhood(dmodel.phys_param,s,1)
-# 
-#   if nbhd[2] == 0 && nbhd[5] == 0
-#     return MLAction(0.,0.)
-#   end
-# 
-#   dist_ahead = nbhd[2] != 0 ? s.cars[nbhd[2]].x - s.cars[1].x : Inf
-#   dist_behind = nbhd[5] != 0 ? s.cars[nbhd[5]].x - s.cars[1].x : Inf
-# 
-# 	sgn = abs(dist_ahead) <= abs(dist_behind) ? -1 : 1
-# 
-#   accel = sgn * acc
-# 
-#   return MLAction(accel,0.)
-# end
+
+struct OptimisticValue end
+
+function MCTS.estimate_value(v::OptimisticValue, m::NoCrashProblem, s::Union{MLState,MLPhysicalState}, steps::Int)
+    rm = m.rmodel
+    if rm isa NoCrashRewardModel
+        rw = rm.reward_in_target_lane
+    elseif rm isa SuccessReward
+        rw = 1.0
+    else
+        error("Unrecognized reward model.")
+    end
+    dm = m.dmodel
+    dt = dm.phys_param.dt
+    steps_away = abs(rm.target_lane - first(s.cars).y) / (dm.lane_change_rate * dt)
+    if s.x + first(s.cars).vel*steps_away*dt > dm.max_dist
+        return 0.0
+    elseif dm.lane_terminate
+        return discount(m)^steps_away*rw
+    else
+        gamma = discount(m)
+        return gamma^steps_away*rw/(1-gamma)
+    end
+end
+
+MCTS.estimate_value(v::OptimisticValue, m::MLPOMDP, s::Union{MLState,MLPhysicalState}, h, steps::Int) = estimate_value(v, m, s, steps)

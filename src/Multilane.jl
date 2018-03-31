@@ -90,7 +90,8 @@ export
     Simple,
     SimpleSolver,
     BehaviorSolver,
-    IDMLaneSeekingSolver
+    IDMLaneSeekingSolver,
+    OptimisticValue
 
 export
     SingleBehaviorSolver,
