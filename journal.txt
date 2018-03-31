@@ -1,3 +1,14 @@
+Fri 30 Mar 2018 05:27:22 PM PDT
+
+Big iter parity? (not promising)
+zsunberg@jodhpur:~/.julia/v0.6/Multilane$ julia -p 54 scratch/gap_iter_parity.jl
+N = 1000 = 1000
+n_iters = 10000 = 10000
+max_time = Inf = Inf
+max_depth = 40 = 40
+
+/home/zsunberg/.julia/v0.6/Multilane/data/baseline_curve_Friday_30_Mar_13_36.csv
+
 Fri 30 Mar 2018 05:19:12 PM PDT
 
 gap_500.jl
