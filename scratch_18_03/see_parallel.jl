@@ -29,7 +29,7 @@ solver = POMCPOWSolver(tree_queries=10_000,
                                tree_in_info=tii
                               )
 
-psolver = ParallelPOMCPOWSolver(solver, 100)
+psolver = ParallelPOMCPOWSolver(solver, 1000)
 
 behaviors = standard_uniform(correlation=0.75)
 pp = PhysicalParam(4, lane_length=100.0)
