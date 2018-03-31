@@ -1,3 +1,13 @@
+Fri 30 Mar 2018 12:16:10 PM PDT
+
+Things that I could do
+
+[ ] Adjust reward functions
+[ ] Do cross-entropy
+[ ] Work on parallel
+[ ] Do correlation study
+[ ] Non-aggressiveness filter
+
 Fri 30 Mar 2018 09:36:59 AM PDT
 
 with fully-corellated
