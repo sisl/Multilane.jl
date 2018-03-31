@@ -113,7 +113,7 @@ end
 
 struct CarPhysicalState
     x::Float64
-    y::Float64
+    y::Float64 # in units of lane
     vel::Float64
     lane_change::Float64
     id::Int

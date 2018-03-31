@@ -1,3 +1,11 @@
+Sat 31 Mar 2018 01:25:54 PM PDT
+
+[ ] run fully-correlated with value to compare with rollout
+[ ] get rho = 0.0 working
+[ ] run rho = 0.75 for plot
+[ ] run rho = 0.0 for plot
+[ ] run correlation trend
+
 Fri 30 Mar 2018 05:27:22 PM PDT
 
 Big iter parity? (not promising)
@@ -8,6 +16,7 @@ max_time = Inf = Inf
 max_depth = 40 = 40
 
 /home/zsunberg/.julia/v0.6/Multilane/data/baseline_curve_Friday_30_Mar_13_36.csv
+
 
 Fri 30 Mar 2018 05:19:12 PM PDT
 
@@ -20,8 +29,9 @@ Things that I could do
 
 [ ] Adjust reward functions
 [ ] Do cross-entropy
-[ ] Work on parallel
-[ ] Do correlation study
+[X] Work on parallel
+[0] Value instead of rollout
+[1] Do correlation study
 [ ] Non-aggressiveness filter
 
 Fri 30 Mar 2018 09:36:59 AM PDT

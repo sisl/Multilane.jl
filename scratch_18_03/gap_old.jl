@@ -14,24 +14,18 @@ using POMCPOW
 
 using Gallium
 
-@show N = 1
-@show n_iters = 10_000
-@show max_time = Inf
-@show max_depth = 40
-@show val = OptimisticValue()
+@show N = 2000
 alldata = DataFrame()
 
-dpws = DPWSolver(depth=max_depth,
-                 n_iterations=n_iters,
-                 max_time=max_time,
+dpws = DPWSolver(depth=20,
+                 n_iterations=1_000_000,
+                 max_time=1.0,
                  exploration_constant=2.0,
                  k_state=4.0,
                  alpha_state=1/8,
                  enable_action_pw=false,
                  check_repeat_state=false,
-                 # estimate_value=RolloutEstimator(val)
-                 estimate_value=val
-                )
+                 estimate_value=RolloutEstimator(SimpleSolver()))
 
 wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
 
@@ -40,32 +34,33 @@ solvers = Dict{String, Solver}(
     "omniscient" => dpws,
     "mlmpc" => MLMPCSolver(dpws),
     "qmdp" => QBSolver(dpws),
-    # "pftdpw" => begin
-    #     m = 10
-    #     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
-    #     rng = MersenneTwister(123)
-    #     up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
-    #     ABMDPSolver(dpws, up)
-    # end,
-    "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
+    "pftdpw" => begin
+        m = 10
+        wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
+        rng = MersenneTwister(123)
+        up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
+        ABMDPSolver(dpws, up)
+    end,
+    "pomcpow" => POMCPOWSolver(tree_queries=10_000_000,
                                criterion=MaxUCB(2.0),
-                               max_depth=max_depth,
-                               max_time=max_time,
+                               max_depth=20,
+                               max_time=1.0,
                                enable_action_pw=false,
                                k_observation=4.0,
                                alpha_observation=1/8,
-                               # estimate_value=FORollout(val),
-                               estimate_value=val,
+                               estimate_value=FORollout(SimpleSolver()),
                                check_repeat_obs=false,
                                node_sr_belief_updater=AggressivenessPOWFilter(wup)
                               )
 )
 
+
+
 for lambda in 2.0.^(-2:4)
 # for lambda in [1.0]
     @show lambda
 
-    behaviors = standard_uniform(correlation=true)
+    behaviors = standard_uniform(correlation=0.75)
     pp = PhysicalParam(4, lane_length=100.0)
     dmodel = NoCrashIDMMOBILModel(10, pp,
                                   behaviors=behaviors,
@@ -123,8 +118,8 @@ for lambda in 2.0.^(-2:4)
             @assert problem(last(sims)).throw
         end
 
-        data = run(sims) do sim, hist
-        # data = run_parallel(sims) do sim, hist
+        # data = run(sims) do sim, hist
+        data = run_parallel(sims) do sim, hist
 
             if isnull(exception(hist))
                 p = problem(sim)
@@ -159,7 +154,6 @@ for lambda in 2.0.^(-2:4)
 
                 return [:n_steps=>n_steps(hist),
                         :mean_iterations=>mean(ai[:tree_queries] for ai in eachstep(hist, "ai")),
-                        :mean_search_time=>1e-6*mean(ai[:search_time_us] for ai in eachstep(hist, "ai")),
                         :reward=>discounted_reward(hist),
                         :crashed=>crashed,
                         :steps_to_lane=>steps_to_lane,
@@ -188,7 +182,6 @@ for lambda in 2.0.^(-2:4)
 
         @show extrema(data[:distance])
         @show mean(data[:mean_iterations])
-        @show mean(data[:mean_search_time])
         @show mean(data[:reward])
         if minimum(data[:min_speed]) < 15.0
             @show minimum(data[:min_speed])
