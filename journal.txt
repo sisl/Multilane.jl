@@ -1,3 +1,74 @@
+Sat 31 Mar 2018 10:07:38 PM PDT
+
+With 20000 iters and value... weird
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/baseline_curve_Saturday_31_Mar_19_03.csv
+
+Sat 31 Mar 2018 10:06:50 PM PDT
+
+Reproduction with lambda = 0: you can't get less than 13.8 seconds
+zsunberg@bethpage:~/.julia/v0.6/Multilane$ julia -p 54 scratch/reproduce.jl 
+N = 500 = 500
+n_iters = 500 = 500
+max_time = Inf = Inf
+max_depth = 20 = 20
+val = SimpleSolver() = Multilane.SimpleSolver()
+lambda = 0.0
+k = "mlmpc"
+Simulating...100%|██████████████████████████████████████| Time: 0:01:08
+extrema(data[:time_to_lane]) = (4.5, 36.75)
+mean(data[:time_to_lane]) = 15.2745
+mean(data[:nb_brakes]) = 0.69
+extrema(data[:init_n_cars]) = (4, 7)
+mean(data[:init_n_cars]) = 5.618
+mean(data[:mean_search_time]) = 0.2510736670276966
+mean(data[:reward]) = 0.4020048199087055
+minimum(data[:min_speed]) = 0.09838861831921974
+k = "baseline"
+Simulating...100%|██████████████████████████████████████| Time: 0:01:14
+extrema(data[:time_to_lane]) = (4.5, 248.25)
+mean(data[:time_to_lane]) = 18.4035
+mean(data[:nb_brakes]) = 0.628
+extrema(data[:init_n_cars]) = (4, 7)
+mean(data[:init_n_cars]) = 5.618
+mean(data[:mean_search_time]) = missing
+mean(data[:reward]) = 0.4104719448438347
+minimum(data[:min_speed]) = 0.0870830254537509
+k = "omniscient"
+Simulating...100%|██████████████████████████████████████| Time: 0:00:46
+extrema(data[:time_to_lane]) = (4.5, 43.5)
+mean(data[:time_to_lane]) = 13.8465
+mean(data[:nb_brakes]) = 0.612
+extrema(data[:init_n_cars]) = (4, 7)
+mean(data[:init_n_cars]) = 5.618
+mean(data[:mean_search_time]) = 0.24905548593471075
+mean(data[:reward]) = 0.43650107055018406
+minimum(data[:min_speed]) = 3.5155584119643777
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/reproduction_Saturday_31_Mar_18_42.csv
+
+Sat 31 Mar 2018 06:36:44 PM PDT
+
+Attempt at reproduction
+/home/zsunberg/.julia/v0.6/Multilane/data/reproduction_Saturday_31_Mar_18_32.csv
+
+Sat 31 Mar 2018 05:16:24 PM PDT
+
+Unable to reproduce the old results with the current reward function
+
+Sat 31 Mar 2018 04:52:43 PM PDT
+
+Got nb_brakes of .4; ttl of 17 with reward of 1; switching to reward 10
+
+Sat 31 Mar 2018 04:46:38 PM PDT
+
+In reproducing results got nb_brakes of like 0.07 and ttl of like 28 with reward of 1
+^ Noticed that this was because I was using a SuccessReward
+
+Sat 31 Mar 2018 03:59:33 PM PDT
+
+Tried to reproduce results... saw no brakes and ttl of 5.7 with lane reward 1
+^ this was because I set lane_length to 0.75
+
+
 Sat 31 Mar 2018 09:27:13 PM PDT
 
 Shoot - gotta run it without pomcpow because I don't have an uncorrelated sr belief updater

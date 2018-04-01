@@ -14,7 +14,7 @@ using POMCPOW
 
 using Gallium
 
-@show N = 1
+@show N = 1000
 @show n_iters = 20_000
 @show max_time = Inf
 @show max_depth = 40
@@ -61,11 +61,12 @@ solvers = Dict{String, Solver}(
                               )
 )
 
-# for lambda in 2.0.^(-2:4)
-for lambda in [1.0]
+for lambda in 2.0.^(-1:3)
+# for lambda in [1.0]
     @show lambda
+    cor = 0.75
 
-    behaviors = standard_uniform(correlation=true)
+    behaviors = standard_uniform(correlation=cor)
     pp = PhysicalParam(4, lane_length=100.0)
     dmodel = NoCrashIDMMOBILModel(10, pp,
                                   behaviors=behaviors,
@@ -105,6 +106,7 @@ for lambda in [1.0]
                             :lambda=>lambda,
                             :solver=>k,
                             :dt=>pp.dt
+                            :correlation=>convert(Float64, cor)
                        )   
             hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
 
@@ -123,8 +125,8 @@ for lambda in [1.0]
             @assert problem(last(sims)).throw
         end
 
-        data = run(sims) do sim, hist
-        # data = run_parallel(sims) do sim, hist
+        # data = run(sims) do sim, hist
+        data = run_parallel(sims) do sim, hist
 
             if isnull(exception(hist))
                 p = problem(sim)
@@ -171,6 +173,7 @@ for lambda in [1.0]
                         :min_speed=>min_speed,
                         :min_ego_speed=>min_ego_speed,
                         :terminal=>string(get(last(state_hist(hist)).terminal, missing))
+                        :init_n_cars=>length(first(state_hist(hist)).cars)
                        ]
             else
                 warn("Error in Simulation")

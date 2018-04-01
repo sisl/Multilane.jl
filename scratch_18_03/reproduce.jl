@@ -16,8 +16,8 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 1
-@show n_iters = 2500
+@show N = 500
+@show n_iters = 500
 @show max_time = Inf
 @show max_depth = 20
 @show val = SimpleSolver()
@@ -41,7 +41,7 @@ solvers = Dict{String, Solver}(
     "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "omniscient" => dpws,
     "mlmpc" => MLMPCSolver(dpws),
-    "qmdp" => QBSolver(dpws),
+    # "qmdp" => QBSolver(dpws),
     # "pftdpw" => begin
     #     m = 10
     #     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
@@ -49,34 +49,35 @@ solvers = Dict{String, Solver}(
     #     up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
     #     ABMDPSolver(dpws, up)
     # end,
-    "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
-                               criterion=MaxUCB(5.0),
-                               max_depth=max_depth,
-                               max_time=max_time,
-                               enable_action_pw=false,
-                               k_observation=4.0,
-                               alpha_observation=1/8,
-                               estimate_value=FORollout(val),
-                               # estimate_value=val,
-                               check_repeat_obs=false,
-                               node_sr_belief_updater=AggressivenessPOWFilter(wup)
-                              )
+    # "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
+    #                            criterion=MaxUCB(5.0),
+    #                            max_depth=max_depth,
+    #                            max_time=max_time,
+    #                            enable_action_pw=false,
+    #                            k_observation=4.0,
+    #                            alpha_observation=1/8,
+    #                            estimate_value=FORollout(val),
+    #                            # estimate_value=val,
+    #                            check_repeat_obs=false,
+    #                            node_sr_belief_updater=AggressivenessPOWFilter(wup)
+    #                           )
 )
 
 # for lambda in 2.0.^(0:5)
-for lambda in [1.0]
+for lambda in [0.0]
     @show lambda
     cor = 0.75
 
     behaviors = standard_uniform(correlation=cor)
-    pp = PhysicalParam(4, lane_length=0.75)
+    pp = PhysicalParam(4, lane_length=100.0)
     dmodel = NoCrashIDMMOBILModel(10, pp,
                                   behaviors=behaviors,
                                   p_appear=1.0,
                                   lane_terminate=false,
                                   max_dist=Inf
                                  )
-    rmodel = NoCrashRewardModel(lambda, 1.0, 4.0, 4.0)
+    rmodel = NoCrashRewardModel(lambda, 1.0, 4.0, 4)
+    # rmodel = SuccessReward(lambda=lambda)
     pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
     mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
 
@@ -111,7 +112,7 @@ for lambda in [1.0]
                             :dt=>pp.dt,
                             :correlation=>convert(Float64, cor)
                        )   
-            hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
+            hr = HistoryRecorder(rng=rng, capture_exception=false)
 
             if p isa POMDP
                 agg_up = AggressivenessUpdater(sim_problem, 500, 0.1, 0.1, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), MersenneTwister(rng_seed+50000))
@@ -128,8 +129,8 @@ for lambda in [1.0]
             @assert problem(last(sims)).throw
         end
 
-        data = run(sims) do sim, hist
-        # data = run_parallel(sims) do sim, hist
+        # data = run(sims) do sim, hist
+        data = run_parallel(sims) do sim, hist
 
             if isnull(exception(hist))
                 p = problem(sim)
@@ -175,7 +176,8 @@ for lambda in [1.0]
                         :mean_ego_speed=>distance/(n_steps(hist)*p.dmodel.phys_param.dt),
                         :min_speed=>min_speed,
                         :min_ego_speed=>min_ego_speed,
-                        :terminal=>string(get(last(state_hist(hist)).terminal, missing))
+                        :terminal=>string(get(last(state_hist(hist)).terminal, missing)),
+                        :init_n_cars=>length(first(state_hist(hist)).cars)
                        ]
             else
                 warn("Error in Simulation")
@@ -187,12 +189,12 @@ for lambda in [1.0]
             end
         end
 
-        success = 100.0*sum(data[:terminal].=="lane")/N
-        brakes = 100.0*sum(data[:nb_brakes].>=1)/N
-        @printf("%% reaching:%5.1f; %% braking:%5.1f\n", success, brakes)
-
-        @show extrema(data[:distance])
-        @show mean(data[:mean_iterations])
+        data[:time_to_lane] = data[:steps_to_lane].*p.dmodel.phys_param.dt
+        @show extrema(data[:time_to_lane])
+        @show mean(data[:time_to_lane])
+        @show mean(data[:nb_brakes])
+        @show extrema(data[:init_n_cars])
+        @show mean(data[:init_n_cars])
         @show mean(data[:mean_search_time])
         @show mean(data[:reward])
         if minimum(data[:min_speed]) < 15.0
