@@ -1,7 +1,12 @@
+Sat 31 Mar 2018 09:27:13 PM PDT
+
+Shoot - gotta run it without pomcpow because I don't have an uncorrelated sr belief updater
+
+
 Sat 31 Mar 2018 01:25:54 PM PDT
 
-[ ] run fully-correlated with value to compare with rollout
-[ ] repeat acc results
+[O] run fully-correlated with value to compare with rollout
+[O] repeat acc results
 [ ] get rho = 0.0 working
 [ ] run rho = 0.75 for plot
 [ ] run rho = 0.0 for plot

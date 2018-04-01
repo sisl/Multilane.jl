@@ -92,7 +92,7 @@ function standard_uniform(factor=1.0; correlation::Union{Bool,Float64}=false)
     end
 end
 
-function clip(b::IDMMOBILBehavior, gen::UniformIDMMOBIL)
+function clip(b::IDMMOBILBehavior, gen::Union{UniformIDMMOBIL,CopulaIDMMOBIL})
     bi = b.p_idm
     bm = b.p_mobil
     mini = gen.min_idm

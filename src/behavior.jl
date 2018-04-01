@@ -10,7 +10,7 @@ Base.hash(a::IDMMOBILBehavior,h::UInt64=zero(UInt64)) = hash(a.p_idm,hash(a.p_mo
 -(a::IDMMOBILBehavior, b::IDMMOBILBehavior) = a+(-1.0*b)
 *(a::Real, b::IDMMOBILBehavior) = IDMMOBILBehavior(a*b.p_idm, a*b.p_mobil, 0)
 # .*(a::Real, b::IDMMOBILBehavior) = a*b
-# .*(b::IDMMOBILBehavior, v::Vector{Float64}) = IDMMOBILBehavior(b.p_idm.*v[1:6], b.p_mobil.*v[7:9], 0)
+.*(b::IDMMOBILBehavior, v::Vector{Float64}) = IDMMOBILBehavior(b.p_idm.*v[1:6], b.p_mobil.*v[7:9], 0)
 ^(b::IDMMOBILBehavior, p::Integer) = IDMMOBILBehavior(b.p_idm.^p, b.p_mobil.^p, 0)
 # .^(b::IDMMOBILBehavior, p::Integer) = IDMMOBILBehavior(b.p_idm.^p, b.p_mobil.^p, 0)
 # .-(v::Vector{B}, b::IDMMOBILBehavior) where {B<:BehaviorModel} = B[v[i]-b for i in 1:length(v)]
@@ -19,7 +19,7 @@ sqrt(b::IDMMOBILBehavior) = IDMMOBILBehavior(sqrt(b.p_idm), sqrt(b.p_mobil), 0)
 zero(::Type{IDMMOBILBehavior}) = IDMMOBILBehavior(zero(IDMParam), zero(MOBILParam), 0)
 nan(::Type{IDMMOBILBehavior}) = IDMMOBILBehavior(nan(IDMParam), nan(MOBILParam), 0)
 abs(b::IDMMOBILBehavior) = IDMMOBILBehavior(abs(b.p_idm), abs(b.p_mobil), 0)
-max(a::IDMMOBILBehavior, b::IDMMOBILBehavior) = IDMMOBILBehavior(max(a.p_idm, b.p_idm), max(a.p_mobil, b.p_mobil), 0)
+max(a::IDMMOBILBehavior, b::IDMMOBILBehavior) = IDMMOBILBehavior(max.(a.p_idm, b.p_idm), max.(a.p_mobil, b.p_mobil), 0)
 
 function IDMMOBILBehavior(s::AbstractString,v0::Float64,s0::Float64,idx::Int)
 	return IDMMOBILBehavior(IDMParam(s,v0,s0), MOBILParam(s), idx)
