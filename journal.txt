@@ -1,3 +1,13 @@
+Mon 02 Apr 2018 12:37:11 PM PDT
+
+Expected runtime for allgaps
+30 minutes per point x 5 points x 4 solvers x 3 cors = 30 hours.
+Lower to 1000 iters, 500 sims ~= 1.5 hours
+
+Mon 02 Apr 2018 12:28:41 PM PDT
+
+Realized that allgaps mistakenly uses the optimistic heuristic - re-running
+
 Mon 02 Apr 2018 11:24:45 AM PDT
 
 zsunberg@jodhpur:~/.julia/v0.6/Multilane$ julia -p 54 scratch/allgaps.jl
