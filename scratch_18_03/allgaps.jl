@@ -18,7 +18,7 @@ using Gallium
 @show n_iters = 10_000
 @show max_time = Inf
 @show max_depth = 40
-@show val = OptimisticValue()
+@show val = SimpleSolver()
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=max_depth,
@@ -29,8 +29,8 @@ dpws = DPWSolver(depth=max_depth,
                  alpha_state=1/8,
                  enable_action_pw=false,
                  check_repeat_state=false,
-                 # estimate_value=RolloutEstimator(val)
-                 estimate_value=val
+                 estimate_value=RolloutEstimator(val)
+                 # estimate_value=val
                 )
 
 
@@ -53,8 +53,8 @@ solvers = Dict{String, Solver}(
     #                            enable_action_pw=false,
     #                            k_observation=4.0,
     #                            alpha_observation=1/8,
-    #                            # estimate_value=FORollout(val),
-    #                            estimate_value=val,
+    #                            estimate_value=FORollout(val),
+    #                            # estimate_value=val,
     #                            check_repeat_obs=false,
     #                            # node_sr_belief_updater=AggressivenessPOWFilter(wup)
     #                           )
@@ -76,7 +76,6 @@ for lambda in 2.0.^(-1:3)
     # for lambda in [1.0]
         @show cor
         @show lambda
-
 
         behaviors = standard_uniform(correlation=cor)
         pp = PhysicalParam(4, lane_length=100.0)
