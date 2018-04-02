@@ -1,3 +1,13 @@
+Mon 02 Apr 2018 02:53:33 PM PDT
+
+zsunberg@jodhpur:~/.julia/v0.6/Multilane$ julia -p 54 scratch/allgaps.jl
+N = 500 = 500
+n_iters = 1000 = 1000
+max_time = Inf = Inf
+max_depth = 40 = 40
+val = SimpleSolver() = Multilane.SimpleSolver()
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/baseline_curve_Monday_2_Apr_14_49.csv
+
 Mon 02 Apr 2018 12:37:11 PM PDT
 
 Expected runtime for allgaps
