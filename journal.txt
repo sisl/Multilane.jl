@@ -1,3 +1,14 @@
+Mon 02 Apr 2018 11:24:45 AM PDT
+
+zsunberg@jodhpur:~/.julia/v0.6/Multilane$ julia -p 54 scratch/allgaps.jl
+N = 1000 = 1000
+n_iters = 10000 = 10000
+max_time = Inf = Inf
+max_depth = 40 = 40
+val = OptimisticValue() = Multilane.OptimisticValue()
+
+/home/zsunberg/.julia/v0.6/Multilane/data/baseline_curve_Sunday_1_Apr_02_18.csv
+
 Sat 31 Mar 2018 10:07:38 PM PDT
 
 With 20000 iters and value... weird
