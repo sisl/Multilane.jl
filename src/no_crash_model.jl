@@ -10,13 +10,13 @@ end
 NoCrashRewardModel() = NoCrashRewardModel(100.,10.,2.5,4)
 lambda(rm::NoCrashRewardModel) = rm.cost_dangerous_brake/rm.reward_in_target_lane
 
-mutable struct NoCrashIDMMOBILModel <: AbstractMLDynamicsModel
+mutable struct NoCrashIDMMOBILModel{G<:BehaviorGenerator} <: AbstractMLDynamicsModel
     nb_cars::Int
     phys_param::PhysicalParam
 
     # behaviors::Vector{BehaviorModel}
     # behavior_probabilities::Weights
-    behaviors::BehaviorGenerator
+    behaviors::G
 
     adjustment_acceleration::Float64
     lane_change_rate::Float64 # in LANES PER SECOND
@@ -59,10 +59,12 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
     )
 end
 
-NoCrashMDP{R<:AbstractMLRewardModel} =  MLMDP{MLState, MLAction, NoCrashIDMMOBILModel, R}
-NoCrashPOMDP{R<:AbstractMLRewardModel} =  MLPOMDP{MLState, MLAction, MLObs, NoCrashIDMMOBILModel, R}
+const NoCrashMDP{R<:AbstractMLRewardModel, G} =  MLMDP{MLState, MLAction, NoCrashIDMMOBILModel{G}, R}
+const NoCrashPOMDP{R<:AbstractMLRewardModel, G} =  MLPOMDP{MLState, MLAction, MLObs, NoCrashIDMMOBILModel{G}, R}
 
-NoCrashProblem{R<:AbstractMLRewardModel} =  Union{NoCrashMDP{R}, NoCrashPOMDP{R}}
+const NoCrashProblem{R<:AbstractMLRewardModel,G} =  Union{NoCrashMDP{R,G}, NoCrashPOMDP{R,G}}
+
+gen_type(::Type{MLPOMDP{S,A,O,NoCrashIDMMOBILModel{G},R}}) where {S,A,O,G,R} = G
 
 # create_action(::NoCrashProblem) = MLAction()
 
@@ -659,7 +661,7 @@ end
 
 function initial_state(p::NoCrashProblem, rng::AbstractRNG=Base.GLOBAL_RNG)
     @if_debug println("debugging")
-    mdp = NoCrashMDP{typeof(p.rmodel)}(p.dmodel, p.rmodel, p.discount, p.throw) # make sure an MDP
+    mdp = NoCrashMDP{typeof(p.rmodel), typeof(p.dmodel.behaviors)}(p.dmodel, p.rmodel, p.discount, p.throw) # make sure an MDP
     return relaxed_initial_state(mdp, 200, rng)
 end
 

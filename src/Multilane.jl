@@ -146,6 +146,7 @@ export # POMDP belief stuff
     aggressiveness,
     BehaviorParticleUpdater,
     BehaviorParticleBelief,
+    BehaviorPOWFilter,
     ParticleGenerator,
     param_means,
     param_stds

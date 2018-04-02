@@ -103,7 +103,7 @@ function weights_from_particles!(b::AggressivenessBelief,
     return b
 end
 
-function maybe_push_one!(particles, weights, params, pp, gen, sp, o)
+function maybe_push_one!(particles::Vector{Vector{Float64}}, weights, params, pp, gen, sp, o)
     isp = 1
     io = 1
     while io <= length(o.cars) && isp <= length(sp.cars)

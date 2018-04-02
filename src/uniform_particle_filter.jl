@@ -78,41 +78,45 @@ function weights_from_particles!(b::BehaviorParticleBelief,
             resize!(b.weights[i], 0)
         end
     end
-    for (j, sp) in enumerate(particles)
-        isp = 1
-        io = 1
-        while io <= length(o.cars) && isp <= length(sp.cars)
-            co = o.cars[io]
-            csp = sp.cars[isp]
-            if co.id == csp.id
-                if abs(co.x-csp.x) < 0.2*problem.dmodel.phys_param.lane_length
-                    @assert isa(csp.behavior, IDMMOBILBehavior)
-                    a = csp.behavior.p_idm.a
-                    dt = problem.dmodel.phys_param.dt
-                    veld = TriangularDist(csp.vel-a*dt/2.0, csp.vel+a*dt/2.0, csp.vel)
-                    proportional_likelihood = Distributions.pdf(veld, co.vel)
-                    if proportional_likelihood > 0.0
-                        if co.y == csp.y
-                            push!(b.particles[io], csp.behavior)
-                            push!(b.weights[io], proportional_likelihood)
-                        elseif abs(co.y - csp.y) < 1.0
-                            push!(b.particles[io], csp.behavior)
-                            push!(b.weights[io], p.wrong_lane_factor*proportional_likelihood)
-                        end # if greater than one lane apart, do nothing
-                    end
-                end
-                io += 1
-                isp += 1
-            elseif co.id < csp.id
-                io += 1
-            else 
-                @assert co.id > csp.id
-                isp += 1
-            end
-        end
+    for sp in particles
+        maybe_push_one!(b.particles, b.weights, p, problem.dmodel.phys_param, b.gen, sp, o)
     end
    
     return b
+end
+
+function maybe_push_one!(particles::Vector{Vector{IDMMOBILBehavior}}, weights, params, pp, gen, sp, o)
+    isp = 1
+    io = 1
+    while io <= length(o.cars) && isp <= length(sp.cars)
+        co = o.cars[io]
+        csp = sp.cars[isp]
+        if co.id == csp.id
+            if abs(co.x-csp.x) < 0.2*pp.lane_length
+                @assert isa(csp.behavior, IDMMOBILBehavior)
+                a = csp.behavior.p_idm.a
+                dt = pp.dt
+                veld = TriangularDist(csp.vel-a*dt/2.0, csp.vel+a*dt/2.0, csp.vel)
+                proportional_likelihood = Distributions.pdf(veld, co.vel)
+                if proportional_likelihood > 0.0
+                    if co.y == csp.y
+                        push!(particles[io], csp.behavior)
+                        push!(weights[io], proportional_likelihood)
+                    elseif abs(co.y - csp.y) < 1.0
+                        push!(particles[io], csp.behavior)
+                        push!(weights[io], params.wrong_lane_factor*proportional_likelihood)
+                    end # if greater than one lane apart, do nothing
+                end
+            end
+            io += 1
+            isp += 1
+        elseif co.id < csp.id
+            io += 1
+        else 
+            @assert co.id > csp.id
+            isp += 1
+        end
+    end
 end
 
 actions(p::Union{MLMDP,MLPOMDP}, b::BehaviorParticleBelief) = actions(p, b.physical)

@@ -3,7 +3,7 @@ struct MLMPCSolver <: Solver
 end
 
 function solve(sol::MLMPCSolver, p::NoCrashProblem)
-    mdp = NoCrashMDP{typeof(p.rmodel)}(p.dmodel, p.rmodel, p.discount, p.throw) # make sure an MDP
+    mdp = NoCrashMDP{typeof(p.rmodel), typeof(p.dmodel.behaviors)}(p.dmodel, p.rmodel, p.discount, p.throw) # make sure an MDP
     return MLMPCPolicy(solve(sol.solver, mdp))
 end
 

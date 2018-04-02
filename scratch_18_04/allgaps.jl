@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 500
+@show N = 1
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -44,18 +44,18 @@ solvers = Dict{String, Solver}(
     #     up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
     #     ABMDPSolver(dpws, up)
     # end,
-    # "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
-    #                            criterion=MaxUCB(2.0),
-    #                            max_depth=max_depth,
-    #                            max_time=max_time,
-    #                            enable_action_pw=false,
-    #                            k_observation=4.0,
-    #                            alpha_observation=1/8,
-    #                            estimate_value=FORollout(val),
-    #                            # estimate_value=val,
-    #                            check_repeat_obs=false,
-    #                            # node_sr_belief_updater=AggressivenessPOWFilter(wup)
-    #                           )
+    "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
+                               criterion=MaxUCB(2.0),
+                               max_depth=max_depth,
+                               max_time=max_time,
+                               enable_action_pw=false,
+                               k_observation=4.0,
+                               alpha_observation=1/8,
+                               estimate_value=FORollout(val),
+                               # estimate_value=val,
+                               check_repeat_obs=false,
+                               # node_sr_belief_updater=AggressivenessPOWFilter(wup)
+                              )
 )
 
 
@@ -68,10 +68,13 @@ function make_updater(cor, problem, rng_seed)
     end
 end
 
-for cor in [false, 0.75, true]
-# for cor in [false]
-for lambda in 2.0.^(-1:3)
-    # for lambda in [1.0]
+pow_updater(up::AggressivenessUpdater) = AggressivenessPOWFilter(up.params)
+pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
+
+# for cor in [false, 0.75, true]
+for cor in [false]
+# for lambda in 2.0.^(-1:3)
+    for lambda in [1.0]
         @show cor
         @show lambda
 
@@ -84,8 +87,8 @@ for lambda in 2.0.^(-1:3)
                                       max_dist=1000.0
                                      )
         rmodel = SuccessReward(lambda=lambda)
-        pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
-        mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
+        pomdp = NoCrashPOMDP{typeof(rmodel), typeof(behaviors)}(dmodel, rmodel, 0.95, false)
+        mdp = NoCrashMDP{typeof(rmodel), typeof(behaviors)}(dmodel, rmodel, 0.95, false)
 
         problems = Dict{String, Any}(
             "baseline"=>mdp,
@@ -120,6 +123,9 @@ for lambda in 2.0.^(-1:3)
 
                 if p isa POMDP
                     up = make_updater(cor, sim_problem, rng_seed)
+                    if k == "pomcpow"
+                        solver.node_sr_belief_updater = pow_updater(up)
+                    end
                     planner = solve(solver, sp)
                     push!(sims, Sim(sim_problem, planner, up, ips, is,
                                     simulator=hr,
@@ -135,8 +141,8 @@ for lambda in 2.0.^(-1:3)
                 @assert problem(last(sims)).throw
             end
 
-            # data = run(sims) do sim, hist
-            data = run_parallel(sims) do sim, hist
+            data = run(sims) do sim, hist
+            # data = run_parallel(sims) do sim, hist
 
                 if isnull(exception(hist))
                     p = problem(sim)
@@ -218,6 +224,6 @@ end
 # @show alldata
 
 datestring = Dates.format(now(), "E_d_u_HH_MM")
-filename = Pkg.dir("Multilane", "data", "baseline_curve_"*datestring*".csv")
+filename = Pkg.dir("Multilane", "data", "all_gaps_"*datestring*".csv")
 println("Writing data to $filename")
 CSV.write(filename, alldata)
