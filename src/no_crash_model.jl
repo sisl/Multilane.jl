@@ -59,6 +59,10 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
     )
 end
 
+function NoCrashIDMMOBILModel(old::NoCrashIDMMOBILModel, behaviors::BehaviorGenerator)
+    return NoCrashIDMMOBILModel(old.nb_cars, old.phys_param, behaviors, old.adjustment_acceleration, old.lane_change_rate, old.p_appear, old.appear_clearance, old.vel_sigma, old.lane_terminate, old.brake_terminate_thresh, old.max_dist)
+end
+
 const NoCrashMDP{R<:AbstractMLRewardModel, G} =  MLMDP{MLState, MLAction, NoCrashIDMMOBILModel{G}, R}
 const NoCrashPOMDP{R<:AbstractMLRewardModel, G} =  MLPOMDP{MLState, MLAction, MLObs, NoCrashIDMMOBILModel{G}, R}
 

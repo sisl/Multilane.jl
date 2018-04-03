@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 1
+@show N = 1000
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -71,10 +71,10 @@ end
 pow_updater(up::AggressivenessUpdater) = AggressivenessPOWFilter(up.params)
 pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
-# for cor in [false, 0.75, true]
-for cor in [false]
-# for lambda in 2.0.^(-1:3)
-    for lambda in [1.0]
+for cor in [false, 0.75, true]
+# for cor in [false]
+for lambda in 2.0.^(-1:3)
+    # for lambda in [1.0]
         @show cor
         @show lambda
 
@@ -141,8 +141,8 @@ for cor in [false]
                 @assert problem(last(sims)).throw
             end
 
-            data = run(sims) do sim, hist
-            # data = run_parallel(sims) do sim, hist
+            # data = run(sims) do sim, hist
+            data = run_parallel(sims) do sim, hist
 
                 if isnull(exception(hist))
                     p = problem(sim)

@@ -13,8 +13,8 @@ end
 set_rng!(solver::SingleBehaviorSolver, rng::AbstractRNG) = set_rng!(solver.inner_solver, rng)
 
 function solve(solver::SingleBehaviorSolver, mdp::NoCrashProblem)
-    single_behavior_mdp = deepcopy(mdp)
-    single_behavior_mdp.dmodel.behaviors = DiscreteBehaviorSet(BehaviorModel[solver.behavior], Weights([1.0]))
+    dmodel = NoCrashIDMMOBILModel(mdp.dmodel, DiscreteBehaviorSet(BehaviorModel[solver.behavior], Weights([1.0])))
+    single_behavior_mdp = NoCrashMDP{typeof(mdp.rmodel), DiscreteBehaviorSet}(dmodel, mdp.rmodel, mdp.discount, mdp.throw)
 
     inner_policy = solve(solver.inner_solver, single_behavior_mdp)
     return SingleBehaviorPolicy(inner_policy, solver.behavior)
