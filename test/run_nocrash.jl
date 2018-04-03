@@ -74,9 +74,8 @@ policy = Multilane.BehaviorPolicy(pomdp, Multilane.NORMAL, false, rng)
 sim = HistoryRecorder(rng=rng, max_steps=100) # initialize a random number generator
 
 wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
-up = BehaviorParticleUpdater(pomdp, 5000, 0.1, 0.1, wup, MersenneTwister(50000))
+up = BehaviorParticleUpdater(pomdp, 1000, 0.1, 0.1, wup, MersenneTwister(50000))
 
-# hist = simulate(sim, pomdp, policy, up, MLPhysicalState(s), s)
 @time hist = simulate(sim, pomdp, policy, up, MLPhysicalState(s), s)
 @show n_steps(hist)
 

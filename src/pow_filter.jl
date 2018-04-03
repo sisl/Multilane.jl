@@ -60,7 +60,7 @@ function POMCPOW.init_node_sr_belief(f::BehaviorPOWFilter, p::MLPOMDP, s, a, sp,
 end
 
 function POMCPOW.push_weighted!(b::BehaviorPOWNodeBelief, f::BehaviorPOWFilter, s, sp, r)
-    maybe_push_one!(b.b.particles, b.b.weights, f.params, b.model.dmodel.phys_param, b.b.gen, sp, b.b.physical)
+    maybe_push_one!(b.b.particles, b.b.cweights, f.params, b.model.dmodel.phys_param, b.b.gen, sp, b.b.physical)
 end
 
 actions(p::MLPOMDP, b::BehaviorPOWNodeBelief) = actions(p, b.b.physical)
