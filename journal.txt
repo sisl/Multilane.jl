@@ -1,3 +1,7 @@
+Tue 03 Apr 2018 03:06:29 PM PDT
+
+On bethpage - added min speed termination so that we could do lambda=0 to optimize the right thing
+
 Tue 03 Apr 2018 01:37:14 PM PDT
 
 allgaps
