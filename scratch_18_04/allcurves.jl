@@ -10,7 +10,8 @@ function only(a)
     return first(a)
 end
 
-filename = Pkg.dir("Multilane", "data/baseline_curve_Sunday_1_Apr_02_18.csv")
+# filename = Pkg.dir("Multilane", "data/baseline_curve_Sunday_1_Apr_02_18.csv")
+filename = Pkg.dir("Multilane", "data/baseline_curve_Monday_2_Apr_14_49.csv")
 
 data = CSV.read(filename, nullable=true)
 

@@ -1,3 +1,7 @@
+Mon 02 Apr 2018 04:58:23 PM PDT
+
+do correlation trend
+
 Mon 02 Apr 2018 02:53:33 PM PDT
 
 zsunberg@jodhpur:~/.julia/v0.6/Multilane$ julia -p 54 scratch/allgaps.jl
