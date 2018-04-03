@@ -73,7 +73,7 @@ pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
 for cor in 0.0:0.2:1.0
     @show cor
-    @show lambda=1.0
+    @show lambda=0.0
 
     behaviors = standard_uniform(correlation=cor)
     pp = PhysicalParam(4, lane_length=100.0)
@@ -82,7 +82,8 @@ for cor in 0.0:0.2:1.0
                                   p_appear=1.0,
                                   lane_terminate=true,
                                   max_dist=1000.0,
-                                  brake_terminate_thresh=4.0
+                                  brake_terminate_thresh=4.0,
+                                  speed_terminate_thresh=15.0
                                  )
     rmodel = SuccessReward(lambda=lambda)
     pomdp = NoCrashPOMDP{typeof(rmodel), typeof(behaviors)}(dmodel, rmodel, 0.95, false)

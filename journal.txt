@@ -1,3 +1,7 @@
+Tue 03 Apr 2018 10:57:00 AM PDT
+
+Need to add min speed termination
+
 Tue 03 Apr 2018 10:31:33 AM PDT
 
 correlation trend with N=5000

@@ -29,6 +29,7 @@ mutable struct NoCrashIDMMOBILModel{G<:BehaviorGenerator} <: AbstractMLDynamicsM
     lane_terminate::Bool # if true, terminate the simulation when the car has reached the desired lane
     brake_terminate_thresh::Float64 # terminate simulation if braking is above this (always positive)
     max_dist::Float64 # terminate simulation if distance becomes greater than this
+    speed_terminate_thresh::Float64 # terminate simulation if any speed is below this
 end
 
 function NoCrashIDMMOBILModel(nb_cars::Int,
@@ -38,6 +39,7 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
                               p_appear=0.5,
                               brake_terminate_thresh=Inf,
                               max_dist=Inf,
+                              speed_terminate_thresh=-Inf,
                               behaviors=DiscreteBehaviorSet(IDMMOBILBehavior[IDMMOBILBehavior(x[1],x[2],x[3],idx) for (idx,x) in
                                                  enumerate(Iterators.product(["cautious","normal","aggressive"],
                                                         [pp.v_slow+0.5;pp.v_med;pp.v_fast],
@@ -55,12 +57,13 @@ function NoCrashIDMMOBILModel(nb_cars::Int,
         vel_sigma, # vel_sigma
         lane_terminate,
         brake_terminate_thresh,
-        max_dist
+        max_dist,
+        speed_terminate_thresh
     )
 end
 
 function NoCrashIDMMOBILModel(old::NoCrashIDMMOBILModel, behaviors::BehaviorGenerator)
-    return NoCrashIDMMOBILModel(old.nb_cars, old.phys_param, behaviors, old.adjustment_acceleration, old.lane_change_rate, old.p_appear, old.appear_clearance, old.vel_sigma, old.lane_terminate, old.brake_terminate_thresh, old.max_dist)
+    return NoCrashIDMMOBILModel(old.nb_cars, old.phys_param, behaviors, old.adjustment_acceleration, old.lane_change_rate, old.p_appear, old.appear_clearance, old.vel_sigma, old.lane_terminate, old.brake_terminate_thresh, old.max_dist, old.speed_terminate_thresh)
 end
 
 const NoCrashMDP{R<:AbstractMLRewardModel, G} =  MLMDP{MLState, MLAction, NoCrashIDMMOBILModel{G}, R}
@@ -413,6 +416,9 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
             velp = max(car.vel + dvs[i], 0.0) # removed speed limits on 8/13
             # note lane change is updated above
 
+            if velp < mdp.dmodel.speed_terminate_thresh
+                sp.terminal = Nullable{Symbol}(:speed)
+            end
             if dvs[i]/dt < -mdp.dmodel.brake_terminate_thresh
                 sp.terminal = Nullable{Symbol}(:brake)
             end
