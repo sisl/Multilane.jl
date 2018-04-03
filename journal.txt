@@ -1,8 +1,11 @@
 Tue 03 Apr 2018 03:56:30 PM PDT
 
-cweight speed results for 100 step sim with trivial policy
+cweight speed results for 100 step sim with trivial policy; 5k particles
 weights: 38.7 seconds
-cweights:
+cweights: 21 seconds
+
+10k particles
+cweights 44 seconds
 
 Tue 03 Apr 2018 01:44:19 PM PDT
 
