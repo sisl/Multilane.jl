@@ -1,3 +1,13 @@
+Mon 02 Apr 2018 09:26:58 PM PDT
+
+zsunberg@bethpage:~/.julia/v0.6/Multilane$ julia -p 54 scratch/correlation_trend.jl
+N = 1000 = 1000
+n_iters = 1000 = 1000
+max_time = Inf = Inf
+max_depth = 40 = 40
+val = SimpleSolver() = Multilane.SimpleSolver()
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/cor_trend_Monday_2_Apr_19_49.csv
+
 Mon 02 Apr 2018 04:58:23 PM PDT
 
 do correlation trend
