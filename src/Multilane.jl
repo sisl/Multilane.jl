@@ -161,6 +161,7 @@ export
 export
     include_visualization
 
+include("sampling.jl")
 include("triangular.jl")
 include("physical.jl")
 include("MDP_types.jl")

@@ -1,3 +1,11 @@
+Tue 03 Apr 2018 01:44:19 PM PDT
+
+Lots of problems:
+Most of these problems are with MLMPC, so perhaps better filtering will fix:
+UPGRADE TO EFFICIENT FILTERS
+[ ] Use cweights
+[ ] Use low variance resampling for outer loop
+
 Tue 03 Apr 2018 01:37:14 PM PDT
 
 allgaps

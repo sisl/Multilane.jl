@@ -2,15 +2,20 @@ mutable struct BehaviorParticleBelief{G} <: BehaviorBelief
     gen::G
     physical::MLPhysicalState
     particles::Vector{Vector{IDMMOBILBehavior}} # First index is the position in physical.cars
-    weights::Vector{Vector{Float64}}   # Second index is the particle number
+    cweights::Vector{Vector{Float64}}   # Cumulative weights Second index is the particle number
 end
+
+"""
+Return the weights for the behavior particles of a car (as opposed to the cumulative weights).
+"""
+weights(b::BehaviorParticleBelief, i::Int) = insert!(diff(b.cweights[i]), 1, first(b.cweights[i]))
 
 function rand(rng::AbstractRNG,
                 b::BehaviorParticleBelief,
                 s::MLState=MLState(b.physical, Vector{CarState}(length(b.physical.cars))))
     resize!(s.cars, length(b.physical.cars))
     for i in 1:length(s.cars)
-        particle = sample(rng, b.particles[i], Weights(b.weights[i]))
+        particle = sample_cweighted(rng, b.particles[i], b.cweights[i])
         s.cars[i] = CarState(b.physical.cars[i], particle)
     end
     return s
@@ -23,7 +28,7 @@ function rand(rng::AbstractRNG,
     s::MLState=MLState(b.physical, Vector{CarState}(length(b.physical.cars)))
     resize!(s.cars, length(b.physical.cars))
     for i in 1:length(s.cars)
-        particle = sample(rng, b.particles[i], Weights(b.weights[i]))
+        particle = sample_cweighted(rng, b.particles[i], b.cweights[i])
         nudged = clip(particle+sample_noises[i].*randn(rng,9), b.gen)
         s.cars[i] = CarState(b.physical.cars[i], nudged)
     end
@@ -35,31 +40,39 @@ end
 function most_likely_state(b::BehaviorParticleBelief)
     s = MLState(b.physical, Vector{CarState}(length(b.physical.cars)))
     for i in 1:length(s.cars)
-        ml_ind = indmax(b.weights[i])
+        ml_ind = indmax(weights(b, i))
         behavior = b.particles[i][ml_ind]
         s.cars[i] = CarState(b.physical.cars[i], behavior)
     end
     return s
 end
 
-param_means(b::BehaviorParticleBelief) = [sum(b.weights[i].*b.particles[i])/sum(b.weights[i]) for i in 1:length(b.particles)]
+function param_means(b::BehaviorParticleBelief)
+    ms = Vector{eltype(first(b.particles))}(length(b.particles))
+    for i in 1:length(ms)
+        wts = weights(b, i)
+        ms[i] = sum(wts.*b.particles[i])/sum(wts)
+    end
+    return ms
+end
 function param_stds(b::BehaviorParticleBelief)
     means = param_means(b)
     stds = Vector{IDMMOBILBehavior}(length(b.physical.cars))
     for i in 1:length(b.physical.cars)
-        stds[i] = sqrt(sum(b.weights[i].*(b.particles[i].-means[i]).^2)/sum(b.weights[i]))
+        wts = weights(b, i)
+        stds[i] = sqrt(sum(wts.*(b.particles[i].-means[i]).^2)/sum(wts))
     end
     return stds
 end
 
-function weights_from_particles!(b::BehaviorParticleBelief,
+function cweights_from_particles!(b::BehaviorParticleBelief,
                                  problem::NoCrashProblem,
                                  o::MLPhysicalState,
                                  particles,
                                  p::WeightUpdateParams)
 
     b.physical = o
-    resize!(b.weights, length(o.cars))
+    resize!(b.cweights, length(o.cars))
     resize!(b.particles, length(o.cars))
     for i in 1:length(o.cars)
         # make sure we're not going to be allocating a bunch of memory in the loop
@@ -70,22 +83,22 @@ function weights_from_particles!(b::BehaviorParticleBelief,
             b.particles[i] = Vector{IDMMOBILBehavior}(length(particles))
             resize!(b.particles[i], 0)
         end
-        if isassigned(b.weights, i)
-            sizehint!(b.weights[i], length(particles))
-            resize!(b.weights[i], 0)
+        if isassigned(b.cweights, i)
+            sizehint!(b.cweights[i], length(particles))
+            resize!(b.cweights[i], 0)
         else
-            b.weights[i] = Vector{Float64}(length(particles))
-            resize!(b.weights[i], 0)
+            b.cweights[i] = Vector{Float64}(length(particles))
+            resize!(b.cweights[i], 0)
         end
     end
     for sp in particles
-        maybe_push_one!(b.particles, b.weights, p, problem.dmodel.phys_param, b.gen, sp, o)
+        maybe_push_one!(b.particles, b.cweights, p, problem.dmodel.phys_param, b.gen, sp, o)
     end
    
     return b
 end
 
-function maybe_push_one!(particles::Vector{Vector{IDMMOBILBehavior}}, weights, params, pp, gen, sp, o)
+function maybe_push_one!(particles::Vector{Vector{IDMMOBILBehavior}}, cweights, params, pp, gen, sp, o)
     isp = 1
     io = 1
     while io <= length(o.cars) && isp <= length(sp.cars)
@@ -99,12 +112,13 @@ function maybe_push_one!(particles::Vector{Vector{IDMMOBILBehavior}}, weights, p
                 veld = TriangularDist(csp.vel-a*dt/2.0, csp.vel+a*dt/2.0, csp.vel)
                 proportional_likelihood = Distributions.pdf(veld, co.vel)
                 if proportional_likelihood > 0.0
+                    cweight = length(cweights[io]) > 0 ? last(cweights[io]) : 0.0
                     if co.y == csp.y
                         push!(particles[io], csp.behavior)
-                        push!(weights[io], proportional_likelihood)
+                        push!(cweights[io], cweight + proportional_likelihood)
                     elseif abs(co.y - csp.y) < 1.0
                         push!(particles[io], csp.behavior)
-                        push!(weights[io], params.wrong_lane_factor*proportional_likelihood)
+                        push!(cweights[io], cweight + params.wrong_lane_factor*proportional_likelihood)
                     end # if greater than one lane apart, do nothing
                 end
             end
@@ -160,12 +174,12 @@ function update(up::BehaviorParticleUpdater,
         particles[i] = generate_s(get(up.problem), s, a, up.rng)
     end
     
-    weights_from_particles!(b_new, get(up.problem), o, particles, up.params)
+    cweights_from_particles!(b_new, get(up.problem), o, particles, up.params)
 
     for i in 1:length(o.cars)
-        if isempty(b_new.weights[i])
+        if isempty(b_new.cweights[i])
             b_new.particles[i] = [rand(up.rng, b_new.gen) for i in 1:up.nb_sims]
-            b_new.weights[i] = ones(up.nb_sims)
+            b_new.cweights[i] = collect(1.0:convert(Float64, up.nb_sims))./up.nb_sims
         end
     end
 
