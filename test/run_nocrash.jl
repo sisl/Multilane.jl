@@ -60,3 +60,37 @@ end
 #         readline(STDIN)
 #     end
 # end
+
+behaviors = standard_uniform(correlation=0.75)
+dmodel = NoCrashIDMMOBILModel(dmodel, behaviors)
+pomdp = NoCrashPOMDP{typeof(rmodel), typeof(dmodel.behaviors)}(dmodel, rmodel, _discount, true);
+
+rng = MersenneTwister(5)
+
+s = initial_state(mdp::NoCrashMDP, rng)
+
+policy = Multilane.BehaviorPolicy(pomdp, Multilane.NORMAL, false, rng)
+
+sim = HistoryRecorder(rng=rng, max_steps=100) # initialize a random number generator
+
+wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
+up = BehaviorParticleUpdater(pomdp, 5000, 0.1, 0.1, wup, MersenneTwister(50000))
+
+# hist = simulate(sim, pomdp, policy, up, MLPhysicalState(s), s)
+@time hist = simulate(sim, pomdp, policy, up, MLPhysicalState(s), s)
+@show n_steps(hist)
+
+# check for crashes
+for i in 1:length(state_hist(hist))-1
+    if is_crash(mdp, state_hist(hist)[i], state_hist(hist)[i+1])
+        println("Crash:")
+        println("mdp = $mdp\n")
+        println("s = $(state_hist(hist)[i])\n")
+        println("a = $(action_hist(hist)[i])\n")
+        println("Saving gif...")
+        f = write_tmp_gif(mdp, hist)
+        println("gif written to $f")
+    end
+    @test !is_crash(mdp, state_hist(hist)[i], state_hist(hist)[i+1])
+end
+

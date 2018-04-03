@@ -1,6 +1,10 @@
-Tue 03 Apr 2018 03:06:29 PM PDT
+Tue 03 Apr 2018 01:44:19 PM PDT
 
-On bethpage - added min speed termination so that we could do lambda=0 to optimize the right thing
+Lots of problems:
+Most of these problems are with MLMPC, so perhaps better filtering will fix:
+UPGRADE TO EFFICIENT FILTERS
+[ ] Use cweights
+[O] Use low variance resampling for outer loop
 
 Tue 03 Apr 2018 01:37:14 PM PDT
 
