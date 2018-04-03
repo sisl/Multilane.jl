@@ -1,3 +1,8 @@
+Tue 03 Apr 2018 10:31:33 AM PDT
+
+correlation trend with N=5000
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/cor_trend_Tuesday_3_Apr_07_20.csv
+
 Mon 02 Apr 2018 09:26:58 PM PDT
 
 zsunberg@bethpage:~/.julia/v0.6/Multilane$ julia -p 54 scratch/correlation_trend.jl
