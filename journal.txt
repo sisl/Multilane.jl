@@ -1,3 +1,15 @@
+Tue 03 Apr 2018 01:37:14 PM PDT
+
+allgaps
+
+zsunberg@jodhpur:~/.julia/v0.6/Multilane$ julia -p 54 scratch/allgaps.jl
+N = 1000 = 1000
+n_iters = 1000 = 1000
+max_time = Inf = Inf
+max_depth = 40 = 40
+val = SimpleSolver() = Multilane.SimpleSolver()
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/all_gaps_Monday_2_Apr_21_34.csv
+
 Tue 03 Apr 2018 10:57:00 AM PDT
 
 Need to add min speed termination
