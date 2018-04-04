@@ -1,3 +1,11 @@
+Wed 04 Apr 2018 02:07:24 PM PDT
+
+Run curves with old particle filter and N=2000
+
+Wed 04 Apr 2018 01:19:38 PM PDT
+
+The particle filter upgrade DID NOT WORK Need to run with old and 2k sims or FIX
+
 Tue 03 Apr 2018 05:03:05 PM PDT
 
 [ ] make it so that lane termination only happens if it's not dangerous
