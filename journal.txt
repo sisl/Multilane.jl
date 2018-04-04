@@ -1,3 +1,7 @@
+Tue 03 Apr 2018 05:03:05 PM PDT
+
+[ ] make it so that lane termination only happens if it's not dangerous
+
 Tue 03 Apr 2018 03:56:30 PM PDT
 
 cweight speed results for 100 step sim with trivial policy; 5k particles

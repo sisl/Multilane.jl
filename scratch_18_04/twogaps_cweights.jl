@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 1
+@show N = 2000
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -141,8 +141,8 @@ for cor in [false, 0.75]
                 @assert problem(last(sims)).throw
             end
 
-            data = run(sims) do sim, hist
-            # data = run_parallel(sims) do sim, hist
+            # data = run(sims) do sim, hist
+            data = run_parallel(sims) do sim, hist
 
                 if isnull(exception(hist))
                     p = problem(sim)
