@@ -11,7 +11,8 @@ function only(a)
 end
 
 # filename = Pkg.dir("Multilane", "data/cor_trend_Monday_2_Apr_19_49.csv")
-filename = Pkg.dir("Multilane", "data/cor_trend_Tuesday_3_Apr_07_20.csv")
+# filename = Pkg.dir("Multilane", "data/cor_trend_Tuesday_3_Apr_07_20.csv")
+filename = Pkg.dir("Multilane", "data/cor_trend_Tuesday_3_Apr_20_35.csv")
 
 data = CSV.read(filename, nullable=true)
 

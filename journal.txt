@@ -1,6 +1,7 @@
 Wed 04 Apr 2018 02:18:48 PM PDT
 
 data/cor_trend_Tuesday_3_Apr_20_35.csv
+This looks pretty good for a final correlation trend plot
 
 Wed 04 Apr 2018 02:07:24 PM PDT
 
