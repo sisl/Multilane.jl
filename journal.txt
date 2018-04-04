@@ -1,9 +1,14 @@
+Wed 04 Apr 2018 02:18:48 PM PDT
+
+data/cor_trend_Tuesday_3_Apr_20_35.csv
+
 Wed 04 Apr 2018 02:07:24 PM PDT
 
 Run curves with old particle filter and N=2000
 
 Wed 04 Apr 2018 01:19:38 PM PDT
 
+data/all_gaps_Wednesday_4_Apr_04_20.csv
 The particle filter upgrade DID NOT WORK Need to run with old and 2k sims or FIX
 
 Tue 03 Apr 2018 05:03:05 PM PDT
