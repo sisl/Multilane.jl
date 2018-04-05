@@ -1,3 +1,8 @@
+Thu 05 Apr 2018 11:24:33 AM PDT
+
+gaps with N=2000 old filter
+all_gaps_Thursday_5_Apr_00_53.csv
+
 Tue 03 Apr 2018 03:56:30 PM PDT
 
 cweight speed results for 100 step sim with trivial policy; 5k particles
