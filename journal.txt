@@ -1,3 +1,7 @@
+Wed 04 Apr 2018 02:36:40 PM PDT
+
+Running on jodhpur with N=2000 with old filter
+
 Wed 04 Apr 2018 02:18:48 PM PDT
 
 data/cor_trend_Tuesday_3_Apr_20_35.csv
