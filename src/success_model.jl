@@ -19,13 +19,14 @@ function reward(mdp::MLPOMDP{MLState, MLAction, MLPhysicalState, D, TargetLaneRe
 end
 
 """
-Reward of +1 on transition INTO target lane, -lambda on unsafe transitions
+Reward of +1 on transition INTO target lane, -lambda on unsafe transitions, -lane_change_cost if sp between lanes
 """
 @with_kw struct SuccessReward <: AbstractMLRewardModel
     lambda::Float64                 = 1.0  # always positive
     target_lane::Int                = 4
     brake_penalty_thresh::Float64   = 4.0  # always positive
     speed_thresh::Float64           = 15.0 # always positive
+    lane_change_cost::Float64       = 0.0 # always positive
 end
 
 function reward(p::NoCrashProblem{SuccessReward}, s::MLState, ::MLAction, sp::MLState)
@@ -38,6 +39,9 @@ function reward(p::NoCrashProblem{SuccessReward}, s::MLState, ::MLAction, sp::ML
     nb_brakes = detect_braking(p, s, sp)
     if nb_brakes > 0 || min_speed < p.rmodel.speed_thresh
         r -= p.rmodel.lambda
+    end
+    if !isinteger(sp.cars[1].y)
+        r -= p.rmodel.lane_change_cost
     end
     return r
 end

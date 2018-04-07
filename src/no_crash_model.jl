@@ -182,23 +182,6 @@ function max_safe_acc(gap, v_behind, v_ahead, braking_limit, dt)
     g = gap
     # VVV see mathematica notebook
     return - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
-    # ret = 0.0
-    # try
-    #     ret = - (bp*dt + 2.*v - sqrt(8.*g*bp + bp^2*dt^2 - 4.*bp*dt*v + 4.*vo^2)) / (2.*dt)
-    # catch ex
-    #     if isa(ex, DomainError)
-    #         @show gap
-    #         @show v_behind
-    #         @show v_ahead
-    #         @show braking_limit
-    #         @show dt
-    #         error("Bad max_safe_acc calculation")
-    #         return -braking_limit
-    #     else
-    #         rethrow(ex)
-    #     end
-    # end
-    # return ret
 end
 
 """
@@ -271,6 +254,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
         nb_cars = length(s.cars)
         resize!(sp.cars, nb_cars)
         sp.terminal = s.terminal
+        sp.t = s.t + dt
 
         ## Calculate deltas ##
         #====================#

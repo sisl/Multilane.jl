@@ -194,15 +194,20 @@ include("tree_vis.jl")
 include_visualization() = include(joinpath(Pkg.dir("Multilane"),"src","visualization.jl"))
 
 # if gethostname() == "Theresa"
-#     println("Automatically loading visualization components.")
-#     include("visualization.jl")
-#     export
-#         display_sim,
-#         show_state,
-#         show_sim,
-#         display_sim,
-#         save_frame,
-#         visualize
+    println("Automatically loading visualization components.")
+    include("visualization.jl")
+    export
+        interp_physical_state,
+        visualize,
+        make_rollouts,
+        NodeWithRollouts
+    # export
+    #     display_sim,
+    #     show_state,
+    #     show_sim,
+    #     display_sim,
+    #     save_frame,
+    #     visualize
 # end
 
 end # module

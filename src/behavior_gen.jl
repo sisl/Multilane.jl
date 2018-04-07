@@ -206,3 +206,4 @@ function clip(b::IDMMOBILBehavior, gen::Union{UniformIDMMOBIL,CopulaIDMMOBIL})
     )
 end
 
+const STANDARD_CORRELATED = standard_uniform(correlation=true)
