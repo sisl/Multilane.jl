@@ -197,7 +197,7 @@ include_visualization() = include(joinpath(Pkg.dir("Multilane"),"src","visualiza
     println("Automatically loading visualization components.")
     include("visualization.jl")
     export
-        interp_physical_state,
+        interp_state,
         visualize,
         make_rollouts,
         NodeWithRollouts

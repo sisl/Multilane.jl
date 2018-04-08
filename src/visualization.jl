@@ -6,10 +6,10 @@ using AutoViz
 # using POMDPToolbox
 # using Cairo
 
-function interp_physical_state(s, sp, frac)
+function interp_state(s, sp, frac)
     a = frac
     b = 1.0 - frac
-    cars = CarPhysicalState[]
+    cars = CarState[]
     nb_leaving = 0
     for (i,c) in enumerate(s.cars)
         if length(sp.cars) >= i-nb_leaving
@@ -26,12 +26,12 @@ function interp_physical_state(s, sp, frac)
             vel = a*cp.vel + b*c.vel
             lane_change = c.lane_change
             id = c.id
-            push!(cars, CarPhysicalState(x, y, vel, lane_change, id))
+            push!(cars, CarState(x, y, vel, lane_change, c.behavior, id))
         end
     end
     x = a*sp.x + b*s.x
     t = a*sp.t + b*s.t
-    return MLPhysicalState(x, t, cars, s.terminal)
+    return MLState(x, t, cars, s.terminal)
 end
 
 function visualize(p, s, r; tree=nothing)
@@ -43,12 +43,21 @@ function visualize(p, s, r; tree=nothing)
     if r != nothing
         str *= @sprintf("\nr: %6.2f", r)
     end
-    if tree != nothing
-        push!(stuff, RelativeRender(tree, s.t, s.cars[1].vel))
-    end
     push!(stuff, str)
+    if tree != nothing
+        # push!(stuff, RelativeRender(tree, s.t, s.cars[1].vel))
+        # use the velocity at the root so it doesn't move
+        v = tree.node.tree.root_belief.physical.cars[1].vel
+        push!(stuff, RelativeRender(tree, s.t, v))
+    end
     for (i,c) in enumerate(s.cars)
-        ac = ArrowCar([c.x+s.x, (c.y-1.0)*pp.w_lane], id=i)
+        if i == 1
+            color = colorant"green"
+        else
+            agg = aggressiveness(Multilane.STANDARD_CORRELATED, c.behavior)
+            color = weighted_color_mean(agg, colorant"red", colorant"blue")
+        end
+        ac = ArrowCar([c.x+s.x, (c.y-1.0)*pp.w_lane], id=i, color=color)
         push!(stuff, ac)
     end
 
@@ -81,15 +90,31 @@ function AutoViz.render!(rm::RenderModel, r::RelativeRender{N}) where {N<:NodeWi
     t = r.t
     dt = pp.dt
 
+    # draw dots and find o_children
     a_children = tree.tried[node.node]
-    # value = maximum(tree.v[c] for c in a_children)
     o_children = Int[]
     for ac in a_children
-        append!(o_children, [last(oi) for oi in tree.generated[ac]])
+        onodes = [last(oi) for oi in tree.generated[ac]]
+        append!(o_children, onodes)
+        value = tree.v[ac]
+        if value > 0.0
+            color = weighted_color_mean(value, colorant"yellow", colorant"green")
+        else
+            color = weighted_color_mean(clamp(-value, 0.0, 1.0), colorant"yellow", colorant"red")
+        end
+        if !isempty(onodes)
+            ps = tree.o_labels[first(onodes)]
+            c = first(ps.cars)
+            x = ps.x + c.x - (ps.t-t)*r.vel
+            # x, y, r, fill, stroke, linewidth
+            add_instruction!(rm, render_circle, (x, (c.y-1.0)*pp.w_lane, 0.2, color, color, 0.0))
+        end
     end
     o_children
 
+
     # draw all the lines
+    # XXX hack: should be most likely instead of rand
     s = rand(Base.GLOBAL_RNG, b)
     for oc in o_children
         sp = rand(Base.GLOBAL_RNG, tree.sr_beliefs[oc].b)
