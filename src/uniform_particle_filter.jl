@@ -47,6 +47,13 @@ function most_likely_state(b::BehaviorParticleBelief)
     return s
 end
 
+function Base.mean(b::BehaviorParticleBelief)
+    bs = param_means(b)
+    pcs = b.physical.cars
+    cars = [CarState(pcs[i], bs[i]) for i in 1:length(bs)]
+    return MLState(b.physical, cars)
+end
+
 function param_means(b::BehaviorParticleBelief)
     ms = Vector{eltype(first(b.particles))}(length(b.particles))
     for i in 1:length(ms)

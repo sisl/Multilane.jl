@@ -36,6 +36,7 @@ solvers = Dict{String, Solver}(
     "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "omniscient" => dpws,
     "mlmpc" => MLMPCSolver(dpws),
+    "meanmpc" => MeanMPCSolver(dpws),
     "qmdp" => QBSolver(dpws),
     # "pftdpw" => begin
     #     m = 10

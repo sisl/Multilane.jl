@@ -77,6 +77,7 @@ export
     standard_uniform,
     MLMPCSolver,
     MLPOMDPSolver,
+    MeanMPCSolver,
     GenQMDPSolver,
     QBSolver,
     QMDPWrapper
