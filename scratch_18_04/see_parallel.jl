@@ -3,7 +3,6 @@ using POMDPToolbox
 using POMDPs
 using Multilane
 using POMCPOW
-using D3Trees
 using ParallelPOMCPOW
 
 @everywhere begin
@@ -16,10 +15,10 @@ end
 tii = true
 wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
 
-solver = POMCPOWSolver(tree_queries=10_000,
+solver = POMCPOWSolver(tree_queries=1_000_000,
                                criterion=MaxUCB(10.0),
                                max_depth=20,
-                               max_time=Inf,
+                               max_time=10.0,
                                enable_action_pw=false,
                                k_observation=4.0,
                                alpha_observation=1/8,
@@ -29,7 +28,7 @@ solver = POMCPOWSolver(tree_queries=10_000,
                                tree_in_info=tii
                               )
 
-psolver = ParallelPOMCPOWSolver(solver, 1000)
+psolver = ParallelPOMCPOWSolver(solver, 100)
 
 behaviors = standard_uniform(correlation=0.75)
 pp = PhysicalParam(4, lane_length=100.0)
@@ -43,8 +42,8 @@ rmodel = SuccessReward(lambda=2,
                        target_lane=4,
                        brake_penalty_thresh=4.0
                       )
-pomdp = NoCrashPOMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
-mdp = NoCrashMDP{typeof(rmodel)}(dmodel, rmodel, 0.95, false)
+pomdp = NoCrashPOMDP{typeof(rmodel), typeof(behaviors)}(dmodel, rmodel, 0.95, false)
+mdp = NoCrashMDP{typeof(rmodel), typeof(behaviors)}(dmodel, rmodel, 0.95, false)
 is = initial_state(pomdp, Base.GLOBAL_RNG)
 ips = MLPhysicalState(is)
 
@@ -56,8 +55,12 @@ pplanner = solve(psolver, pomdp)
 
 println("Single Thread")
 action(planner, ib)
-@time action(planner, ib)
+@time a, info = action_info(planner, ib)
+@show info[:search_time_us]/1e6
+@show info[:tree_queries]
 
 println("Parallel")
 action(pplanner, ib)
-@time action(pplanner, ib)
+@time a, info = action_info(pplanner, ib)
+@show info[:search_time_us]/1e6
+@show info
