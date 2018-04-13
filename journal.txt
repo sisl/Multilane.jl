@@ -1,8 +1,20 @@
+Fri 13 Apr 2018 10:26:52 AM PDT
+
+first after fixing initialize_belief fix
+
+zsunberg@bethpage:~/.julia/v0.6/Multilane$ julia -p 54 scratch/twogaps_cweights.jl
+N = 2000 = 2000
+n_iters = 1000 = 1000
+max_time = Inf = Inf
+max_depth = 40 = 40
+val = SimpleSolver() = Multilane.SimpleSolver()
+/home/zsunberg/.julia/v0.6/Multilane/data/all_gaps_Friday_13_Apr_10_17.csv
+
 Fri 06 Apr 2018 10:53:04 PM PDT
 
-[ ] Car colors
-[ ] tree dots
-[ ] Car colors not just dependent on v0
+[X] Car colors
+[X] tree dots
+[X] Car colors not just dependent on v0
 
 Thu 05 Apr 2018 11:24:33 AM PDT
 
