@@ -64,7 +64,7 @@ function make_updater(cor, problem, rng_seed)
     if cor == 1.0
         return AggressivenessUpdater(problem, 500, 0.1, 0.1, wup, MersenneTwister(rng_seed+50000))
     else
-        return BehaviorParticleUpdater(problem, 1000, 0.1, 0.1, wup, MersenneTwister(rng_seed+50000))
+        return BehaviorParticleUpdater(problem, 10000, 0.05, 0.2, wup, MersenneTwister(rng_seed+50000))
     end
 end
 
@@ -73,7 +73,7 @@ pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
 for cor in [false, 0.75, true]
 # for cor in [false]
-for lambda in 2.0.^(-1:3)
+    for lambda in 2.0.^(-1:3)
     # for lambda in [1.0]
         @show cor
         @show lambda
