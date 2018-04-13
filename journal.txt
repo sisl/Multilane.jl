@@ -1,3 +1,14 @@
+Fri 06 Apr 2018 10:53:04 PM PDT
+
+[ ] Car colors
+[ ] tree dots
+[ ] Car colors not just dependent on v0
+
+Thu 05 Apr 2018 11:24:33 AM PDT
+
+gaps with N=2000 old filter
+all_gaps_Thursday_5_Apr_00_53.csv
+
 Wed 04 Apr 2018 02:36:40 PM PDT
 
 Running on jodhpur with N=2000 with old filter

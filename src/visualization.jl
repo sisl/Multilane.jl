@@ -1,71 +1,247 @@
-# using PyPlot
-#=
-module MLVisualization
-
-export
-    visualize,
-    display_sim,
-    write_tmp_gif
-=#
-using Reel
+# using Reel
 using AutomotiveDrivingModels
 using AutoViz
-using Multilane
-using Interact
-using POMDPToolbox
-using Cairo
+# using Multilane
+# using Interact
+# using POMDPToolbox
+# using Cairo
 
-BEHAVIOR_COLORS = Dict{Float64,AbstractString}(0.5=>"#0101DF",0.25=>"#D7DF01",0.0=>"#FF0000")
-
-function display_sim(mdp, S::Array{MLState,1}, A::Array{MLAction,1})
-    warn("This should be run in a Jupyter Notebook")
-    assert(length(S) == length(A)+1)
-    @manipulate for i = 1:length(A)
-        visualize(mdp,S[i],A[i],S[i+1])
-    end
-end
-
-show_state(mdp::Union{MLMDP, MLPOMDP}, s::MLState) = show_state(mdp.dmodel.phys_param, s)
-
-function show_state(pp::PhysicalParam, s::MLState)
-    c = visualize(pp, s)
-    tn = string(tempname(), ".png")
-    write_to_png(c, tn)
-    run(`xdg-open $tn`)
-end
-
-function show_sim(mdp, sim::HistoryRecorder)
-    f = write_tmp_gif(mdp, sim)
-    run(`gifview $f`)
-end
-
-function display_sim(mdp, sim::HistoryRecorder)
-    display_sim(mdp, sim.state_hist, sim.action_hist)
-end
-
-function save_frame(mdp, sim, k=1, filename=string(tempname(),".png"))
-    c = visualize(mdp, sim.state_hist[k], sim.action_hist[k], sim.state_hist[k+1])
-    write_to_png(c, filename)
-    println("Saved to $filename")
-end
-
-function write_tmp_gif(mdp, sim::HistoryRecorder)
-    dt = mdp.dmodel.phys_param.dt
-    S = sim.state_hist
-    A = sim.action_hist
-    length(sim.action_hist)
-    film = roll(fps = 1/dt, duration = dt*(length(sim.state_hist))) do t, dt
-        i = round(Int, t/dt)+1
-        if i == length(sim.state_hist)
-            visualize(mdp, S[i])
+function interp_state(s, sp, frac)
+    a = frac
+    b = 1.0 - frac
+    cars = CarState[]
+    nb_leaving = 0
+    for (i,c) in enumerate(s.cars)
+        if length(sp.cars) >= i-nb_leaving
+            cp = sp.cars[i-nb_leaving]
         else
-            visualize(mdp, S[i], A[i], S[i+1], idx=Nullable(i))
+            break
+        end
+        if cp.id != c.id
+            nb_leaving += 1
+            continue
+        else # c and cp have same id
+            x = a*cp.x + b*c.x
+            y = a*cp.y + b*c.y
+            vel = a*cp.vel + b*c.vel
+            lane_change = c.lane_change
+            id = c.id
+            push!(cars, CarState(x, y, vel, lane_change, c.behavior, id))
         end
     end
-    filename = string(tempname(), ".gif")
-    write(filename, film)
-    return filename
+    x = a*sp.x + b*s.x
+    t = a*sp.t + b*s.t
+    return MLState(x, t, cars, s.terminal)
 end
+
+function visualize(p, s, r; tree=nothing)
+    pp = p.dmodel.phys_param
+    stuff = []
+    roadway = gen_straight_roadway(pp.nb_lanes, p.dmodel.max_dist+200.0, lane_width=pp.w_lane)
+    push!(stuff, roadway)
+    str = @sprintf("t: %6.2f\nx: %6.2f\nvel: %6.2f", s.t, s.x, s.cars[1].vel)
+    if r != nothing
+        str *= @sprintf("\nr: %6.2f", r)
+    end
+    push!(stuff, str)
+    if tree != nothing
+        # push!(stuff, RelativeRender(tree, s.t, s.cars[1].vel))
+        # use the velocity at the root so it doesn't move
+        v = tree.node.tree.root_belief.physical.cars[1].vel
+        push!(stuff, RelativeRender(tree, s.t, v))
+    end
+    for (i,c) in enumerate(s.cars)
+        if i == 1
+            color = colorant"green"
+        else
+            agg = aggressiveness(Multilane.STANDARD_CORRELATED, c.behavior)
+            color = weighted_color_mean(agg, colorant"red", colorant"blue")
+        end
+        ac = ArrowCar([c.x+s.x, (c.y-1.0)*pp.w_lane], id=i, color=color)
+        push!(stuff, ac)
+    end
+
+    render(stuff, cam=CarFollowCamera(1, 8.5))
+end
+
+# start with just lines
+
+struct RelativeRender{T} <: Renderable
+    object::T
+    t::Float64     # time that this is being rendered 
+    vel::Float64
+end
+
+struct NodeWithRollouts{N<:POWTreeObsNode}
+    node::N
+    rollouts::Vector
+end
+
+function AutoViz.render!(rm::RenderModel, r::RelativeRender{N}) where {N<:NodeWithRollouts}
+    node = r.object.node
+    tree = node.tree
+    if isroot(node)
+        b = tree.root_belief
+    else
+        b = tree.sr_beliefs[node.node].b
+    end
+    m = last(tree.sr_beliefs).model
+    pp = m.dmodel.phys_param
+    t = r.t
+    dt = pp.dt
+
+    # draw dots and find o_children
+    a_children = tree.tried[node.node]
+    o_children = Int[]
+    for ac in a_children
+        onodes = [last(oi) for oi in tree.generated[ac]]
+        append!(o_children, onodes)
+        value = tree.v[ac]
+        if value > 0.0
+            color = weighted_color_mean(value, colorant"yellow", colorant"green")
+        else
+            color = weighted_color_mean(clamp(-value, 0.0, 1.0), colorant"yellow", colorant"red")
+        end
+        if !isempty(onodes)
+            ps = tree.o_labels[first(onodes)]
+            c = first(ps.cars)
+            x = ps.x + c.x - (ps.t-t)*r.vel
+            # x, y, r, fill, stroke, linewidth
+            add_instruction!(rm, render_circle, (x, (c.y-1.0)*pp.w_lane, 0.2, color, color, 0.0))
+        end
+    end
+    o_children
+
+
+    # draw all the lines
+    # XXX hack: should be most likely instead of rand
+    s = rand(Base.GLOBAL_RNG, b)
+    for oc in o_children
+        sp = rand(Base.GLOBAL_RNG, tree.sr_beliefs[oc].b)
+        render_rel_lines!(rm, pp, s, sp, t, r.vel)
+    end
+
+    # render the children
+    for oc in o_children
+        nwr = NodeWithRollouts(POWTreeObsNode(tree, oc), r.object.rollouts)
+        render!(rm, RelativeRender(nwr, t, r.vel))
+        ro = r.object.rollouts[oc]
+        for (s, sp) in eachstep(ro, "s,sp")
+            render_rel_lines!(rm, pp, s, sp, t, r.vel)
+            # render_rel_ego_line!(rm, pp, s, sp, t, r.vel)
+        end
+    end
+end
+
+function render_rel_ego_line!(rm::RenderModel, pp, s, sp, t, vel)
+    c = first(s.cars)
+    cp = first(sp.cars)
+    x1 = s.x + c.x - (s.t-t)*vel 
+    y1 = (c.y - 1.0)*pp.w_lane
+    x2 = sp.x + cp.x - (sp.t-t)*vel
+    y2 = (cp.y - 1.0)*pp.w_lane
+    width = 0.1
+    color = RGBA(0.8, 0.8, 0.8, 0.2)
+    add_instruction!(rm, render_line_segment, (x1, y1, x2, y2, color, width))
+end
+
+function render_rel_lines!(rm::RenderModel, pp, s, sp, t, vel)
+    nb_leaving = 0
+    for (i,c) in enumerate(s.cars)
+        if length(sp.cars) >= i-nb_leaving
+            cp = sp.cars[i-nb_leaving]
+        else
+            break
+        end
+        if cp.id != c.id
+            nb_leaving += 1
+            continue
+        else # c and cp have same id
+            # for x, if the point is in the future, you want it to be way behind where it should be
+            # if the point is in the past, you want it to be way ahead
+            x1 = s.x + c.x - (s.t-t)*vel 
+            y1 = (c.y - 1.0)*pp.w_lane
+            x2 = sp.x + cp.x - (sp.t-t)*vel
+            y2 = (cp.y - 1.0)*pp.w_lane
+            width = 0.1
+            if c.id == 1
+                color = RGBA(0.8, 0.8, 0.8, 0.2)
+            else
+                agg = aggressiveness(Multilane.STANDARD_CORRELATED, c.behavior)
+                color = weighted_color_mean(agg, RGBA(1.0, 0.0, 0.0, 0.2), RGBA(0.0, 0.0, 1.0, 0.2))
+            end
+            add_instruction!(rm, render_line_segment, (x1, y1, x2, y2, color, width))
+        end
+    end
+end
+
+function make_rollouts(planner, tree)
+    t0 = tree.root_belief.physical.t
+    m = planner.problem
+    dt = m.dmodel.phys_param.dt
+    rop = solve(SimpleSolver(), m)
+    rollouts = Vector{Any}(length(tree.sr_beliefs))
+    for i in 2:length(tree.sr_beliefs)
+        srb = tree.sr_beliefs[i]
+        b = srb.b
+        ps = b.physical
+        start_t = srb.b.physical.t
+        completed = round(Int, (start_t - t0)/dt)
+        steps = planner.solver.max_depth - completed
+        hr = HistoryRecorder(max_steps=steps)
+        cars = [CarState(ps.cars[i], first(b.particles[i])) for i in 1:length(b.particles)]
+        state = MLState(ps, cars)
+        mdp = NoCrashMDP{typeof(m.rmodel), typeof(m.dmodel.behaviors)}(m.dmodel, m.rmodel, m.discount, m.throw)
+        hist = simulate(hr, mdp, rop, state)
+        rollouts[i] = hist
+    end
+    return rollouts
+end
+
+#=
+function AutoViz.render!(rm::RenderModel, t::RelativeRender{P}) where {P<:POMCPOWTree}
+    render!(rm, RelativeRender(POWTreeObsNode(t.object, 1), t.t, t.vel))
+end
+
+function AutoViz.render!(rm::RenderModel, r::RelativeRender{N}) where {N<:POWTreeObsNode}
+    node = r.object
+    tree = node.tree
+    if isroot(node)
+        b = tree.root_belief
+    else
+        b = tree.sr_beliefs[node.node].b
+    end
+    m = last(tree.sr_beliefs).model
+    pp = m.dmodel.phys_param
+    t = r.t
+    dt = pp.dt
+
+    a_children = tree.tried[node.node]
+    # value = maximum(tree.v[c] for c in a_children)
+    o_children = Int[]
+    for ac in a_children
+        append!(o_children, [last(oi) for oi in tree.generated[ac]])
+    end
+    o_children
+
+    # draw all the lines
+    s = b.physical
+    for oc in o_children
+        sp = tree.sr_beliefs[oc].b.physical
+        render_rel_lines!(rm, pp, s, sp, t, r.vel)
+    end
+
+    # render the children
+    for oc in o_children
+        render!(rm, RelativeRender(POWTreeObsNode(tree, oc), t, r.vel))
+    end
+end
+
+=#
+
+
+#=
+BEHAVIOR_COLORS = Dict{Float64,AbstractString}(0.5=>"#0101DF",0.25=>"#D7DF01",0.0=>"#FF0000")
 
 function visualize(mdp::Union{MLMDP,MLPOMDP}, s::MLState, a::MLAction, sp::MLState;
                    idx::Nullable{Int}=Nullable{Int}())
@@ -184,3 +360,4 @@ function AutoViz.render!(rm::RenderModel, o::CarVelOverlay, scene::Scene, roadwa
                          (@sprintf("%04.1f",v.state.v), vx, vy, 7, colorant"white"))
     end
 end
+=#
