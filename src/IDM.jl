@@ -16,6 +16,7 @@ end #IDMParam
 
 StaticArrays.similar_type(::Type{IDMParam}, ::Type{Float64}, ::Size{(6,)}) = IDMParam
 
+nan(::Type{IDMParam}) = IDMParam(NaN, NaN, NaN, NaN, NaN, NaN)
 #=
 ==(a::IDMParam,b::IDMParam) = (a.a==b.a) && (a.b==b.b) &&(a.T == b.T)&&(a.v0==b.v0)&&(a.s0==b.s0)&&(a.del==b.del)
 Base.hash(a::IDMParam,h::UInt64=zero(UInt64)) = hash(a.a,hash(a.b,hash(a.T,hash(a.v0,hash(a.s0,hash(a.del,h))))))
@@ -28,7 +29,6 @@ Base.hash(a::IDMParam,h::UInt64=zero(UInt64)) = hash(a.a,hash(a.b,hash(a.T,hash(
 .^(p::IDMParam, n::Real) = IDMParam(p.a^n, p.b^n, p.T^n, p.v0^n, p.s0^n, p.del^n)
 sqrt(p::IDMParam) = IDMParam(sqrt(p.a), sqrt(p.b), sqrt(p.T), sqrt(p.v0), sqrt(p.s0), sqrt(p.del))
 zero(::Type{IDMParam}) = IDMParam(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-nan(::Type{IDMParam}) = IDMParam(NaN, NaN, NaN, NaN, NaN, NaN)
 abs(p::IDMParam) = IDMParam(abs(p.a), abs(p.b), abs(p.T), abs(p.v0), abs(p.s0), abs(p.del))
 max(a::IDMParam, b::IDMParam) = IDMParam(max(a.a,b.a), max(a.b,b.b), max(a.T,b.T), max(a.v0,b.v0), max(a.s0,b.s0), max(a.del,b.del))
 =#

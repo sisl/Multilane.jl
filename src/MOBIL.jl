@@ -15,6 +15,7 @@ MOBILParam(;p::Float64=0.25,b_safe::Float64=4.,a_thr::Float64=0.2) = MOBILParam(
 
 StaticArrays.similar_type(::Type{MOBILParam}, ::Type{Float64}, ::Size{(3,)}) = MOBILParam
 
+nan(::Type{MOBILParam}) = MOBILParam(NaN, NaN, NaN)
 #=
 ==(a::MOBILParam,b::MOBILParam) = (a.p==b.p) && (a.b_safe==b.b_safe) && (a.a_thr == b.a_thr)
 Base.hash(a::MOBILParam,h::UInt64=zero(UInt64)) = hash(a.p,hash(a.b_safe,hash(a.a_thr,h)))

@@ -193,7 +193,7 @@ function initialize_belief(up::BehaviorParticleUpdater, distribution)
     weights = Vector{Vector{Float64}}(length(first(states).cars))
     for i in 1:length(first(states).cars)
         particles[i] = Vector{IDMMOBILBehavior}(length(states))
-        weights[i] = ones(length(states))
+        weights[i] = collect(1.0:convert(Float64, up.nb_sims))./up.nb_sims
         for (j,s) in enumerate(states)
             particles[i][j] = s.cars[i].behavior
         end
@@ -207,7 +207,7 @@ function initialize_belief(up::BehaviorParticleUpdater, physical::MLPhysicalStat
     weights = Vector{Vector{Float64}}(length(physical.cars))
     for i in 1:length(physical.cars)
         particles[i] = Vector{IDMMOBILBehavior}(up.nb_sims)
-        weights[i] = ones(up.nb_sims)
+        weights[i] = collect(1.0:convert(Float64, up.nb_sims))./up.nb_sims
         for j in 1:up.nb_sims
             particles[i][j] = rand(up.rng, gen)
         end
