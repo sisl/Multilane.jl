@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 2000
+@show N = 1
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -36,7 +36,7 @@ solvers = Dict{String, Solver}(
     "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "omniscient" => dpws,
     "mlmpc" => MLMPCSolver(dpws),
-    "meanmpc" => MeanMPCSolver(dpws),
+    # "meanmpc" => MeanMPCSolver(dpws),
     "qmdp" => QBSolver(dpws),
     # "pftdpw" => begin
     #     m = 10
@@ -62,8 +62,8 @@ solvers = Dict{String, Solver}(
 
 function make_updater(cor, problem, rng_seed)
     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
-    if cor == 1.0
-        return AggressivenessUpdater(problem, 500, 0.1, 0.1, wup, MersenneTwister(rng_seed+50000))
+    if cor >= 0.5
+        return AggressivenessUpdater(problem, 2000, 0.1, 0.1, wup, MersenneTwister(rng_seed+50000))
     else
         return BehaviorParticleUpdater(problem, 10000, 0.05, 0.2, wup, MersenneTwister(rng_seed+50000))
     end
@@ -73,7 +73,7 @@ pow_updater(up::AggressivenessUpdater) = AggressivenessPOWFilter(up.params)
 pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
 for cor in [false, 0.75, true]
-# for cor in [false]
+# for cor in [true]
     for lambda in 2.0.^(-1:3)
     # for lambda in [1.0]
         @show cor

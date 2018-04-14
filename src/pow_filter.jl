@@ -14,15 +14,15 @@ POMCPOW.belief_type(::Type{AggressivenessPOWFilter}, ::Type{P}) where P<:MLPOMDP
 
 function POMCPOW.init_node_sr_belief(f::AggressivenessPOWFilter, p::MLPOMDP, s, a, sp, o, r)
     particles = [Vector{Float64}() for c in o.cars]
-    weights = [Vector{Float64}() for c in o.cars]
+    cweights = [Vector{Float64}() for c in o.cars]
     gen = CorrelatedIDMMOBIL(p.dmodel.behaviors)
-    maybe_push_one!(particles, weights, f.params, p.dmodel.phys_param, gen, sp, o)
-    ab = AggressivenessBelief(gen, o, particles, weights)
+    maybe_push_one!(particles, cweights, f.params, p.dmodel.phys_param, gen, sp, o)
+    ab = AggressivenessBelief(gen, o, particles, cweights)
     return AggressivenessPOWNodeBelief(p, ab, r)
 end
 
 function POMCPOW.push_weighted!(b::AggressivenessPOWNodeBelief, f::AggressivenessPOWFilter, s, sp, r)
-    maybe_push_one!(b.b.particles, b.b.weights, f.params, b.model.dmodel.phys_param, b.b.gen, sp, b.b.physical)
+    maybe_push_one!(b.b.particles, b.b.cweights, f.params, b.model.dmodel.phys_param, b.b.gen, sp, b.b.physical)
 end
 
 actions(p::MLPOMDP, b::AggressivenessPOWNodeBelief) = actions(p, b.b.physical)
@@ -52,10 +52,10 @@ POMCPOW.belief_type(::Type{BehaviorPOWFilter}, ::Type{P}) where P<:MLPOMDP = Beh
 
 function POMCPOW.init_node_sr_belief(f::BehaviorPOWFilter, p::MLPOMDP, s, a, sp, o, r)
     particles = [Vector{IDMMOBILBehavior}() for c in o.cars]
-    weights = [Vector{Float64}() for c in o.cars]
+    cweights = [Vector{Float64}() for c in o.cars]
     gen = p.dmodel.behaviors
-    maybe_push_one!(particles, weights, f.params, p.dmodel.phys_param, gen, sp, o)
-    ab = BehaviorParticleBelief(gen, o, particles, weights)
+    maybe_push_one!(particles, cweights, f.params, p.dmodel.phys_param, gen, sp, o)
+    ab = BehaviorParticleBelief(gen, o, particles, cweights)
     return BehaviorPOWNodeBelief(p, ab, r)
 end
 

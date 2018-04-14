@@ -13,13 +13,13 @@ function POMDPToolbox.action_info(qp::QBPlanner, b; tree_in_info=false)
     dpw = p
     sol = p.solver
 
-    local a::action_type(p.mdp)
+    local a::POMDPs.action_type(p.mdp)
     info = Dict{Symbol, Any}()
     try
         total_n = 0
         @assert p.solver.enable_action_pw == false
         S = state_type(p.mdp)
-        A = action_type(p.mdp)
+        A = POMDPs.action_type(p.mdp)
         tree = MCTS.DPWTree{S,A}(p.solver.n_iterations)
         p.tree = Nullable(tree)
 
@@ -117,7 +117,7 @@ function POMDPToolbox.action_info(qp::QBPlanner, b; tree_in_info=false)
         # XXX some publications say to choose action that has been visited the most
         a = tree.a_labels[sanode] # choose action with highest approximate value
     catch ex
-        a = convert(action_type(p.mdp), default_action(p.solver.default_action, p.mdp, b, ex))
+        a = convert(POMDPs.action_type(p.mdp), default_action(p.solver.default_action, p.mdp, b, ex))
         info[:exception] = ex
     end
 
