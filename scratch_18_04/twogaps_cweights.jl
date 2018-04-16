@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 1
+@show N = 2000
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -37,7 +37,7 @@ solvers = Dict{String, Solver}(
     # "omniscient" => dpws,
     # "mlmpc" => MLMPCSolver(dpws),
     "meanmpc" => MeanMPCSolver(dpws),
-    # "qmdp" => QBSolver(dpws),
+    "qmdp" => QBSolver(dpws),
     # "pftdpw" => begin
     #     m = 10
     #     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)

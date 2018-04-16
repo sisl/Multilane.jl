@@ -19,10 +19,6 @@ struct MeanMPCSolver <: Solver
     solver
 end
 
-struct MeanMPCSolver <: Solver
-    solver
-end
-
 function solve(sol::MeanMPCSolver, p::NoCrashProblem)
     mdp = NoCrashMDP{typeof(p.rmodel), typeof(p.dmodel.behaviors)}(p.dmodel, p.rmodel, p.discount, p.throw) # make sure an MDP
     return MeanMPCPlanner(solve(sol.solver, mdp))
