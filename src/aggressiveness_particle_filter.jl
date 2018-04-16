@@ -58,6 +58,43 @@ function agg_stds(b::AggressivenessBelief)
     return stds
 end
 
+"""
+Return a vector of states sampled using a carwise version of Thrun's Probabilistic Robotics p. 101
+"""
+function lv_resample(b, up)
+    rng = up.rng
+    stds = max.(agg_stds(b, 0.01))
+    samples = Array{MLState}(n)
+    nc = length(b.physical.cars)
+    for m in 1:n
+        cars = resize!([CarState(first(b.physical.cars), NORMAL)], nc)
+        samples[m] = MLState(b.physical, cars)
+    end
+    for ci in 2:nc
+        inds = randperm(rng, n)
+        particles = b.particles[ci]
+        cweights = b.cweights[ci]
+        step = last(cweights)/n
+        r = rand(rng)*step
+        c = first(cweights)
+        i = 1
+        U = r
+        for m in 1:n
+            while U > c
+                i += 1
+                c = cweights[i]
+            end
+            U += step
+            particle = particles[i]
+            if rand(up.rng) < up.p_resample_noise
+                particle = clamp(particle+stds[ci]*randn(rng), 0.0, 1.0)
+            end
+            cs = CarState(b.physical.cars[ci], create_model(b.gen, particle))
+            samples[inds[m]].cars[ci] = cs
+        end
+    end
+    return samples
+end
 
 function weights_from_particles!(b::AggressivenessBelief,
                                  problem::NoCrashProblem,
@@ -168,17 +205,9 @@ function update(up::AggressivenessUpdater,
                                  Vector{Vector{Float64}}(length(o.cars)))
 
     particles = Vector{MLState}(up.nb_sims)
-    stds = max.(agg_stds(b_old), 0.01)
-    @if_debug if any(isnan, stds)
-        Gallium.@enter update(up, b_old, a, o)
-    end
+    samples = lv_resample(b_old, up)
     for i in 1:up.nb_sims
-        if rand(up.rng) < up.p_resample_noise
-            s = rand(up.rng, b_old, up.resample_noise_factor*stds)
-        else
-            s = rand(up.rng, b_old)
-        end
-        particles[i] = generate_s(get(up.problem), s, a, up.rng)
+        particles[i] = generate_s(get(up.problem), samples[i], a, up.rng)
     end
     
     weights_from_particles!(b_new, get(up.problem), o, particles, up.params)
