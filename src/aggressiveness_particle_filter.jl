@@ -99,7 +99,7 @@ function weights_from_particles!(b::AggressivenessBelief,
     end
 
     for cw in b.cweights
-        if cw[end] == 0.0
+        if sum(cw) == 0.0
             cw[:] = 1.0:1.0:length(cw)
         end
     end

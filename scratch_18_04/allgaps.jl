@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 1
+@show N = 2000
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -34,10 +34,10 @@ dpws = DPWSolver(depth=max_depth,
 
 solvers = Dict{String, Solver}(
     "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
-    "omniscient" => dpws,
+    # "omniscient" => dpws,
     "mlmpc" => MLMPCSolver(dpws),
     # "meanmpc" => MeanMPCSolver(dpws),
-    "qmdp" => QBSolver(dpws),
+    # "qmdp" => QBSolver(dpws),
     # "pftdpw" => begin
     #     m = 10
     #     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
@@ -45,25 +45,25 @@ solvers = Dict{String, Solver}(
     #     up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
     #     ABMDPSolver(dpws, up)
     # end,
-    "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
-                               criterion=MaxUCB(2.0),
-                               max_depth=max_depth,
-                               max_time=max_time,
-                               enable_action_pw=false,
-                               k_observation=4.0,
-                               alpha_observation=1/8,
-                               estimate_value=FORollout(val),
-                               # estimate_value=val,
-                               check_repeat_obs=false,
-                               # node_sr_belief_updater=AggressivenessPOWFilter(wup)
-                              )
+    # "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
+    #                            criterion=MaxUCB(2.0),
+    #                            max_depth=max_depth,
+    #                            max_time=max_time,
+    #                            enable_action_pw=false,
+    #                            k_observation=4.0,
+    #                            alpha_observation=1/8,
+    #                            estimate_value=FORollout(val),
+    #                            # estimate_value=val,
+    #                            check_repeat_obs=false,
+    #                            # node_sr_belief_updater=AggressivenessPOWFilter(wup)
+    #                           )
 )
 
 
 function make_updater(cor, problem, rng_seed)
     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
     if cor >= 0.5
-        return AggressivenessUpdater(problem, 2000, 0.1, 0.1, wup, MersenneTwister(rng_seed+50000))
+        return AggressivenessUpdater(problem, 5000, 0.1, 0.1, wup, MersenneTwister(rng_seed+50000))
     else
         return BehaviorParticleUpdater(problem, 10000, 0.05, 0.2, wup, MersenneTwister(rng_seed+50000))
     end
@@ -72,8 +72,8 @@ end
 pow_updater(up::AggressivenessUpdater) = AggressivenessPOWFilter(up.params)
 pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
-for cor in [false, 0.75, true]
-# for cor in [true]
+# for cor in [false, 0.75, true]
+for cor in [true]
     for lambda in 2.0.^(-1:3)
     # for lambda in [1.0]
         @show cor
@@ -218,6 +218,11 @@ for cor in [false, 0.75, true]
             else
                 alldata = vcat(alldata, data)
             end
+
+            datestring = Dates.format(now(), "E_d_u_HH_MM")
+            filename = joinpath("/tmp", "all_gaps_checkpoint_"*datestring*".csv")
+            println("Writing data to $filename")
+            CSV.write(filename, alldata)
         end
     end
 end

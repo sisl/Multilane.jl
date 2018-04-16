@@ -55,7 +55,7 @@ function Base.mean(b::BehaviorParticleBelief)
 end
 
 function param_means(b::BehaviorParticleBelief)
-    ms = Vector{eltype(first(b.particles))}(length(b.particles))
+    ms = Vector{eltype(first(b.particles))}(length(b.physical.cars))
     for i in 1:length(ms)
         wts = weights(b, i)
         ms[i] = sum(wts.*b.particles[i])/sum(wts)
