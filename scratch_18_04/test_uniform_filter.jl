@@ -29,7 +29,7 @@ pomdp = NoCrashPOMDP{typeof(rmodel), typeof(behaviors)}(dmodel, rmodel, 1.0, tru
 sim = HistoryRecorder(rng=rng, show_progress=true, capture_exception=false, max_steps=100)
 # up = BehaviorRootUpdater(pomdp, WeightUpdateParams(smoothing=0.02))
 
-up = BehaviorParticleUpdater(pomdp, 10000, 0.0, 0.2, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), rng)
+up = BehaviorParticleUpdater(pomdp, 10000, 0.01, 0.5, WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5), rng)
 
 # solver = BehaviorSolver(Multilane.UNIFORM_MEAN, false, rng)
 solver = SimpleSolver()
