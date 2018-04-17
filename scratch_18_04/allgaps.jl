@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 2000
+@show N = 1
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -33,7 +33,7 @@ dpws = DPWSolver(depth=max_depth,
 
 
 solvers = Dict{String, Solver}(
-    "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
+    # "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
     # "omniscient" => dpws,
     "mlmpc" => MLMPCSolver(dpws),
     # "meanmpc" => MeanMPCSolver(dpws),
@@ -73,9 +73,9 @@ pow_updater(up::AggressivenessUpdater) = AggressivenessPOWFilter(up.params)
 pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
 # for cor in [false, 0.75, true]
-for cor in [true]
-    for lambda in 2.0.^(-1:3)
-    # for lambda in [1.0]
+for cor in [true, 0.75]
+    # for lambda in 2.0.^(-1:3)
+    for lambda in [1.0]
         @show cor
         @show lambda
 

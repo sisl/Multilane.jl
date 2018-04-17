@@ -62,8 +62,9 @@ end
 Return a vector of states sampled using a carwise version of Thrun's Probabilistic Robotics p. 101
 """
 function lv_resample(b, up)
+    n = up.nb_sims
     rng = up.rng
-    stds = max.(agg_stds(b, 0.01))
+    stds = max.(agg_stds(b), 0.01)
     samples = Array{MLState}(n)
     nc = length(b.physical.cars)
     for m in 1:n
