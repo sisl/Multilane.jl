@@ -1,3 +1,13 @@
+Tue 17 Apr 2018 10:50:04 AM PDT
+
+Problems...
+pomcpow_winning_on correlated
+nonconvexity on 0.75 (eliminate lambda = 8)
+mlmpc worse than baseline
+
+run with 5k
+use meanmpc on uncorrelated?
+
 Mon 16 Apr 2018 11:31:47 PM PDT
 
 last before switching to lv_resample /tmp/all_gaps_checkpoint_Monday_16_Apr_23_12.csv
