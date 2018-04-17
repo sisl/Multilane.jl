@@ -1,3 +1,8 @@
+Mon 16 Apr 2018 11:31:47 PM PDT
+
+last before switching to lv_resample /tmp/all_gaps_checkpoint_Monday_16_Apr_23_12.csv
+copied to data
+
 Mon 16 Apr 2018 05:28:01 PM PDT
 
 mlmpc seems to beat baseline here
