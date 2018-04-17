@@ -1,3 +1,8 @@
+Mon 16 Apr 2018 05:28:01 PM PDT
+
+mlmpc beats baseline here
+/home/zsunberg/.julia/v0.6/Multilane/data/all_gaps_Monday_16_Apr_15_05.csv
+
 Fri 13 Apr 2018 10:26:52 AM PDT
 
 first after fixing initialize_belief fix
