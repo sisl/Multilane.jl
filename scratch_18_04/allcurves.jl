@@ -4,6 +4,15 @@ using CSV
 using DataFrames
 using Missings
 using Query
+using DocOpt
+
+doc = """
+
+Usage:
+
+"""
+
+args = docopt(doc)
 
 function only(a)
     @assert length(a) == 1

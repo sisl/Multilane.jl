@@ -11,6 +11,7 @@ mutable struct SingleBehaviorPolicy <: Policy
 end
 
 set_rng!(solver::SingleBehaviorSolver, rng::AbstractRNG) = set_rng!(solver.inner_solver, rng)
+Base.srand(p::SingleBehaviorPolicy, s) = srand(p.inner_policy, s)
 
 function solve(solver::SingleBehaviorSolver, mdp::NoCrashProblem)
     dmodel = NoCrashIDMMOBILModel(mdp.dmodel, DiscreteBehaviorSet(BehaviorModel[solver.behavior], Weights([1.0])))

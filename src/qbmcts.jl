@@ -8,6 +8,8 @@ struct QBPlanner{P<:DPWPlanner} <: Policy
     p::P
 end
 
+Base.srand(p::QBPlanner, s) = srand(p.p, s)
+
 function POMDPToolbox.action_info(qp::QBPlanner, b; tree_in_info=false)
     p = qp.p
     dpw = p

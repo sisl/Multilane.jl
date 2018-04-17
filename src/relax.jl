@@ -1,5 +1,5 @@
 function relaxed_initial_state(mdp::NoCrashProblem, steps=200,
-                             rng=MersenneTwister(rand(UInt32)); 
+                             rng=Base.GLOBAL_RNG; 
                              solver=BehaviorSolver(NORMAL, true, rng))
     
     mdp = deepcopy(mdp)

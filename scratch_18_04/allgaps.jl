@@ -63,7 +63,7 @@ solvers = Dict{String, Solver}(
 function make_updater(cor, problem, rng_seed)
     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
     if cor >= 0.5
-        return AggressivenessUpdater(problem, 5000, 0.1, 0.1, wup, MersenneTwister(rng_seed+50000))
+        return AggressivenessUpdater(problem, 5000, 0.05, 0.1, wup, MersenneTwister(rng_seed+50000))
     else
         return BehaviorParticleUpdater(problem, 10000, 0.05, 0.2, wup, MersenneTwister(rng_seed+50000))
     end
@@ -127,13 +127,15 @@ for cor in [true, 0.75, false]
                     if k == "pomcpow"
                         solver.node_sr_belief_updater = pow_updater(up)
                     end
-                    planner = solve(solver, sp)
+                    planner = deepcopy(solve(solver, sp))
+                    srand(planner, rng_seed+60000)
                     push!(sims, Sim(sim_problem, planner, up, ips, is,
                                     simulator=hr,
                                     metadata=metadata
                                    ))
                 else
-                    planner = solve(solver, sp)
+                    planner = deepcopy(solve(solver, sp))
+                    srand(planner, rng_seed+60000)
                     push!(sims, Sim(sim_problem, planner, is,
                                     simulator=hr,
                                     metadata=metadata
