@@ -1,3 +1,10 @@
+Tue 17 Apr 2018 02:06:08 PM PDT
+
+pomcpow winning on correlated not fixed by 5k sims
+run with more iterations?
+optimize parameters?
+
+
 Tue 17 Apr 2018 10:50:04 AM PDT
 
 Problems...
