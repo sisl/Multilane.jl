@@ -58,45 +58,6 @@ function agg_stds(b::AggressivenessBelief)
     return stds
 end
 
-"""
-Return a vector of states sampled using a carwise version of Thrun's Probabilistic Robotics p. 101
-"""
-function lv_resample(b, up)
-    n = up.nb_sims
-    rng = up.rng
-    stds = max.(agg_stds(b), 0.01)
-    samples = Array{MLState}(n)
-    nc = length(b.physical.cars)
-    for m in 1:n
-        cars = resize!([CarState(first(b.physical.cars), NORMAL)], nc)
-        samples[m] = MLState(b.physical, cars)
-    end
-    for ci in 2:nc
-        inds = randperm(rng, n)
-        particles = b.particles[ci]
-        cweights = b.cweights[ci]
-        step = last(cweights)/n
-        r = rand(rng)*step
-        c = first(cweights)
-        i = 1
-        U = r
-        for m in 1:n
-            while U > c
-                i += 1
-                c = cweights[i]
-            end
-            U += step
-            particle = particles[i]
-            if rand(up.rng) < up.p_resample_noise
-                particle = clamp(particle+stds[ci]*randn(rng), 0.0, 1.0)
-            end
-            cs = CarState(b.physical.cars[ci], create_model(b.gen, particle))
-            samples[inds[m]].cars[ci] = cs
-        end
-    end
-    return samples
-end
-
 function weights_from_particles!(b::AggressivenessBelief,
                                  problem::NoCrashProblem,
                                  o::MLPhysicalState,
@@ -223,6 +184,46 @@ function update(up::AggressivenessUpdater,
 
     return b_new
 end
+
+"""
+Return a vector of states sampled using a carwise version of Thrun's Probabilistic Robotics p. 101
+"""
+function lv_resample(b::AggressivenessBelief, up::AggressivenessUpdater)
+    n = up.nb_sims
+    rng = up.rng
+    stds = max.(agg_stds(b), 0.01)
+    samples = Array{MLState}(n)
+    nc = length(b.physical.cars)
+    for m in 1:n
+        cars = resize!([CarState(first(b.physical.cars), NORMAL)], nc)
+        samples[m] = MLState(b.physical, cars)
+    end
+    for ci in 2:nc
+        inds = randperm(rng, n)
+        particles = b.particles[ci]
+        cweights = b.cweights[ci]
+        step = last(cweights)/n
+        r = rand(rng)*step
+        c = first(cweights)
+        i = 1
+        U = r
+        for m in 1:n
+            while U > c
+                i += 1
+                c = cweights[i]
+            end
+            U += step
+            particle = particles[i]
+            if rand(up.rng) < up.p_resample_noise
+                particle = clamp(particle+stds[ci]*randn(rng), 0.0, 1.0)
+            end
+            cs = CarState(b.physical.cars[ci], create_model(b.gen, particle))
+            samples[inds[m]].cars[ci] = cs
+        end
+    end
+    return samples
+end
+
 
 function initialize_belief(up::AggressivenessUpdater, distribution)
     gen = CorrelatedIDMMOBIL(get(up.problem).dmodel.behaviors)
