@@ -72,6 +72,7 @@ function param_stds(b::BehaviorParticleBelief)
     return stds
 end
 
+
 function cweights_from_particles!(b::BehaviorParticleBelief,
                                  problem::NoCrashProblem,
                                  o::MLPhysicalState,
@@ -157,6 +158,48 @@ function set_rng!(u::BehaviorParticleUpdater, rng::AbstractRNG)
     u.rng = rng
 end
 
+"""
+Return a vector of states sampled using a carwise version of Thrun's Probabilistic Robotics p. 101
+"""
+function lv_resample(b::BehaviorParticleBelief, up::BehaviorParticleUpdater)
+    n = up.nb_sims
+    rng = up.rng
+    gen = b.gen
+    min_std = 0.001*IDMMOBILBehavior(gen.max_idm-gen.min_idm, gen.max_mobil-gen.min_mobil, 0)
+    stds = max.(param_stds(b), min_std)
+    samples = Array{MLState}(n)
+    nc = length(b.physical.cars)
+    for m in 1:n
+        cars = resize!([CarState(first(b.physical.cars), NORMAL)], nc)
+        samples[m] = MLState(b.physical, cars)
+    end
+    for ci in 2:nc
+        inds = randperm(rng, n)
+        particles = b.particles[ci]
+        cweights = b.cweights[ci]
+        step = last(cweights)/n
+        r = rand(rng)*step
+        c = first(cweights)
+        i = 1
+        U = r
+        for m in 1:n
+            while U > c
+                i += 1
+                c = cweights[i]
+            end
+            U += step
+            particle = particles[i]
+            if rand(up.rng) < up.p_resample_noise
+                particle = clip(particle+stds[ci].*randn(rng, 9), gen)
+            end
+            cs = CarState(b.physical.cars[ci], particle)
+            samples[inds[m]].cars[ci] = cs
+        end
+    end
+    return samples
+end
+
+
 function update(up::BehaviorParticleUpdater,
                 b_old::BehaviorParticleBelief,
                 a::MLAction,
@@ -167,18 +210,9 @@ function update(up::BehaviorParticleUpdater,
 
     gen = get(up.problem).dmodel.behaviors
     particles = Vector{MLState}(up.nb_sims)
-    min_std = 0.001*IDMMOBILBehavior(gen.max_idm-gen.min_idm, gen.max_mobil-gen.min_mobil, 0)
-    stds = param_stds(b_old)
-    for i in 1:length(stds)
-        stds[i] = max(stds[i], min_std)
-    end
+    samples = lv_resample(b_old, up)
     for i in 1:up.nb_sims
-        if rand(up.rng) < up.p_resample_noise
-            s = rand(up.rng, b_old, up.resample_noise_factor.*stds)
-        else
-            s = rand(up.rng, b_old)
-        end
-        particles[i] = generate_s(get(up.problem), s, a, up.rng)
+        particles[i] = generate_s(get(up.problem), samples[i], a, up.rng)
     end
     
     cweights_from_particles!(b_new, get(up.problem), o, particles, up.params)
