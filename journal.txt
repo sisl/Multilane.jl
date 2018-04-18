@@ -1,3 +1,22 @@
+Wed 18 Apr 2018 10:33:03 AM PDT
+
+The 5k sims test seems to have stalled
+/tmp/all_gaps_checkpoint_Tuesday_17_Apr_19_19.csv
+
+Wed 18 Apr 2018 10:20:36 AM PDT
+
+cross entropy for omniscient
+iteration 22
+mean(d) = [8.04951, 4.49361, 10.7003]
+det(cov(d)) = 0.005685112203029496
+ev = eigvals(cov(d)) = [0.00245582, 1.0348, 2.23711]
+(eigvecs(cov(d)))[:, j] = [-0.0265389, -0.920364, 0.390162]
+(eigvecs(cov(d)))[:, j] = [0.782263, -0.262122, -0.565117]
+(eigvecs(cov(d)))[:, j] = [0.622383, 0.290212, 0.726923]
+creating 60 simulation sets............................................................
+Simulating...100%|██████████████████████████████████████| Time: 0:28:16
+mean(combined[:mean_reward]) = 0.34184144918572895
+
 Tue 17 Apr 2018 02:06:08 PM PDT
 
 pomcpow winning on correlated not fixed by 5k sims

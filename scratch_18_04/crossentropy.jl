@@ -84,8 +84,8 @@ end
 start_mean = [2.0, 4.0, 8.0]
 start_cov = diagm([10.0^2, 10.0^2, 30.0^2])
 d = MvNormal(start_mean, start_cov)
-K = 15 # 60 # number of parameter samples
-n = 1 # 100 # number of evaluation simulations
+K = 60 # 60 # number of parameter samples
+n = 100 # 100 # number of evaluation simulations
 m = 15  # 15 # number of elite samples
 max_iters = 100
 

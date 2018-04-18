@@ -222,7 +222,7 @@ for cor in [true]
             end
 
             datestring = Dates.format(now(), "E_d_u_HH_MM")
-            filename = joinpath("/tmp", "all_gaps_checkpoint_"*datestring*".csv")
+            filename = joinpath("/tmp", "omniscient_iters_checkpoint_"*datestring*".csv")
             println("Writing data to $filename")
             CSV.write(filename, alldata)
         end
@@ -232,6 +232,6 @@ end
 # @show alldata
 
 datestring = Dates.format(now(), "E_d_u_HH_MM")
-filename = Pkg.dir("Multilane", "data", "all_gaps_"*datestring*".csv")
+filename = Pkg.dir("Multilane", "data", "omniscient_iters_"*datestring*".csv")
 println("Writing data to $filename")
 CSV.write(filename, alldata)
