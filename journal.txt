@@ -1,3 +1,7 @@
+Thu 19 Apr 2018 01:02:10 PM PDT
+
+[ ] focus on 0.75
+
 Thu 19 Apr 2018 12:51:35 PM PDT
 
 meanmpc for correlated
