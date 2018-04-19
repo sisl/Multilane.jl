@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 5000
+@show N = 2000
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -22,9 +22,9 @@ alldata = DataFrame()
 dpws = DPWSolver(depth=max_depth,
                  n_iterations=n_iters,
                  max_time=max_time,
-                 exploration_constant=2.0,
-                 k_state=4.0,
-                 alpha_state=1/8,
+                 exploration_constant=8.0,
+                 k_state=4.5,
+                 alpha_state=1/10.0,
                  enable_action_pw=false,
                  check_repeat_state=false,
                  estimate_value=RolloutEstimator(val)
@@ -46,12 +46,12 @@ solvers = Dict{String, Solver}(
     #     ABMDPSolver(dpws, up)
     # end,
     "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
-                               criterion=MaxUCB(2.0),
+                               criterion=MaxUCB(8.0),
                                max_depth=max_depth,
                                max_time=max_time,
                                enable_action_pw=false,
-                               k_observation=4.0,
-                               alpha_observation=1/8,
+                               k_observation=4.5,
+                               alpha_observation=1/10.0,
                                estimate_value=FORollout(val),
                                # estimate_value=val,
                                check_repeat_obs=false,

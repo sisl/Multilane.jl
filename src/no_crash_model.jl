@@ -362,6 +362,8 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                         if occupation_overlap(car_i.y + dys[i], car_j.y + dys[j])
                             # warn and nudge behind
                             if mdp.throw
+                                @show car_j.x
+                                @show car_i.x
                                 @show car_j.x + dxs[j]
                                 @show car_i.x + dxs[i]
                                 @show pp.l_car
@@ -372,12 +374,12 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                             end
                             if i == 1
                                 if mdp.throw
-                                    error("Car nudged because noise would cause a crash (ego in front).")
+                                    error("Car nudged because of crash (ego in front).")
                                 end
                             else
                                 # warn("Car nudged because noise would cause a crash.")
                                 if mdp.throw
-                                    error("Car nudged because noise would cause a crash.")
+                                    error("Car nudged because of crash.")
                                 end
                             end
                             dxs[j] = car_i.x + dxs[i] - car_j.x - 1.01*pp.l_car

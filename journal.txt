@@ -1,3 +1,19 @@
+Wed 18 Apr 2018 05:49:29 PM PDT
+
+[ ] Get all correlated results
+
+correlated + halfway through 0.75
+/tmp/all_gaps_checkpoint_Wednesday_18_Apr_16_38.csv
+
+Wed 18 Apr 2018 05:39:58 PM PDT
+
+crash in baseline at cor 0.75, lambda = 2.0
+
+Wed 18 Apr 2018 11:23:51 AM PDT
+
+[X] Look at more_iters and see if it is good enough
+Looks good enough
+
 Wed 18 Apr 2018 10:33:03 AM PDT
 
 The 5k sims test seems to have stalled
