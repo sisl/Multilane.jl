@@ -28,8 +28,6 @@ struct MeanMPCPlanner{P<:Policy} <: Policy
     planner::P
 end
 
+Base.srand(p::MeanMPCPlanner, s) = srand(p.planner, s)
 action_info(p::MeanMPCPlanner, b) = action_info(p.planner, mean(b))
-
 action(p::MeanMPCPlanner, b) = first(action_info(p, b))
-
-

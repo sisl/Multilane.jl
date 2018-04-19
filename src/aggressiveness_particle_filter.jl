@@ -36,6 +36,16 @@ function rand(rng::AbstractRNG,
     return s
 end
 
+function Base.mean(b::AggressivenessBelief)
+    ams = agg_means(b)
+    p = b.physical
+    cars = CarState[]
+    for i in 1:length(ams)
+        push!(cars, CarState(p.cars[i], create_model(b.gen, ams[i])))
+    end
+    return MLState(b.physical, cars)
+end
+
 actions(p::Union{MLMDP,MLPOMDP}, b::AggressivenessBelief) = actions(p, b.physical)
 
 function most_likely_state(b::AggressivenessBelief)

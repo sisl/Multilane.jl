@@ -1,3 +1,8 @@
+Thu 19 Apr 2018 12:51:35 PM PDT
+
+meanmpc for correlated
+cor_gap_Thursday_19_Apr_12_49.csv
+
 Thu 19 Apr 2018 10:40:17 AM PDT
 
 results from running correlated omniscient with 10k simulations
