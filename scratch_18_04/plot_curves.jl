@@ -3,12 +3,11 @@ using PGFPlots
 using CSV
 using DataFrames
 using Missings
-using Query
 using DocOpt
 
 doc = """
 Usage:
-   plot_curve.jl <filename> 
+    plot_curves.jl [<filename>...]
 """
 
 args = docopt(doc)
@@ -18,11 +17,15 @@ function only(a)
     return first(a)
 end
 
-default = Pkg.dir("Multilane", "data/all_gaps_Friday_13_Apr_10_17.csv")
-# default = Pkg.dir("Multilane", "data/all_gaps_Monday_16_Apr_15_05.csv")
-filename = get(args, "<filename>", default)
+# default = Pkg.dir("Multilane", "data/all_gaps_Friday_13_Apr_10_17.csv")
+default = Pkg.dir("Multilane", "data/all_gaps_Monday_16_Apr_15_05.csv")
+filenames = args["<filename>"]
+if isempty(filenames)
+    push!(filenames, default)
+end
+@show filenames
 
-data = CSV.read(filename)
+data = vcat([CSV.read(f) for f in filenames]...)
 
 
 data[:time_to_lane] = data[:steps_to_lane].*data[:dt]
