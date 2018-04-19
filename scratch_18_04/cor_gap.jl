@@ -31,7 +31,7 @@ dpws = DPWSolver(depth=max_depth,
                  # estimate_value=val
                 )
 dpws_x10 = deepcopy(dpws)
-dpws_x10.n_iters *= 10
+dpws_x10.n_iterations *= 10
 
 solvers = Dict{String, Solver}(
     # "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
@@ -95,7 +95,8 @@ for cor in [true]
 
         problems = Dict{String, Any}(
             "baseline"=>mdp,
-            "omniscient"=>mdp
+            "omniscient"=>mdp,
+            "omniscient_x10"=>mdp
         )
         solver_problems = Dict{String, Any}(
             "qmdp"=>mdp

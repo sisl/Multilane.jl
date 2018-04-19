@@ -1,3 +1,8 @@
+Thu 19 Apr 2018 10:40:17 AM PDT
+
+results from running correlated omniscient with 10k simulations
+data/cor_gap_Thursday_19_Apr_00_14.csv
+
 Wed 18 Apr 2018 05:49:29 PM PDT
 
 [ ] Get all correlated results
