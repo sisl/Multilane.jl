@@ -1,3 +1,25 @@
+Fri 20 Apr 2018 10:23:07 AM PDT
+
+added partially correlated results 
+data/parcor_gap_Friday_20_Apr_02_39.csv
+
+Thu 19 Apr 2018 08:33:56 PM PDT
+
+Changed so new cars generated based on sp instead of s!!
+
+Thu 19 Apr 2018 08:07:01 PM PDT
+
+Debugging crash
+car_j.x = 12.738286961794964
+car_i.x = 16.8433083124826
+car_j.x + dxs[j] = 36.17517816643702
+car_i.x + dxs[i] = 30.587350751577564
+pp.l_car = 4.0
+Conflict because of noise: front:2, back:6
+/tmp/juliaBVJiMr.jld
+
+Car 2 did a negative lane change into car 6s lane
+
 Thu 19 Apr 2018 01:02:10 PM PDT
 
 [ ] focus on 0.75

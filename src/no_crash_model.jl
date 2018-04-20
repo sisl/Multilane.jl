@@ -370,7 +370,10 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                             end
                             @if_debug begin
                                 println("Conflict because of noise: front:$i, back:$j")
-                                Gallium.@enter generate_s(mdp, s, a, dbg_rng)
+                                # Gallium.@enter generate_s(mdp, s, a, dbg_rng)
+                                fname = tempname()*".jld"
+                                println("saving debug args to $fname")
+                                JLD.@save(fname, mdp, s, a, dbg_rng)
                             end
                             if i == 1
                                 if mdp.throw
@@ -460,12 +463,12 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
             closest_cars = Vector{Int}(pp.nb_lanes)
             fill!(closest_cars, 0)
             sstar_margins = Vector{Float64}(pp.nb_lanes)
-            if vel > s.cars[1].vel
+            if vel > sp.cars[1].vel
                 # put at back
                 # sstar is the sstar of the new guy
-                for i in 1:length(s.cars)
-                    lowlane, highlane = occupation_lanes(s.cars[i].y, lcs[i])
-                    back = s.cars[i].x - pp.l_car
+                for i in 1:length(sp.cars)
+                    lowlane, highlane = occupation_lanes(sp.cars[i].y, 0.0)
+                    back = sp.cars[i].x - pp.l_car
                     if back < clearances[lowlane]
                         clearances[lowlane] = back
                         closest_cars[lowlane] = i
@@ -480,14 +483,14 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                     if other == 0
                         sstar = 0.0
                     else
-                        sstar = get_idm_s_star(behavior.p_idm::IDMParam, vel, vel-s.cars[other].vel::Float64)
+                        sstar = get_idm_s_star(behavior.p_idm::IDMParam, vel, vel-sp.cars[other].vel::Float64)
                     end
                     sstar_margins[j] = clearances[j] - sstar
                 end
             else
-                for i in 1:length(s.cars)
-                    lowlane, highlane = occupation_lanes(s.cars[i].y, lcs[i])
-                    front = pp.lane_length - (s.cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
+                for i in 1:length(sp.cars)
+                    lowlane, highlane = occupation_lanes(sp.cars[i].y, 0.0)
+                    front = pp.lane_length - (sp.cars[i].x + pp.l_car) # l_car is half the length of the old car plus half the length of the new one
                     if front < clearances[lowlane]
                         clearances[lowlane] = front
                         closest_cars[lowlane] = i
@@ -502,9 +505,9 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
                     if other == 0
                         sstar = 0
                     else
-                        sstar = get_idm_s_star(s.cars[other].behavior.p_idm,
-                                               s.cars[other].vel,
-                                               s.cars[other].vel-vel)
+                        sstar = get_idm_s_star(sp.cars[other].behavior.p_idm,
+                                               sp.cars[other].vel,
+                                               sp.cars[other].vel-vel)
                     end
                     sstar_margins[j] = clearances[j] - sstar
                 end
@@ -513,7 +516,7 @@ function generate_s(mdp::NoCrashProblem, s::MLState, a::MLAction, rng::AbstractR
             margin, lane = findmax(sstar_margins)
             
             if margin > 0.0
-                if vel > s.cars[1].vel
+                if vel > sp.cars[1].vel
                     # at back
                     push!(sp.cars, CarState(0.0, lane, vel, 0.0, behavior, next_id))
                 else

@@ -4,7 +4,7 @@ import Gallium
 
 # macro if_debug(expr)
 #     return quote
-#         if GLOBAL_DEBUG > 0 && isinteractive()
+#         if GLOBAL_DEBUG > 0 # && isinteractive()
 #             $(esc(expr))
 #         end
 #     end

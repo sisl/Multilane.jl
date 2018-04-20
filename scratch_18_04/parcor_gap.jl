@@ -114,7 +114,7 @@ for cor in [0.75]
             for i in 1:N
                 rng_seed = i+40000
                 rng = MersenneTwister(rng_seed)
-                is = initial_state(p, rng)
+                is = initial_state(sim_problem, rng)
                 ips = MLPhysicalState(is)
 
                 metadata = Dict(:rng_seed=>rng_seed,
