@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 2000
+@show N = 1
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -33,11 +33,12 @@ dpws = DPWSolver(depth=max_depth,
 
 
 solvers = Dict{String, Solver}(
-    "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
-    "omniscient" => dpws,
-    "mlmpc" => MLMPCSolver(dpws),
+    # "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
+    # "omniscient" => dpws,
+    # "mlmpc" => MLMPCSolver(dpws),
     # "meanmpc" => MeanMPCSolver(dpws),
-    "qmdp" => QBSolver(dpws),
+    # "qmdp" => QBSolver(dpws),
+    "outcome" => OutcomeSolver(dpws)
     # "pftdpw" => begin
     #     m = 10
     #     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
@@ -45,18 +46,18 @@ solvers = Dict{String, Solver}(
     #     up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
     #     ABMDPSolver(dpws, up)
     # end,
-    "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
-                               criterion=MaxUCB(8.0),
-                               max_depth=max_depth,
-                               max_time=max_time,
-                               enable_action_pw=false,
-                               k_observation=4.5,
-                               alpha_observation=1/10.0,
-                               estimate_value=FORollout(val),
-                               # estimate_value=val,
-                               check_repeat_obs=false,
-                               # node_sr_belief_updater=AggressivenessPOWFilter(wup)
-                              )
+    # "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
+    #                            criterion=MaxUCB(8.0),
+    #                            max_depth=max_depth,
+    #                            max_time=max_time,
+    #                            enable_action_pw=false,
+    #                            k_observation=4.5,
+    #                            alpha_observation=1/10.0,
+    #                            estimate_value=FORollout(val),
+    #                            # estimate_value=val,
+    #                            check_repeat_obs=false,
+    #                            # node_sr_belief_updater=AggressivenessPOWFilter(wup)
+    #                           ),
 )
 
 
@@ -74,8 +75,8 @@ pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
 # for cor in [false, 0.75, true]
 for cor in [true, 0.75, false]
-    for lambda in 2.0.^(-1:3)
-    # for lambda in [1.0]
+    # for lambda in 2.0.^(-1:3)
+    for lambda in [1.0]
         @show cor
         @show lambda
 
@@ -93,7 +94,8 @@ for cor in [true, 0.75, false]
 
         problems = Dict{String, Any}(
             "baseline"=>mdp,
-            "omniscient"=>mdp
+            "omniscient"=>mdp,
+            "outcome"=>mdp
         )
         solver_problems = Dict{String, Any}(
             "qmdp"=>mdp

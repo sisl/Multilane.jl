@@ -80,7 +80,9 @@ export
     MeanMPCSolver,
     GenQMDPSolver,
     QBSolver,
-    QMDPWrapper
+    QMDPWrapper,
+    OutcomeMDP,
+    OutcomeSolver
 
 export
     NoCrashRewardModel,
@@ -188,6 +190,7 @@ include("most_likely_mpc.jl")
 include("aggressiveness_belief_mdp.jl")
 include("qmdp.jl")
 include("qbmcts.jl")
+include("outcome_uncertainty.jl")
 include("single_behavior.jl")
 include("heuristics.jl")
 include("tree_vis.jl")
