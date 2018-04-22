@@ -13,7 +13,7 @@ import POMDPs: generate_s, generate_sr, initial_state, generate_o, generate_sor
 import Distributions: Dirichlet, Exponential, Gamma, rand
 import Distributions
 
-import POMDPToolbox: action_info
+import POMDPToolbox: action_info, generate_sori, generate_sri
 
 import Iterators
 

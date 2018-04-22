@@ -139,6 +139,7 @@ function get_dv_ds(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int,idy:
 	nbr = nbhd[idy]
 	#dv: if ahead: me - him; behind: him - me
 	dv = nbr != 0 ? -1*sign((idy-3.5))*(car.vel - s.cars[nbr].vel) : 0.
+
 	ds = nbr != 0 ? abs(s.cars[nbr].x - car.x) - pp.l_car : 1000.
 
 	return dv::Float64, ds::Float64
@@ -159,12 +160,12 @@ function get_rear_accel(pp::PhysicalParam,s::MLState,nbhd::Array{Int,1},idx::Int
 	v = s.cars[idx].vel
 
 	#behind - me
-	dv_behind, s_behind = get_dv_ds(pp,s,nbhd,idx,5+dir)
-	v_behind = v - dv_behind
+	dv_behind, s_behind = get_dv_ds(pp, s, nbhd, idx, 5+dir)
+	v_behind = v + dv_behind
 
 	#me - front
 	#what would the relative velocity, distance be if idx wasn't there
-	dv_behind_, s_behind_ = get_dv_ds(pp,s,nbhd,idx,2+dir)
+	dv_behind_, s_behind_ = get_dv_ds(pp, s, nbhd, idx, 2+dir)
 	dv_behind_ += dv_behind
 	s_behind_ += s_behind + pp.l_car
 

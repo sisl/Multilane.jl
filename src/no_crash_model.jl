@@ -674,5 +674,17 @@ function generate_sor(pomdp::NoCrashPOMDP, s::MLState, a::MLAction, rng::Abstrac
     return sp, o, r
 end
 
+@if_debug function generate_sori(pomdp::NoCrashPOMDP, s::MLState, a::MLAction, rng::AbstractRNG)
+    rngcp = copy(rng)
+    sp, o, r = generate_sor(pomdp, s, a, rng)
+    return sp, o, r, Dict(:rng=>rngcp)
+end
+
+@if_debug function generate_sri(mdp::NoCrashProblem, s, a, rng::AbstractRNG)
+    rngcp = copy(rng)
+    sp, r = generate_sr(mdp, s, a, rng)
+    return sp, r, Dict(:rng=>rngcp)
+end
+
 discount(mdp::Union{MLMDP,MLPOMDP}) = mdp.discount
 isterminal(mdp::Union{MLMDP,MLPOMDP},s::MLState) = !isnull(s.terminal)

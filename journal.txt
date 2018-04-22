@@ -1,8 +1,45 @@
+Fri 20 Apr 2018 07:16:38 PM PDT
+
+Simulating... 62%|████████████████████████              |  ETA: 0:08:56 From worker 45: car_j.x = 18.910574890289986
+        From worker 45: car_i.x = 23.5501036490487
+        From worker 45: car_j.x + dxs[j] = 33.94027537796539
+        From worker 45: car_i.x + dxs[i] = 35.153518985228885
+        From worker 45: pp.l_car = 4.0
+        From worker 45: Conflict because of noise: front:3, back:5
+        From worker 45: saving debug args to /tmp/julianVjRXH.jld
+Simulating... 62%|████████████████████████              |  ETA: 0:08:53WARNING: Error in Simulation
+        From worker 45: sim.metadata[:rng_seed] = 41247
+Car nudged because of crash.    From worker 45: saving debug hist to /tmp/julia3TreUM.jld
+
+Fri 20 Apr 2018 05:56:34 PM PDT
+
+front id: 37;
+back id: 39
+
+From worker 52: Conflict because of noise: front:3, back:5
+From worker 52: saving debug args to /tmp/juliazv8xuq.jld
+WARNING: Error in Simulation
+Car nudged because of crash.    From worker 52: saving debug hist to /tmp/juliaAKPG0b.jld
+
+Fri 20 Apr 2018 01:31:00 PM PDT
+
+Debugging crash
+From worker 5:  car_j.x = 18.9105
+74890289986
+        From worker 5:  car_i.x = 23.5501036490487
+        From worker 5:  car_j.x + dxs[j] = 33.94027537796539
+        From worker 5:  car_i.x + dxs[i] = 35.153518985228885
+        From worker 5:  pp.l_car = 4.0
+lambda = 0.5, meanmpc
+/tmp/juliaIrxQaX.jld
+
+
 Fri 20 Apr 2018 10:49:28 AM PDT
 
 [ ] uncor
 [ ] parcor with other filter
 [ ] outcome uncertainty
+
 
 Fri 20 Apr 2018 10:23:07 AM PDT
 
