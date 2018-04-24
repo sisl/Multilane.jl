@@ -75,6 +75,7 @@ export
     WeightUpdateParams,
     UniformIDMMOBIL,
     standard_uniform,
+    normalized_error_sum,
     MLMPCSolver,
     MLPOMDPSolver,
     MeanMPCSolver,

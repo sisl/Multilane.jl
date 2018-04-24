@@ -1,3 +1,10 @@
+Mon 23 Apr 2018 03:45:55 PM PDT
+
+[ ] Debug mean
+    [X] See if mean works with the uniform filter on 0.75 (NO)
+    [ ] compare individual simulations of meanmpc with uniform and agg filters
+[ ] Try outcome only
+
 Fri 20 Apr 2018 07:16:38 PM PDT
 
 Simulating... 62%|████████████████████████              |  ETA: 0:08:56 From worker 45: car_j.x = 18.910574890289986

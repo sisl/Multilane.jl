@@ -2,7 +2,7 @@ function MCTS.node_tag(s::MLState)
     if isnull(s.terminal)
         desc = ""
     else
-        desc = "[$(uppercase(get(s.terminal)))] "
+        desc = "[$(uppercase(string(get(s.terminal))))] "
     end
     desc *= "("
     for c in s.cars
@@ -15,7 +15,7 @@ function MCTS.tooltip_tag(s::MLState)
     if isnull(s.terminal)
         desc = ""
     else
-        desc = "[$(uppercase(get(s.terminal)))] "
+        desc = "[$(uppercase(string(get(s.terminal))))] "
     end
     desc *= "("
     for c in s.cars

@@ -207,3 +207,8 @@ function clip(b::IDMMOBILBehavior, gen::Union{UniformIDMMOBIL,CopulaIDMMOBIL})
 end
 
 const STANDARD_CORRELATED = standard_uniform(correlation=true)
+
+function normalized_error_sum(a::IDMMOBILBehavior, b::IDMMOBILBehavior, gen::BehaviorGenerator)
+    return sum(abs.(a.p_idm-b.p_idm)./(gen.max_idm-gen.min_idm+1e-5)) + # the 1e-5 is to protect from div by zero
+           sum(abs.(a.p_mobil-b.p_mobil)./(gen.max_mobil-gen.min_mobil))
+end

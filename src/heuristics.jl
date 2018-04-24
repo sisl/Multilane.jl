@@ -19,6 +19,7 @@ create_policy(s::SimpleSolver, problem::MDP) = Simple(problem)
 create_policy(s::SimpleSolver, problem::POMDP) = Simple(problem)
 
 set_rng!(solver::SimpleSolver, rng::AbstractRNG) = nothing
+Base.srand(p::Simple, s) = p
 
 function action(p::Simple,s::Union{MLState,MLObs})
 # lane changes if there is an opportunity
