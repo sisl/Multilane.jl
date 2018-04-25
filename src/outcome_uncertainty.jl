@@ -1,7 +1,7 @@
 """
 MDP with all state uncertainty modeled by outcome uncertainty
 """
-struct OutcomeMDP{M, D, R} <: MDP{MLPhysicalState, MLAction}
+struct OutcomeMDP{M} <: MDP{MLPhysicalState, MLAction}
     mdp::M
 end
 
