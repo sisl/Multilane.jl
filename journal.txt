@@ -1,3 +1,22 @@
+Wed 25 Apr 2018 10:40:56 AM PDT
+
+true and 0.75
+data/gap_Wednesday_25_Apr_07_30.csv
+
+Tue 24 Apr 2018 08:14:46 PM PDT
+
+Results for nocor
+data/gap_Tuesday_24_Apr_20_07.csv
+
+Tue 24 Apr 2018 03:23:48 PM PDT
+
+changed to no particle noise for uniform filter
+
+Tue 24 Apr 2018 03:15:33 PM PDT
+
+0.75 cor
+data/uncor_gap_Monday_23_Apr_18_19.csv
+
 Mon 23 Apr 2018 03:45:55 PM PDT
 
 [ ] Debug mean
