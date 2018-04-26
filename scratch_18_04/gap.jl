@@ -36,7 +36,7 @@ dpws_x10.n_iterations *= 10
 solvers = Dict{String, Solver}(
     # "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
     # "omniscient" => dpws,
-    # "omniscient-x10" => dpws_x10,
+    "omniscient-x10" => dpws_x10,
     # "mlmpc" => MLMPCSolver(dpws),
     # "meanmpc" => MeanMPCSolver(dpws),
     # "qmdp" => QBSolver(dpws),
@@ -59,7 +59,7 @@ solvers = Dict{String, Solver}(
     #                            check_repeat_obs=false,
     #                            # node_sr_belief_updater=AggressivenessPOWFilter(wup)
     #                           ),
-    "outcome" => OutcomeSolver(dpws)
+    # "outcome" => OutcomeSolver(dpws)
 )
 
 
@@ -76,7 +76,7 @@ pow_updater(up::AggressivenessUpdater) = AggressivenessPOWFilter(up.params)
 pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
 # for cor in [false, 0.75, true]
-for cor in [true, 0.75, false]
+for cor in [true]
     for lambda in 2.0.^(-1:3)
     # for lambda in [1.0]
         @show cor

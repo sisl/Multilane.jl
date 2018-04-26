@@ -1,3 +1,8 @@
+Thu 26 Apr 2018 10:59:04 AM PDT
+
+omniscient x10 for correlated
+data/gap_Thursday_26_Apr_06_13.csv
+
 Wed 25 Apr 2018 06:02:43 PM PDT
 
 outcome results
