@@ -1,3 +1,12 @@
+Wed 25 Apr 2018 01:03:09 PM PDT
+
+[X] plots
+[ ] outcome only
+[ ] omniscient_x10 for correlation 1.0
+[ ] rerun everything with 5k
+[ ] rerun correlation
+[ ] pftdpw ?
+
 Wed 25 Apr 2018 10:40:56 AM PDT
 
 true and 0.75

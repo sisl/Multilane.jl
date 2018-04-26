@@ -23,7 +23,7 @@ filenames = args["<filename>"]
 if isempty(filenames)
     push!(filenames, default)
 end
-@show filenames
+# @show filenames
 
 data = vcat([CSV.read(f) for f in filenames]...)
 

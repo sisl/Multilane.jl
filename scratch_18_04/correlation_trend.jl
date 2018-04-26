@@ -22,20 +22,23 @@ alldata = DataFrame()
 dpws = DPWSolver(depth=max_depth,
                  n_iterations=n_iters,
                  max_time=max_time,
-                 exploration_constant=2.0,
-                 k_state=4.0,
-                 alpha_state=1/8,
+                 exploration_constant=8.0,
+                 k_state=4.5,
+                 alpha_state=1/10.0,
                  enable_action_pw=false,
                  check_repeat_state=false,
                  estimate_value=RolloutEstimator(val)
                  # estimate_value=val
                 )
-
+dpws_x10 = deepcopy(dpws)
+dpws_x10.n_iterations *= 10
 
 solvers = Dict{String, Solver}(
     "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
     "omniscient" => dpws,
-    "mlmpc" => MLMPCSolver(dpws),
+    # "omniscient-x10" => dpws_x10,
+    # "mlmpc" => MLMPCSolver(dpws),
+    "meanmpc" => MeanMPCSolver(dpws),
     "qmdp" => QBSolver(dpws),
     # "pftdpw" => begin
     #     m = 10
@@ -45,31 +48,33 @@ solvers = Dict{String, Solver}(
     #     ABMDPSolver(dpws, up)
     # end,
     "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
-                               criterion=MaxUCB(2.0),
+                               criterion=MaxUCB(8.0),
                                max_depth=max_depth,
                                max_time=max_time,
                                enable_action_pw=false,
-                               k_observation=4.0,
-                               alpha_observation=1/8,
+                               k_observation=4.5,
+                               alpha_observation=1/10.0,
                                estimate_value=FORollout(val),
                                # estimate_value=val,
                                check_repeat_obs=false,
                                # node_sr_belief_updater=AggressivenessPOWFilter(wup)
-                              )
+                              ),
+    # "outcome" => OutcomeSolver(dpws)
 )
 
 
-function make_updater(cor, problem, rng_seed)
-    wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
-    if cor == 1.0
-        return AggressivenessUpdater(problem, 500, 0.1, 0.1, wup, MersenneTwister(rng_seed+50000))
+function make_updater(cor, problem, k, rng_seed)
+    wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.05)
+    if cor >= 1.0 || k == "meanmpc"
+        return AggressivenessUpdater(problem, 2000, 0.05, 0.1, wup, MersenneTwister(rng_seed+50000))
     else
-        return BehaviorParticleUpdater(problem, 1000, 0.1, 0.1, wup, MersenneTwister(rng_seed+50000))
+        return BehaviorParticleUpdater(problem, 5000, 0.0, 0.0, wup, MersenneTwister(rng_seed+50000))
     end
 end
 
 pow_updater(up::AggressivenessUpdater) = AggressivenessPOWFilter(up.params)
 pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
+
 
 for cor in 0.0:0.2:1.0
     @show cor
