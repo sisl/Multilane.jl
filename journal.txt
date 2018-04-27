@@ -7,6 +7,7 @@ Thu 26 Apr 2018 10:59:04 AM PDT
 
 omniscient x10 for correlated
 data/gap_Thursday_26_Apr_06_13.csv
+yikes - that doesn't really work
 
 Wed 25 Apr 2018 06:02:43 PM PDT
 
@@ -17,7 +18,7 @@ Wed 25 Apr 2018 01:03:09 PM PDT
 
 [X] plots
 [X] outcome only
-[ ] omniscient_x10 for correlation 1.0
+[/] omniscient_x10 for correlation 1.0
 [ ] rerun correlation
 [ ] rerun everything with 5k
 [ ] pftdpw ?
