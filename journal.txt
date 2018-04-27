@@ -1,3 +1,8 @@
+Fri 27 Apr 2018 10:11:57 AM PDT
+
+Correlation trend data
+data/cor_trend_Friday_27_Apr_03_39.csv
+
 Thu 26 Apr 2018 10:59:04 AM PDT
 
 omniscient x10 for correlated

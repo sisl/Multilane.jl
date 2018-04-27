@@ -59,7 +59,7 @@ solvers = Dict{String, Solver}(
                                check_repeat_obs=false,
                                # node_sr_belief_updater=AggressivenessPOWFilter(wup)
                               ),
-    # "outcome" => OutcomeSolver(dpws)
+    "outcome" => OutcomeSolver(dpws)
 )
 
 
@@ -96,7 +96,9 @@ for cor in 0.0:0.2:1.0
 
     problems = Dict{String, Any}(
         "baseline"=>mdp,
-        "omniscient"=>mdp
+        "omniscient"=>mdp,
+        "omniscient-x10"=>mdp,
+        "outcome"=>mdp
     )
     solver_problems = Dict{String, Any}(
         "qmdp"=>mdp
@@ -126,11 +128,12 @@ for cor in 0.0:0.2:1.0
             hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
 
             if p isa POMDP
-                up = make_updater(cor, sim_problem, rng_seed)
+                up = make_updater(cor, sim_problem, k, rng_seed)
                 if k == "pomcpow"
                     solver.node_sr_belief_updater = pow_updater(up)
                 end
-                planner = solve(solver, sp)
+                planner = deepcopy(solve(solver, sp))
+                srand(planner, rng_seed+80000)
                 push!(sims, Sim(sim_problem, planner, up, ips, is,
                                 simulator=hr,
                                 metadata=metadata
