@@ -62,6 +62,7 @@ function action(pol::Simple, s::QMDPState)
         return action(pol, get(s.b))
     end
 end
+action(p::Simple, b::AbstractParticleBelief) = action(p, MLPhysicalState(first(particles(b))))
 
 mutable struct BehaviorSolver <: Solver
     b::BehaviorModel

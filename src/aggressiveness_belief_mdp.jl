@@ -30,12 +30,13 @@ function generate_sr(p::AggressivenessBeliefMDP, b_old::AggressivenessBelief, a:
         rsum += r
     end
     
-    weights_from_particles!(b_new, get(up.problem), o, particles, up.params)
+    cweights_from_particles!(b_new, get(up.problem), o, particles, up.params)
 
     for i in 1:length(o.cars)
-        if isempty(b_new.weights[i])
+        if isempty(b_new.cweights[i])
+            # println("car $i has empty weights")
             b_new.particles[i] = rand(up.rng, up.nb_sims)
-            b_new.weights[i] = ones(up.nb_sims)
+            b_new.cweights[i] = 1.0:1.0:up.nb_sims
         end
     end
 

@@ -111,6 +111,8 @@ function actions(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState})
     return NoCrashActionSpace(as.NORMAL_ACTIONS, acceptable, brake)
 end
 
+actions(mdp::NoCrashProblem, b::AbstractParticleBelief) = actions(mdp, MLPhysicalState(first(particles(b))))
+
 calc_brake_acc(mdp::NoCrashProblem, s::Union{MLState, MLPhysicalState}) = min(max_safe_acc(mdp,s), -mdp.rmodel.brake_penalty_thresh/2.0)
 # calc_brake_acc(mdp::NoCrashProblem{TargetLaneReward}, s::Union{MLState, MLPhysicalState}) = min(max_safe_acc(mdp, s), min(-mdp.dmodel.phys_param.brake_limit/2, -mdp.dmodel.brake_terminate_thresh/2))
 

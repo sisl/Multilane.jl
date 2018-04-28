@@ -68,7 +68,7 @@ function agg_stds(b::AggressivenessBelief)
     return stds
 end
 
-function weights_from_particles!(b::AggressivenessBelief,
+function cweights_from_particles!(b::AggressivenessBelief,
                                  problem::NoCrashProblem,
                                  o::MLPhysicalState,
                                  particles,
@@ -182,7 +182,7 @@ function update(up::AggressivenessUpdater,
         particles[i] = generate_s(get(up.problem), samples[i], a, up.rng)
     end
     
-    weights_from_particles!(b_new, get(up.problem), o, particles, up.params)
+    cweights_from_particles!(b_new, get(up.problem), o, particles, up.params)
 
     for i in 1:length(o.cars)
         if isempty(b_new.cweights[i])

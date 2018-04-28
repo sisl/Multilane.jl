@@ -28,6 +28,7 @@ using POMDPToolbox
 using MCTS # so that we can define node_tag, etc.
 using POMCPOW
 using CPUTime
+using ParticleFilters
 # using RobustMCTS # for RobustMDP
 # import POMCP # for particle filter
 
