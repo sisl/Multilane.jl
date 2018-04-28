@@ -1,3 +1,8 @@
+Sat 28 Apr 2018 10:44:36 AM PDT
+
+checkpoint containing 5k for fully correlated and some uncor
+/tmp/gap_checkpoint_Saturday_28_Apr_10_38.csv
+
 Fri 27 Apr 2018 10:11:57 AM PDT
 
 Correlation trend data
@@ -19,7 +24,7 @@ Wed 25 Apr 2018 01:03:09 PM PDT
 [X] plots
 [X] outcome only
 [/] omniscient_x10 for correlation 1.0
-[ ] rerun correlation
+[X] rerun correlation
 [ ] rerun everything with 5k
 [ ] pftdpw ?
 
