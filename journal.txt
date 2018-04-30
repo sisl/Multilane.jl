@@ -1,3 +1,8 @@
+Mon 30 Apr 2018 10:19:28 AM PDT
+
+final 5k results
+gap_Sunday_29_Apr_11_40.csv
+
 Sat 28 Apr 2018 10:44:36 AM PDT
 
 checkpoint containing 5k for fully correlated and some uncor
