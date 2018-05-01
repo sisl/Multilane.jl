@@ -71,6 +71,7 @@ export
     MLPOMDPSolver,
     MLPOMDPAgent,
     ABMDPSolver,
+    BBMDPSolver,
     DiscreteBehaviorSet,
     DiscreteBehaviorBelief,
     WeightUpdateParams,
