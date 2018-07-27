@@ -1,3 +1,23 @@
+Fri 27 Jul 2018 10:42:18 AM PDT
+
+Correlation robustness study with N = 2000
+
+zsunberg@jodhpur:~/.julia/v0.6/Multilane$ julia -p 51 scratch/correlation_robustness.jl
+
+N = 2000 = 2000
+n_iters = 1000 = 1000
+max_time = Inf = Inf
+max_depth = 40 = 40
+val = SimpleSolver() = Multilane.SimpleSolver()
+
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/cor_rob_Thursday_26_Jul_23_52.csv
+
+
+Mon 30 Apr 2018 12:47:50 PM PDT
+
+results for simple heuristic
+data/gap_Monday_30_Apr_12_44.csv
+
 Mon 30 Apr 2018 10:19:28 AM PDT
 
 final 5k results

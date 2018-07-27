@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 2
+@show N = 2000
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -251,6 +251,6 @@ end
 # @show alldata
 
 datestring = Dates.format(now(), "E_d_u_HH_MM")
-filename = Pkg.dir("Multilane", "data", "cor_trend_"*datestring*".csv")
+filename = Pkg.dir("Multilane", "data", "cor_rob_"*datestring*".csv")
 println("Writing data to $filename")
 CSV.write(filename, alldata)

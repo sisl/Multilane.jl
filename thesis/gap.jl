@@ -7,6 +7,7 @@ using Missings
 using DataFrames
 using CSV
 using POMCPOW
+using ARDESPOT
 
 @everywhere using Missings
 @everywhere using Multilane
@@ -34,12 +35,12 @@ dpws_x10 = deepcopy(dpws)
 dpws_x10.n_iterations *= 10
 
 solvers = Dict{String, Solver}(
-    "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
-    "omniscient" => dpws,
+    # "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
+    # "omniscient" => dpws,
     # "omniscient-x10" => dpws_x10,
     # "mlmpc" => MLMPCSolver(dpws),
-    "meanmpc" => MeanMPCSolver(dpws),
-    "qmdp" => QBSolver(dpws),
+    # "meanmpc" => MeanMPCSolver(dpws),
+    # "qmdp" => QBSolver(dpws),
     # "pftdpw" => begin
     #     m = 10
     #     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
@@ -47,19 +48,33 @@ solvers = Dict{String, Solver}(
     #     up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
     #     ABMDPSolver(dpws, up)
     # end,
-    "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
-                               criterion=MaxUCB(8.0),
-                               max_depth=max_depth,
-                               max_time=max_time,
-                               enable_action_pw=false,
-                               k_observation=4.5,
-                               alpha_observation=1/10.0,
-                               estimate_value=FORollout(val),
-                               # estimate_value=val,
-                               check_repeat_obs=false,
-                               # node_sr_belief_updater=AggressivenessPOWFilter(wup)
-                              ),
-    "outcome" => OutcomeSolver(dpws)
+    # "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
+    #                            criterion=MaxUCB(8.0),
+    #                            max_depth=max_depth,
+    #                            max_time=max_time,
+    #                            enable_action_pw=false,
+    #                            k_observation=4.5,
+    #                            alpha_observation=1/10.0,
+    #                            estimate_value=FORollout(val),
+    #                            # estimate_value=val,
+    #                            check_repeat_obs=false,
+    #                            # node_sr_belief_updater=AggressivenessPOWFilter(wup)
+    #                           ),
+    # "outcome" => OutcomeSolver(dpws)
+    # "despot" => begin
+    #     rng = MersenneTwister(13)
+    #     b = IndependentBounds(DefaultPolicyLB(val), 1.02, check_terminal=true)
+    #     sol = DESPOTSolver(lambda=0.01,
+    #                  K=100,
+    #                  D=max_depth,
+    #                  max_trials=1_000_000,
+    #                  T_max=max_time,
+    #                  bounds=b,
+    #                  random_source=MemorizingSource(500, max_depth, rng, min_reserve=25),
+    #                  default_action=ReportWhenUsed(MLAction(0.0, 0.0)),
+    #                  rng=rng)
+    # end, 
+    # "simple" => SimpleSolver()
 )
 
 
@@ -182,10 +197,11 @@ for cor in [true, false, 0.75]
                     end
                     time_to_lane = steps_to_lane*p.dmodel.phys_param.dt
                     distance = last(state_hist(hist)).x
+                    ais = eachstep(hist, "ai")
 
                     return [:n_steps=>n_steps(hist),
-                            :mean_iterations=>mean(ai[:tree_queries] for ai in eachstep(hist, "ai")),
-                            :mean_search_time=>1e-6*mean(ai[:search_time_us] for ai in eachstep(hist, "ai")),
+                            :mean_iterations=>mean(ai isa Dict ? ai[:tree_queries] : missing for ai in ais),
+                            :mean_search_time=>1e-6*mean(ai isa Dict ? ai[:search_time_us] : missing for ai in ais),
                             :reward=>discounted_reward(hist),
                             :crashed=>crashed,
                             :steps_to_lane=>steps_to_lane,
