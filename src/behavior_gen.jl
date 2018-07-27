@@ -67,21 +67,21 @@ function standard_uniform(factor=1.0; correlation::Union{Bool,Float64}=false)
         ms0 + factor*ds0,
         del)
     min_idm = IDMParam(
-        ma - factor*da,
-        mb - factor*db,
-        mT - factor*dT,
-        mv0 - factor*dv0,
-        ms0 - factor*ds0,
-        del)
+                       max(ma - factor*da, 0.01),
+                       max(mb - factor*db, 0.01),
+                       max(mT - factor*dT, 0.0),
+                       max(mv0 - factor*dv0, 0.01),
+                       max(ms0 - factor*ds0, 0.0),
+                       del)
     max_mobil = MOBILParam(
         mp + factor*dp,
         mbsafe + factor*dbsafe,
         mathr + factor*dathr
     )
     min_mobil = MOBILParam(
-        mp - factor*dp,
-        mbsafe - factor*dbsafe,
-        mathr - factor*dathr
+                           max(mp - factor*dp, 0.0),
+                           max(mbsafe - factor*dbsafe, 0.01),
+                           max(mathr - factor*dathr, 0.0)
     )
     if correlation == true
         return CorrelatedIDMMOBIL(min_idm, max_idm, min_mobil, max_mobil, 2)
