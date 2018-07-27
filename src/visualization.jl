@@ -34,7 +34,10 @@ function interp_state(s, sp, frac)
     return MLState(x, t, cars, s.terminal)
 end
 
-function visualize(p, s, r; tree=nothing)
+function visualize(p, s, r;
+                   tree=nothing,
+                   surface=CairoRGBSurface(AutoViz.DEFAULT_CANVAS_WIDTH, AutoViz.DEFAULT_CANVAS_HEIGHT)
+                  )
     pp = p.dmodel.phys_param
     stuff = []
     roadway = gen_straight_roadway(pp.nb_lanes, p.dmodel.max_dist+200.0, lane_width=pp.w_lane)
@@ -61,7 +64,7 @@ function visualize(p, s, r; tree=nothing)
         push!(stuff, ac)
     end
 
-    render(stuff, cam=CarFollowCamera(1, 8.5))
+    render(stuff, cam=CarFollowCamera(1, 8.5), surface=surface)
 end
 
 # start with just lines

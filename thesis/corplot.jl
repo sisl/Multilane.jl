@@ -31,29 +31,62 @@ combined = by(data, [:cor, :solver]) do df
                      n=nrow(df))
 end
 
-@show sort(combined, cols=[:solver])
+@show sort(combined, [:solver])
+
+styles = Dict(
+    "qmdp" => "blue",
+    "pomcpow" => "brown",
+    "meanmpc" => "black",
+    "baseline" => "blue",
+    "omniscient" => "red, dashed"
+)
+marks = Dict(
+    "qmdp" => "*",
+    "pomcpow" => "*",
+    "meanmpc" => "star",
+    "baseline" => "diamond*",
+    "omniscient" => "*"
+)
+
+names = Dict("qmdp"=>"QMDP",
+             "outcome"=>"Naive MDP",
+             "pomcpow"=>"POMCPOW",
+             "meanmpc"=>"Mean MPC",
+             "baseline"=>"Assume normal",
+             "omniscient"=>"Omniscient"
+            )
+
 
 
 plts = Plots.Plot[]
 for df in groupby(combined, [:solver])
-    df = sort(df, cols=[:cor])
+    df = sort(df, [:cor])
     name = only(unique(df[:solver]))
-    # 95% confidence region from Hoeffding Bound
-    confidence = 0.5
+    # confidence region from Hoeffding Bound
+    confidence = 0.68
     n = only(unique(df[:n]))
     confidence_radius = sqrt(log((1.0-confidence)/2)/(-2*n))
     plt = Plots.Linear(convert(Vector{Float64}, df[:cor]),
                        df[:reached_lane],
                        errorBars=ErrorBars(y=fill(confidence_radius, nrow(df))), 
-                       legendentry=name)
+                       # style="$(styles[name]), mar",
+                       style="$(styles[name]), mark options={fill=$(styles[name])}",
+                       legendentry=names[name],
+                       mark=marks[name],
+                      )
+                      # legendentry=name)
     push!(plts, plt)
 end
 a = Axis(plts,
-         ylabel="Fraction Successful",
+         ylabel="Fraction successful",
          xlabel="Correlation",
-         legendPos="south west"
+         # legendPos="south west"
+         style="legend style={at={(0.5,-0.2)}, anchor=north}, legend columns=2, grid=both",
+         width="3.5in",
+         height="2.7in"
         )
 
-file = tempname()*".pdf"
-save(file, a)
-run(`xdg-open $file`)
+file = "/home/zach/Devel/thesis/media/corplot.tex"
+save(file, a, include_preamble=false)
+# save(file, a)
+# run(`xdg-open $file`)

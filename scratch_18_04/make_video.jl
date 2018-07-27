@@ -57,8 +57,12 @@ end
 
 @show discounted_reward(hist)
 
+#=
 fpstep = 6
 sh = state_hist(hist)
+surfaces = []
+surfdir = tempname()
+mkdir(surfdir)
 frames = Frames(MIME("image/png"), fps=fpstep/pp.dt)
 @showprogress for (s, ai, r, sp) in eachstep(hist, "s, ai, r, sp")
     tree = get(ai, :tree, nothing)
@@ -67,7 +71,11 @@ frames = Frames(MIME("image/png"), fps=fpstep/pp.dt)
     for t in linspace(0.0, 1.0, fpstep)
         if s.t == 0.0 || t > 0.0
             is = interp_state(s, sp, t)
-            push!(frames, visualize(pomdp, is, r, tree=nwr))
+            # fname = joinpath(surfdir, string(length(surfaces)+1)*".svg")
+            # surf = CairoSVGSurface(fname, AutoViz.DEFAULT_CANVAS_WIDTH, AutoViz.DEFAULT_CANVAS_HEIGHT)
+            # push!(surfaces, visualize(pomdp, is, r, tree=nwr, surface=surf))
+            push!(surfaces, visualize(pomdp, is, r, tree=nwr))
+            push!(frames, last(surfaces))
         end
     end
 end
@@ -95,3 +103,19 @@ write(gifname, frames)
 run(`xdg-open $gifname`)
 # gif = load(gifname)
 # imshow(gif)
+=#
+
+# extract at 19.50
+@show fname = joinpath("/tmp", "selected_frame.svg")
+selected = nothing
+for (s, ai, r, sp) in eachstep(hist, "s, ai, r, sp")
+    tree = get(ai, :tree, nothing)
+    rollouts = make_rollouts(planner, tree)
+    nwr = NodeWithRollouts(POWTreeObsNode(tree, 1), rollouts)
+    if s.t <= 19.5 && sp.t > 19.5
+        is = interp_state(s, sp, (19.5-s.t)/(sp.t-s.t))
+        surf = CairoSVGSurface(fname, AutoViz.DEFAULT_CANVAS_WIDTH, AutoViz.DEFAULT_CANVAS_HEIGHT)
+        selected = visualize(pomdp, is, r, tree=nwr, surface=surf)
+    end
+end
+finish(selected)
