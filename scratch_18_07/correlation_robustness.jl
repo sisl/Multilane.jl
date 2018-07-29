@@ -147,8 +147,8 @@ for cor in 0.0:0.2:1.0
                        )   
             hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
 
-            if p isa POMDP
-                up = make_updater(cor, sim_problem, k, rng_seed)
+            if sim_problem isa POMDP
+                up = make_updater(cor, planner_pomdp, k, rng_seed)
                 if k == "pomcpow"
                     solver.node_sr_belief_updater = pow_updater(up)
                 end

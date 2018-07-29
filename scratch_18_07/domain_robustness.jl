@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 2
+@show N = 2000
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -96,7 +96,7 @@ planner_pomdp = NoCrashPOMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_
 planner_mdp = NoCrashMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_dmodel, rmodel, 0.95, false)
 
 
-for factor in 1.0:0.2:2.0
+for factor in 0.6:0.2:2.0
 
     @show factor
 
@@ -145,12 +145,13 @@ for factor in 1.0:0.2:2.0
                             :lambda=>lambda,
                             :solver=>k,
                             :dt=>pp.dt,
-                            :cor=>cor
+                            :cor=>cor,
+                            :factor=>factor
                        )   
             hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
 
-            if p isa POMDP
-                up = make_updater(cor, sim_problem, k, rng_seed)
+            if sim_problem isa POMDP
+                up = make_updater(cor, planner_pomdp, k, rng_seed)
                 if k == "pomcpow"
                     solver.node_sr_belief_updater = pow_updater(up)
                 end

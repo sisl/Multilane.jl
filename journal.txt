@@ -1,3 +1,13 @@
+Sat 28 Jul 2018 09:41:17 PM PDT
+
+N = 2000 correlation robustness
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/cor_rob_Saturday_28_Jul_20_29.csv
+
+Sat 28 Jul 2018 12:11:07 PM PDT
+
+N = 2000 domain robustness
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/cor_trend_Saturday_28_Jul_01_26.csv
+
 Fri 27 Jul 2018 10:42:18 AM PDT
 
 Correlation robustness study with N = 2000
