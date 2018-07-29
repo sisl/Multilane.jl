@@ -75,8 +75,8 @@ end
 pow_updater(up::AggressivenessUpdater) = AggressivenessPOWFilter(up.params)
 pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
-
-planner_behaviors = standard_uniform(correlation=0.75)
+planner_cor = 0.75
+planner_behaviors = standard_uniform(correlation=planner_cor)
 pp = PhysicalParam(4, lane_length=100.0)
 planner_dmodel = NoCrashIDMMOBILModel(10, pp,
                                   behaviors=planner_behaviors,
@@ -143,12 +143,13 @@ for cor in 0.0:0.2:1.0
                             :lambda=>lambda,
                             :solver=>k,
                             :dt=>pp.dt,
-                            :cor=>cor
+                            :cor=>cor,
+                            :planner_cor=>planner_cor
                        )   
             hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
 
             if sim_problem isa POMDP
-                up = make_updater(cor, planner_pomdp, k, rng_seed)
+                up = make_updater(planner_cor, planner_pomdp, k, rng_seed)
                 if k == "pomcpow"
                     solver.node_sr_belief_updater = pow_updater(up)
                 end

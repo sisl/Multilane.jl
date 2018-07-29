@@ -96,7 +96,7 @@ planner_pomdp = NoCrashPOMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_
 planner_mdp = NoCrashMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_dmodel, rmodel, 0.95, false)
 
 
-for factor in 0.6:0.2:2.0
+for factor in 0.4:0.2:2.0
 
     @show factor
 
