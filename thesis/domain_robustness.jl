@@ -12,7 +12,7 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 2000
+@show N = 5000
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
@@ -96,7 +96,7 @@ planner_pomdp = NoCrashPOMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_
 planner_mdp = NoCrashMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_dmodel, rmodel, 0.95, false)
 
 
-for factor in 0.6:0.2:2.0
+for factor in 0.2:0.2:2.0
 
     @show factor
 

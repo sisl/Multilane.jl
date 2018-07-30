@@ -1,3 +1,8 @@
+Mon 30 Jul 2018 10:45:59 AM PDT
+
+N = 5000 correlation robustness
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/cor_rob_Sunday_29_Jul_13_43.csv
+
 Sat 28 Jul 2018 09:41:17 PM PDT
 
 N = 2000 correlation robustness
