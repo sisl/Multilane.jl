@@ -12,11 +12,12 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 5000
+@show N = 2000
 @show n_iters = 1000
 @show max_time = Inf
 @show max_depth = 40
 @show val = SimpleSolver()
+@show planner_cor = 0.0
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=max_depth,
@@ -75,7 +76,6 @@ end
 pow_updater(up::AggressivenessUpdater) = AggressivenessPOWFilter(up.params)
 pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
-planner_cor = 0.75
 planner_behaviors = standard_uniform(correlation=planner_cor)
 pp = PhysicalParam(4, lane_length=100.0)
 planner_dmodel = NoCrashIDMMOBILModel(10, pp,
@@ -95,7 +95,8 @@ planner_pomdp = NoCrashPOMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_
 planner_mdp = NoCrashMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_dmodel, rmodel, 0.95, false)
 
 
-for cor in 0.0:0.2:1.0
+# for cor in 0.0:0.2:1.0
+for cor in 1.0
     @show cor
 
     behaviors = standard_uniform(correlation=cor)

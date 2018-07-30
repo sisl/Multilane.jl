@@ -254,6 +254,6 @@ end
 # @show alldata
 
 datestring = Dates.format(now(), "E_d_u_HH_MM")
-filename = Pkg.dir("Multilane", "data", "cor_trend_"*datestring*".csv")
+filename = Pkg.dir("Multilane", "data", "dom_rob_"*datestring*".csv")
 println("Writing data to $filename")
 CSV.write(filename, alldata)
