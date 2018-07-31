@@ -1,7 +1,20 @@
+Tue 31 Jul 2018 04:08:53 PM PDT
+
+correlation results with both 1.0 and 0.0 correlation
+N = 5000 = 5000
+sname => planner_cor = "pomcpow"=>0.0
+sname => planner_cor = "pomcpow"=>1.0
+sname => planner_cor = "qmdp"=>0.0
+sname => planner_cor = "qmdp"=>1.0
+sname => planner_cor = "outcome"=>0.0
+sname => planner_cor = "outcome"=>1.0
+Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/cor_rob_Tuesday_31_Jul_15_23.csv
+
 Mon 30 Jul 2018 02:44:54 PM PDT
 
 N = 5000 
 Writing data to /home/zsunberg/.julia/v0.6/Multilane/data/cor_trend_Monday_30_Jul_14_38.csv
+moved to dom_rob
 
 Mon 30 Jul 2018 10:45:59 AM PDT
 

@@ -12,12 +12,16 @@ using POMCPOW
 @everywhere using Multilane
 @everywhere using POMDPToolbox
 
-@show N = 2000
-@show n_iters = 1000
-@show max_time = Inf
-@show max_depth = 40
-@show val = SimpleSolver()
-@show planner_cor = 0.0
+@show N = 5000
+n_iters = 1000
+max_time = Inf
+max_depth = 40
+val = SimpleSolver()
+pp = PhysicalParam(4, lane_length=100.0)
+lambda = 0.0
+rmodel = SuccessReward(lambda=lambda)
+
+
 alldata = DataFrame()
 
 dpws = DPWSolver(depth=max_depth,
@@ -34,36 +38,6 @@ dpws = DPWSolver(depth=max_depth,
 dpws_x10 = deepcopy(dpws)
 dpws_x10.n_iterations *= 10
 
-solvers = Dict{String, Solver}(
-    "baseline" => SingleBehaviorSolver(dpws, Multilane.NORMAL),
-    "omniscient" => dpws,
-    # "omniscient-x10" => dpws_x10,
-    # "mlmpc" => MLMPCSolver(dpws),
-    "meanmpc" => MeanMPCSolver(dpws),
-    "qmdp" => QBSolver(dpws),
-    # "pftdpw" => begin
-    #     m = 10
-    #     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.5)
-    #     rng = MersenneTwister(123)
-    #     up = AggressivenessUpdater(nothing, m, 0.1, 0.1, wup, rng)
-    #     ABMDPSolver(dpws, up)
-    # end,
-    "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
-                               criterion=MaxUCB(8.0),
-                               max_depth=max_depth,
-                               max_time=max_time,
-                               enable_action_pw=false,
-                               k_observation=4.5,
-                               alpha_observation=1/10.0,
-                               estimate_value=FORollout(val),
-                               # estimate_value=val,
-                               check_repeat_obs=false,
-                               # node_sr_belief_updater=AggressivenessPOWFilter(wup)
-                              ),
-    "outcome" => OutcomeSolver(dpws)
-)
-
-
 function make_updater(cor, problem, k, rng_seed)
     wup = WeightUpdateParams(smoothing=0.0, wrong_lane_factor=0.05)
     if cor >= 1.0 || k == "meanmpc"
@@ -76,27 +50,69 @@ end
 pow_updater(up::AggressivenessUpdater) = AggressivenessPOWFilter(up.params)
 pow_updater(up::BehaviorParticleUpdater) = BehaviorPOWFilter(up.params)
 
-planner_behaviors = standard_uniform(correlation=planner_cor)
-pp = PhysicalParam(4, lane_length=100.0)
-planner_dmodel = NoCrashIDMMOBILModel(10, pp,
-                                  behaviors=planner_behaviors,
-                                  p_appear=1.0,
-                                  lane_terminate=true,
-                                  max_dist=1000.0,
-                                  brake_terminate_thresh=4.0,
-                                  speed_terminate_thresh=15.0
-                                 )
+
+solvers = Dict{String, Solver}(
+    "omniscient" => dpws,
+    "qmdp" => QBSolver(dpws),
+    "pomcpow" => POMCPOWSolver(tree_queries=n_iters,
+                               criterion=MaxUCB(8.0),
+                               max_depth=max_depth,
+                               max_time=max_time,
+                               enable_action_pw=false,
+                               k_observation=4.5,
+                               alpha_observation=1/10.0,
+                               estimate_value=FORollout(val),
+                               check_repeat_obs=false,
+                              ),
+    "outcome" => OutcomeSolver(dpws)
+)
+
+planners = Dict{Pair{String, Float64}, Any}(("omniscient"=>NaN)=>nothing) # maps to planner => updater pairs 
 
 
-lambda=0.0
-rmodel = SuccessReward(lambda=lambda)
+for sname in ["pomcpow", "qmdp", "outcome"]
+    for planner_cor in [0.0, 1.0]
+        @show sname => planner_cor
+        planner_behaviors = standard_uniform(correlation=planner_cor)
+        planner_dmodel = NoCrashIDMMOBILModel(10, pp,
+                                          behaviors=planner_behaviors,
+                                          p_appear=1.0,
+                                          lane_terminate=true,
+                                          max_dist=1000.0,
+                                          brake_terminate_thresh=4.0,
+                                          speed_terminate_thresh=15.0
+                                         )
 
-planner_pomdp = NoCrashPOMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_dmodel, rmodel, 0.95, false)
-planner_mdp = NoCrashMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_dmodel, rmodel, 0.95, false)
+        planner_pomdp = NoCrashPOMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_dmodel, rmodel, 0.95, false)
+        planner_mdp = NoCrashMDP{typeof(rmodel), typeof(planner_behaviors)}(planner_dmodel, rmodel, 0.95, false)
+
+        sol = solvers[sname]
+
+        solver_problems = Dict{String, Any}(
+            "qmdp"=>planner_mdp,
+            "outcome"=>planner_mdp
+        )
+
+        updaters = Dict{String, Any}(
+            "qmdp"=>make_updater(planner_cor, planner_pomdp, sname, 50000),
+            "pomcpow"=>make_updater(planner_cor, planner_pomdp, sname, 50000),
+            "outcome"=>nothing,
+        )
+
+        sp = get(solver_problems, sname, planner_pomdp)
+
+        up = updaters[sname]
+        if sname == "pomcpow"
+            sol.node_sr_belief_updater = pow_updater(up)
+        end
+
+        planners[sname=>planner_cor] = (solve(sol, sp) => up)
+    end
+end
 
 
-# for cor in 0.0:0.2:1.0
-for cor in 1.0
+for cor in 0.0:0.2:1.0
+# for cor in 1.0
     @show cor
 
     behaviors = standard_uniform(correlation=cor)
@@ -117,20 +133,21 @@ for cor in 1.0
         "omniscient-x10"=>mdp,
         "outcome"=>mdp
     )
-    solver_problems = Dict{String, Any}(
-        "qmdp"=>planner_mdp,
-        "baseline"=>planner_mdp,
-        "omniscient"=>mdp,
-        "omniscient-x10"=>mdp,
-        "outcome"=>planner_mdp
-    )
 
-    for (k, solver) in solvers
+    for ((k, planner_cor),pup) in planners
         @show k
+        @show planner_cor
+
+
         p = get(problems, k, pomdp)
-        sp = get(solver_problems, k, planner_pomdp)
         sim_problem = deepcopy(p)
         sim_problem.throw=true
+
+        if pup == nothing
+            planner = solve(solvers[k], p)
+        else
+            (planner, up) = pup
+        end
 
         sims = []
 
@@ -150,18 +167,12 @@ for cor in 1.0
             hr = HistoryRecorder(max_steps=100, rng=rng, capture_exception=false)
 
             if sim_problem isa POMDP
-                up = make_updater(planner_cor, planner_pomdp, k, rng_seed)
-                if k == "pomcpow"
-                    solver.node_sr_belief_updater = pow_updater(up)
-                end
-                planner = deepcopy(solve(solver, sp))
                 srand(planner, rng_seed+80000)
                 push!(sims, Sim(sim_problem, planner, up, ips, is,
                                 simulator=hr,
                                 metadata=metadata
                                ))
             else
-                planner = solve(solver, sp)
                 push!(sims, Sim(sim_problem, planner, is,
                                 simulator=hr,
                                 metadata=metadata
