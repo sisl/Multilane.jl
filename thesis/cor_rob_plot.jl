@@ -14,22 +14,23 @@ end
 
 data = CSV.read(filename)
 
-data[:time_to_lane] = data[:steps_to_lane].*data[:dt]
-data[:brakes_per_step] = data[:nb_brakes]./data[:n_steps]
+# data[:time_to_lane] = data[:steps_to_lane].*data[:dt]
+# data[:brakes_per_step] = data[:nb_brakes]./data[:n_steps]
 
-data = @from i in data begin
-    @where i.solver != "outcome"
-    @select i
-    @collect DataFrame
-end
+# data = @from i in data begin
+#     @where i.solver != "outcome"
+#     @select i
+#     @collect DataFrame
+# end
 
 combined = by(data, [:cor, :solver]) do df
     return DataFrame(reached_lane=sum(df[:terminal].=="lane")/nrow(df),
                      n=nrow(df))
 end
 
-@show sort(combined, [:solver])
+@show sort(combined, [:solver, :planner_cor])
 
+#=
 styles = Dict(
     "qmdp" => "blue",
     "pomcpow" => "brown",
@@ -52,6 +53,7 @@ names = Dict("qmdp"=>"QMDP",
              "baseline"=>"Assume normal",
              "omniscient"=>"Omniscient"
             )
+=#
 
 
 
