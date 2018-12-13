@@ -56,9 +56,12 @@ function visualize(p, s, r;
     for (i,c) in enumerate(s.cars)
         if i == 1
             color = colorant"green"
-        else
+        elseif c isa CarState
             agg = aggressiveness(Multilane.STANDARD_CORRELATED, c.behavior)
             color = weighted_color_mean(agg, colorant"red", colorant"blue")
+        else
+            @assert c isa CarPhysicalState
+            color = colorant"magenta"
         end
         ac = ArrowCar([c.x+s.x, (c.y-1.0)*pp.w_lane], id=i, color=color)
         push!(stuff, ac)
