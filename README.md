@@ -4,9 +4,4 @@
 
 Simulation and control of an autonomous car on a multilane highway in a (PO)MDP framework (implemented using [POMDPs.jl](https://github.com/JuliaPOMDP/POMDPs.jl)).
 
-![Simulation Image](https://raw.githubusercontent.com/zsunberg/Multilane.jl/master/img/scene.png)
-
-The following solvers can be used:
-- [MCTS](https://github.com/JuliaPOMDP/MCTS.jl)
-- [POMCP](https://github.com/JuliaPOMDP/POMCP.jl)
-- [RobustMCTS](https://github.com/zsunberg/RobustMCTS.jl/tree/master/src)
+The most recent set of experiments can be found in the [thesis](/thesis) directory.
