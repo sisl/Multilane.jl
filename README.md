@@ -4,4 +4,6 @@
 
 Simulation and control of an autonomous car on a multilane highway in a (PO)MDP framework (implemented using [POMDPs.jl](https://github.com/JuliaPOMDP/POMDPs.jl)).
 
+![POMCPOW Planning](/img/planning.png)
+
 The most recent set of experiments can be found in the [thesis](/thesis) directory.
